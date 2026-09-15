@@ -1,0 +1,60 @@
+// Prisma schema — Fase 2 Sprint 5 Backend
+// Supabase Postgres (Free) — prover: postgresql
+// Local fallback: usa localStorage si DATABASE_URL no está configurada
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ALUMNO
+  PROFESOR
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(ALUMNO)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress  Progress[]
+}
+
+model Progress {
+  id        String   @id @default(cuid())
+  userId    String
+  topicId   String   // ej: "04_iupac", "05_balanceo", "06_estequiometria"
+  score     Int      @default(0)
+  total     Int      @default(0)
+  attempts  Int      @default(0)
+  completed Boolean  @default(false)
+  lastScore Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+  @@index([userId])
+  @@index([topicId])
+}
+
+// Opcional: logs de NPS y eventos
+model Event {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String   // "nps", "retos_score", "sim_complete"
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+}

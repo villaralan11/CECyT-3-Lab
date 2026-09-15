@@ -1,0 +1,7 @@
+codigo,grupo,tema,pre_score,post_score,nps,completitud,tiempo_min,fecha_pre,fecha_post
+ALU-01,B,01_MRU,3,6,9,1,15,2026-11-16,2026-12-02
+ALU-02,B,02_MRUV,4,7,10,1,18,2026-11-16,2026-12-02
+ALU-03,B,03_Tiros,2,5,8,1,20,2026-11-18,2026-12-05
+ALU-04,B,07_VerbTenses,5,7,9,1,12,2026-11-20,2026-12-07
+ALU-05,B,08_Passive,3,6,8,1,14,2026-11-20,2026-12-07
+# Piloto 2 Física/Inglés — mismo análisis con scripts/analisis-piloto.py
