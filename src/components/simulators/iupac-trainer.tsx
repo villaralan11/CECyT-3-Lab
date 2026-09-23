@@ -26,6 +26,35 @@ type Compound = {
   explanation: string;
 };
 
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const a = [...arr];
+  const rnd = mulberry32(seed);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 const TYPE_META: Record<CompoundType, { label: string; group: "Inorgánico" | "Orgánico"; color: string; bgSoft: string; border: string }> = {
   oxido: { label: "Óxido", group: "Inorgánico", color: "text-rose-700", bgSoft: "bg-rose-50", border: "border-rose-200" },
   hidroxido: { label: "Hidróxido", group: "Inorgánico", color: "text-orange-700", bgSoft: "bg-orange-50", border: "border-orange-200" },
@@ -40,26 +69,26 @@ const TYPE_META: Record<CompoundType, { label: string; group: "Inorgánico" | "O
 
 const COMPOUNDS: Compound[] = [
   // Óxidos
-  { formula: "CO₂", name: "dióxido de carbono", type: "oxido", hint: "Óxido: prefijos griegos según nº de O (mono-, di-, tri-).", explanation: "C + 2 O. 'di-' por 2 oxígenos. Como el C tiene varias valencias, aquí va con la menor (IV)." },
-  { formula: "SO₃", name: "trióxido de azufre", type: "oxido", hint: "Óxido ácido de un no-metal. Prefijo 'tri-' por 3 O.", explanation: "S + 3 O. Anhídrido sulfúrico. Prefijo 'tri-' porque hay 3 átomos de O." },
+  { formula: "CO₂", name: "dióxido de carbono", type: "oxido", hint: "Óxido: prefijos griegos según nº de O (mono-, di-, tri-).", explanation: "C + 2 O. 'di-' por 2 oxígenos. Como el C tiene varias valencias, aquí va con la mayor (IV); CO sería C(II)." },
+  { formula: "SO₃", name: "trióxido de azufre", type: "oxido", hint: "Óxido ácido de un no-metal. Prefijo 'tri-' por 3 O.", explanation: "S + 3 O. Prefijo 'tri-' porque hay 3 átomos de O (nomenclatura sistemática)." },
   { formula: "Na₂O", name: "óxido de sodio", type: "oxido", hint: "Óxido básico (metal + O). Sodio valencia 1.", explanation: "Na⁺ + O²⁻. Se necesitan 2 Na para compensar la carga del O²⁻. Sin prefijos (valencia única)." },
   { formula: "CaO", name: "óxido de calcio", type: "oxido", hint: "Cal viva. Ca²⁺ + O²⁻.", explanation: "Cal viva. Ca²⁺ y O²⁻ se neutralizan 1:1. Sin prefijos." },
-  { formula: "Fe₂O₃", name: "óxido de hierro (III)", type: "oxido", hint: "Hierro con valencia 3. Se indica con números romanos.", explanation: "Hierro con valencia III (óxido férrico). Como el Fe tiene valencias 2 y 3, hay que indicarla." },
+  { formula: "Fe₂O₃", name: "óxido de hierro (III)", type: "oxido", hint: "Hierro con valencia 3. Se indica con números romanos.", explanation: "Hierro con valencia III. Como el Fe tiene valencias 2 y 3, hay que indicarla con número romano (Stock)." },
   // Hidróxidos
   { formula: "NaOH", name: "hidróxido de sodio", type: "hidroxido", hint: "Base: metal + grupo OH⁻.", explanation: "Na⁺ + OH⁻. Sosa cáustica. 1:1 porque Na es +1 y OH es −1." },
   { formula: "Ca(OH)₂", name: "hidróxido de calcio", type: "hidroxido", hint: "Cal apagada. Ca²⁺ necesita 2 OH⁻.", explanation: "Ca²⁺ + 2 OH⁻. Cal apagada. Se escribe (OH)₂ para indicar 2 grupos." },
   { formula: "Al(OH)₃", name: "hidróxido de aluminio", type: "hidroxido", hint: "Al³⁺ requiere 3 grupos OH⁻.", explanation: "Al³⁺ + 3 OH⁻. El paréntesis indica que el subíndice afecta a todo el grupo OH." },
   // Ácidos
-  { formula: "HCl", name: "ácido clorhídrico", type: "acido", hint: "Ácido binario (H + no-metal). Termina en -hídrico.", explanation: "H + Cl. Ácido binario sin O. Terminación -hídrico." },
+  { formula: "HCl", name: "ácido clorhídrico", type: "acido", hint: "Ácido binario (H + no-metal). Termina en -hídrico.", explanation: "H + Cl. Ácido binario sin O. Terminación -hídrico. En disolución acuosa es «ácido clorhídrico»; el gas puro es «cloruro de hidrógeno»." },
   { formula: "H₂SO₄", name: "ácido sulfúrico", type: "acido", hint: "Oxoácido del azufre con valencia VI. Termina en -ico.", explanation: "H₂SO₄. Oxoácido. S con valencia VI → -ico. Ácido fuerte de uso industrial." },
-  { formula: "HNO₃", name: "ácido nítrico", type: "acido", hint: "Oxoácido del nitrato. N valencia V.", explanation: "HNO₃. N con valencia V → -ico. Ácido fuerte usado en fertilizantes." },
+  { formula: "HNO₃", name: "ácido nítrico", type: "acido", hint: "Oxoácido del nitrógeno. N valencia V.", explanation: "HNO₃. N con valencia V → -ico. Ácido fuerte usado en fertilizantes." },
   { formula: "H₃PO₄", name: "ácido fosfórico", type: "acido", hint: "Tres H ionizables. P valencia V.", explanation: "H₃PO₄. P con valencia V → -ico. 3 H reemplazables → ácido triprótico." },
   // Sales
   { formula: "NaCl", name: "cloruro de sodio", type: "sal", hint: "Sal binaria: -uro del no-metal + de + metal.", explanation: "Na⁺ + Cl⁻. Sal de mesa. Cl como 'cloruro' (valencia única)." },
   { formula: "KBr", name: "bromuro de potasio", type: "sal", hint: "Sal binaria de haluro.", explanation: "K⁺ + Br⁻. Bromuro. Sal binaria típica de haluro." },
   { formula: "CaCO₃", name: "carbonato de calcio", type: "sal", hint: "Sal de ácido carbónico. Cambia -ico → -ato.", explanation: "Ca²⁺ + CO₃²⁻. Sal de ácido carbónico (H₂CO₃). -ico del ácido → -ato en la sal." },
   { formula: "FeSO₄", name: "sulfato de hierro (II)", type: "sal", hint: "Hierro con valencia 2 → (II).", explanation: "Fe²⁺ + SO₄²⁻. Hierro (II) → sal verde. La valencia va entre paréntesis." },
-  { formula: "AgNO₃", name: "nitrato de plata", type: "sal", hint: "Sal de ácido nítrico. Plata +1.", explanation: "Ag⁺ + NO₃⁻. Nitrato de plata. Lentes de laboratorio para detectar cloruros." },
+  { formula: "AgNO₃", name: "nitrato de plata", type: "sal", hint: "Sal de ácido nítrico. Plata +1.", explanation: "Ag⁺ + NO₃⁻. Nitrato de plata. Reactivo de laboratorio para detectar cloruros." },
   // Alcanos
   { formula: "CH₄", name: "metano", type: "alcano", hint: "Alcano 1 C: met- + -ano.", explanation: "1 C → met-. Sin enlaces dobles → -ano. Gas metano, componente del gas natural." },
   { formula: "C₂H₆", name: "etano", type: "alcano", hint: "Alcano 2 C: et- + -ano.", explanation: "2 C → et-. -ano por enlace simple. Segundo alcano de la serie." },
@@ -70,7 +99,7 @@ const COMPOUNDS: Compound[] = [
   { formula: "CH₃OH", name: "metanol", type: "alcohol", hint: "Alcohol 1 C: met- + -anol.", explanation: "1 C + grupo OH. Metanol (alcohol de madera). Tóxico." },
   { formula: "C₂H₅OH", name: "etanol", type: "alcohol", hint: "Alcohol 2 C: et- + -anol.", explanation: "2 C + grupo OH. Etanol (alcohol de bebidas)." },
   // Ácidos carboxílicos
-  { formula: "CH₃COOH", name: "ácido acético", type: "acido_org", hint: "Ácido carboxílico 2 C: ácido + etanoico.", explanation: "2 C con grupo -COOH. Ácido acético (vinagre). IUPAC: ácido etanoico." },
+  { formula: "CH₃COOH", name: "ácido acético", type: "acido_org", hint: "Ácido carboxílico 2 C: usa el nombre común aceptado.", explanation: "2 C con grupo -COOH. Ácido acético (vinagre). IUPAC: ácido etanoico." },
   // Cetonas
   { formula: "CH₃COCH₃", name: "propanona", type: "cetona", hint: "Cetona 3 C, C=O en medio.", explanation: "3 C con C=O en el carbono central. Propanona (acetona). Quitaesmalte." },
 ];
@@ -104,10 +133,11 @@ export default function IUPACTrainer() {
     const others = COMPOUNDS.filter((c) => TYPE_META[c.type].group !== TYPE_META[current.type].group);
 
     const candidates = [...sameType, ...sameGroup, ...others].filter((c) => c.name !== current.name);
-    // Dedupe and shuffle
+    // Dedupe and shuffle deterministically (evita hydration mismatch en SSR)
     const unique = Array.from(new Set(candidates.map((c) => c.name))).map((n) => candidates.find((c) => c.name === n)!);
-    const shuffled = [...unique].sort(() => Math.random() - 0.5).slice(0, 3);
-    const opts = [...shuffled, current].sort(() => Math.random() - 0.5);
+    const seed = hashSeed(current.name + "|" + idx);
+    const shuffled = seededShuffle(unique, seed);
+    const opts = seededShuffle([...shuffled.slice(0, 3), current], seed ^ 0x9e3779b9);
     return opts;
   }, [current, idx]);
 

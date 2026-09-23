@@ -81,6 +81,15 @@ export default function EstequiometriaSimulator() {
     setMasses(REACTIONS[i].reactants.map(() => 8));
   };
 
+  const esteqExploredRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    const hasInteracted = masses.some((m) => m !== 8);
+    if (!hasInteracted || esteqExploredRef.current.has(rIdx)) return;
+    const next = new Set(esteqExploredRef.current).add(rIdx);
+    esteqExploredRef.current = next;
+    void save("06_estequiometria", next.size, REACTIONS.length);
+  }, [masses, rIdx, save]);
+
   // Moles of each reactant
   const moles = useMemo(
     () => reaction.reactants.map((r, i) => masses[i] / r.molarMass),
@@ -118,17 +127,6 @@ export default function EstequiometriaSimulator() {
     };
   });
 
-  // Auto-guarda progreso al interactuar
-  const esteqSavedRef = useRef(false);
-  useEffect(() => {
-    const hasInteracted = masses.some((m) => m !== 8);
-    if (hasInteracted && !esteqSavedRef.current) {
-      esteqSavedRef.current = true;
-      save("06_estequiometria", 1, 1);
-    } else if (!hasInteracted) {
-      esteqSavedRef.current = false;
-    }
-  }, [masses, save]);
   // Find max mass for bar scaling
   const maxMass = Math.max(...masses, ...yields.map((y) => y.grams), 1);
 

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Car, TrendingUp, Square, Zap, Gauge, MapPin, Flag, Pause, Play, StepBack, StepForward, RotateCcw } from "lucide-react";
 import { Readout, SimHeader, Slider, Graph, Insight } from "./shared";
+import { useAnimationLoop } from "@/hooks/use-animation-loop";
+import { useProgress } from "@/hooks/use-progress";
 
 export default function MRUSimulator() {
   const TMAX = 10;
@@ -14,62 +16,43 @@ export default function MRUSimulator() {
   const [t, setT] = useState(0);
   const [running, setRunning] = useState(false);
   const [trail, setTrail] = useState<{ x: number; o: number }[]>([]);
-  const rafRef = useRef<number | null>(null);
-  const lastTsRef = useRef<number | null>(null);
-  const accumulatorRef = useRef(0);
   const trailRef = useRef<{ x: number; o: number }[]>([]);
-  const lastTrailT = useRef(0);
+  const lastTrailTsRef = useRef(0);
   const sceneRef = useRef<HTMLDivElement>(null);
   const tRef = useRef(t);
   useEffect(() => { tRef.current = t; }, [t]);
+  const { save } = useProgress();
+  const completedRef = useRef(false);
 
   const x = x0 + v * t;
   const distance = v * t;
 
-  const FIXED_DT = 1 / 120;
-  useEffect(() => {
-    if (!running) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-      accumulatorRef.current = 0;
-      return;
+  const handleTick = useCallback((dt: number, ts: number) => {
+    const curT = tRef.current + dt;
+    if ((curT >= TMAX || x0 + v * curT >= TRACK_LEN) && !completedRef.current) {
+      completedRef.current = true;
+      void save("01_mru", 1, 1);
     }
-    let lastTrailTs = performance.now();
-    const step = (ts: number) => {
-      if (lastTsRef.current == null) lastTsRef.current = ts;
-      const frameDt = Math.min(0.05, (ts - lastTsRef.current) / 1000);
-      lastTsRef.current = ts;
-      accumulatorRef.current += frameDt;
-      const steps = Math.floor(accumulatorRef.current / FIXED_DT);
-      if (steps > 0) {
-        const delta = steps * FIXED_DT;
-        accumulatorRef.current -= delta;
-        setT((prev) => {
-          const next = prev + delta;
-          if (next >= TMAX || x0 + v * next >= TRACK_LEN) {
-            setRunning(false);
-            return Math.min(next, TMAX);
-          }
-          return next;
-        });
-        // Trail every ~100ms using fixed steps
-        if (ts - lastTrailTs > 100) {
-          lastTrailTs = ts;
-          const curT = tRef.current + delta;
-          const xn = x0 + v * curT;
-          trailRef.current = [...trailRef.current.slice(-25), { x: xn, o: 1 }];
-          setTrail([...trailRef.current]);
-        }
+    setT((prev) => {
+      const next = prev + dt;
+      if (next >= TMAX || x0 + v * next >= TRACK_LEN) {
+        setRunning(false);
+        return Math.min(next, TMAX);
       }
-      rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [running, v, x0]);
+      return next;
+    });
+    if (ts - lastTrailTsRef.current > 100) {
+      lastTrailTsRef.current = ts;
+      const xn = x0 + v * (tRef.current + dt);
+      trailRef.current = [...trailRef.current.slice(-25), { x: xn, o: 1 }];
+      setTrail([...trailRef.current]);
+    }
+  }, [x0, v, save]);
+
+  useAnimationLoop(running, handleTick);
 
   const reset = useCallback(() => {
+    completedRef.current = false;
     setRunning(false);
     setT(0);
     trailRef.current = [];

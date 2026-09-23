@@ -120,7 +120,7 @@ export default function FisicaPage() {
       <div className="mt-12">
         <CtaStrip
           title="¿Listo para experimentar?"
-          description="Cada simulador es una página independiente con controles, gráficas en vivo y notas pedagógicas. También puedes probar los retos de 5 minutos."
+          description="Cada simulador es una página independiente con controles, gráficas en vivo y notas pedagógicas. También puedes probar los retos rápidos."
           primaryLabel="Empezar con MRU"
           primaryHref="/fisica/mru"
           secondaryLabel="Ver retos"

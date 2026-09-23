@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { SimHeader, Insight } from "./shared";
+import { useProgress } from "@/hooks/use-progress";
 import { cn } from "@/lib/utils";
 import { isCorrectEnglish } from "@/lib/nlp";
 
@@ -35,6 +36,7 @@ export function QuizTrainer({
   items,
   accentColor = "amber",
   intro,
+  topicId,
 }: {
   title: string;
   description: string;
@@ -42,68 +44,22 @@ export function QuizTrainer({
   items: QItem[];
   accentColor?: "amber" | "fuchsia" | "emerald";
   intro?: string;
+  topicId?: string;
 }) {
+  const { save } = useProgress();
+  const savedRef = useRef(false);
   const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<(boolean | null)[]>(items.map(() => null));
   const [showHint, setShowHint] = useState(false);
+  const [writeValue, setWriteValue] = useState("");
+  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
 
   const item = items[idx];
   const total = items.length;
-  const [writeValue, setWriteValue] = useState("");
   const isWriteMode = item.type === "write";
 
   const score = results.filter((r) => r === true).length;
   const answered = results.filter((r) => r !== null).length;
-
-  const onPick = (i: number) => {
-    if (picked !== null) return;
-    setPicked(i);
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = i === item.correct;
-      return next;
-    });
-  };
-
-  const goto = (i: number) => {
-    if (i < 0 || i >= total) return;
-    setIdx(i);
-    setPicked(results[i] !== null ? items[i].correct : null); // if already answered, keep showing as answered
-    // Actually we need to track the picked index separately - let me redo
-    setShowHint(false);
-  };
-
-  const next = () => {
-    if (idx < total - 1) {
-      setIdx(idx + 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const prev = () => {
-    if (idx > 0) {
-      setIdx(idx - 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const reset = () => {
-    setIdx(0);
-    setPicked(null);
-    setWriteValue("");
-    setResults(items.map(() => null));
-    setShowHint(false);
-    setPickedHistory(items.map(() => null));
-  };
-
-  // For showing picked, we need to track which option user picked (not just correct/incorrect)
-  // Let me track separately
-  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
 
   const onPickV2 = (i: number) => {
     if (pickedHistory[idx] !== null) return;
@@ -117,7 +73,31 @@ export function QuizTrainer({
       next[idx] = i === item.correct;
       return next;
     });
-    setPicked(i);
+  };
+
+  const next = () => {
+    if (idx < total - 1) {
+      setIdx(idx + 1);
+      setWriteValue("");
+      setShowHint(false);
+    }
+  };
+
+  const prev = () => {
+    if (idx > 0) {
+      setIdx(idx - 1);
+      setWriteValue("");
+      setShowHint(false);
+    }
+  };
+
+  const reset = () => {
+    savedRef.current = false;
+    setIdx(0);
+    setWriteValue("");
+    setResults(items.map(() => null));
+    setShowHint(false);
+    setPickedHistory(items.map(() => null));
   };
 
   const onSubmitWrite = () => {
@@ -134,13 +114,11 @@ export function QuizTrainer({
       next[idx] = correct;
       return next;
     });
-    setPicked(correct ? item.correct : -1);
   };
 
   const gotoV2 = (i: number) => {
     if (i < 0 || i >= total) return;
     setIdx(i);
-    setPicked(pickedHistory[i]);
     setWriteValue("");
     setShowHint(false);
   };
@@ -174,6 +152,14 @@ export function QuizTrainer({
   const c = accentMap[accentColor];
 
   const allAnswered = answered === total;
+
+  // Guarda progreso una vez por ciclo al completar todos los ejercicios.
+  useEffect(() => {
+    if (topicId && allAnswered && !savedRef.current) {
+      savedRef.current = true;
+      void save(topicId, score, total);
+    }
+  }, [topicId, allAnswered, score, total, save]);
 
   return (
     <div className="space-y-5">

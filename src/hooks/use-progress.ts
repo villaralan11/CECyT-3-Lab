@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-type ProgressItem = {
+export type ProgressItem = {
   topicId: string;
   score: number;
   total: number;

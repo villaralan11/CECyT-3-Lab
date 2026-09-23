@@ -55,13 +55,13 @@ const ITEMS: QItem[] = [
   },
   {
     type: "blank",
-    prompt: "The pH indicator ____ turn pink in basic solutions. (es lo que se espera, deducción)",
+    prompt: "The pH indicator ____ turn pink in basic solutions. (es un hecho: siempre ocurre)",
     sentence: "The pH indicator ____ turn pink in basic solutions.",
-    options: ["might", "should", "could", "would"],
+    options: ["might", "will", "could", "would"],
     correct: 1,
-    explanation: "'Should' expresa una deducción razonable basada en lo que se espera. No es certeza absoluta como 'will', pero es lo previsible.",
-    hint: "Lo que se espera que pase normalmente → should.",
-    extra: "Should como deducción: 'It's 6 pm, the bus should be here soon' (= espero que llegue).",
+    explanation: "'Will' expresa un hecho determinista: en medio básico el indicador siempre vira a rosa. 'Should' expresaría expectativa o consejo, no un hecho.",
+    hint: "Hecho científico que siempre ocurre → will.",
+    extra: "Will = certeza/hecho. Should = expectativa ('I expect it will') o recomendación. En ciencia, los hechos van con presente o will.",
   },
   {
     type: "blank",
@@ -75,13 +75,13 @@ const ITEMS: QItem[] = [
   },
   {
     type: "blank",
-    prompt: "She ____ not be in the lab; the lights are off. (deducción negativa fuerte)",
+    prompt: "She ____ not be in the lab; the lights are off. (deducción negativa: es imposible)",
     sentence: "She ____ not be in the lab; the lights are off.",
-    options: ["should", "might", "can", "must"],
-    correct: 3,
-    explanation: "'Must not be' expresa deducción negativa fuerte (estoy seguro de que no). En inglés británico también se usa 'can't be'.",
-    hint: "Deducción negativa fuerte → can't / must not (en este contexto, must = deducción).",
-    extra: "Deducción: must = seguro que sí; can't = seguro que no (más común que must not en negativas).",
+    options: ["should", "might", "can't", "must"],
+    correct: 2,
+    explanation: "'Can't be' expresa deducción negativa: con las luces apagadas es imposible que esté. 'Must not be' sonaría a prohibición, no a deducción.",
+    hint: "Deducción negativa (imposible que sí) → can't.",
+    extra: "Deducción: must = seguro que sí; can't = seguro que no. Must not = prohibición (no deducción).",
   },
   {
     type: "write",
@@ -110,12 +110,13 @@ const ITEMS: QItem[] = [
 export default function ModalVerbsTrainer() {
   return (
     <QuizTrainer
+      topicId="09_modal"
       title="Grammar · Modal Verbs"
       description="Must, can, might, should y compañía: obligación, prohibición, posibilidad, deducción y permiso. El matiz que convierte una recomendación en una norma de seguridad del laboratorio."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 10 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de verbos modales."
+      intro="Has completado los 10 ejercicios de verbos modales."
     />
   );
 }

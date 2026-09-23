@@ -30,10 +30,10 @@ export function Slider({
   description?: string;
 }) {
   const colorMap = {
-    fuchsia: { accent: "accent-fuchsia-500", text: "text-fuchsia-600", track: "bg-fuchsia-500" },
-    emerald: { accent: "accent-emerald-500", text: "text-emerald-600", track: "bg-emerald-500" },
-    amber: { accent: "accent-amber-500", text: "text-amber-600", track: "bg-amber-500" },
-    rose: { accent: "accent-rose-500", text: "text-rose-600", track: "bg-rose-500" },
+    fuchsia: { fill: "#d946ef", text: "text-fuchsia-600" },
+    emerald: { fill: "#10b981", text: "text-emerald-600" },
+    amber: { fill: "#f59e0b", text: "text-amber-600" },
+    rose: { fill: "#f43f5e", text: "text-rose-600" },
   };
   const c = colorMap[color];
   const pct = ((value - min) / (max - min)) * 100;
@@ -58,10 +58,16 @@ export function Slider({
           step={step}
           value={value}
           disabled={disabled}
+          aria-label={label}
+          aria-valuetext={`${value.toFixed(step < 1 ? 2 : 0)}${unit}`}
           onChange={(e) => onChange(parseFloat(e.target.value))}
-          className={cn("relative w-full h-2 cursor-pointer appearance-none rounded-full bg-secondary", c.accent, disabled && "cursor-not-allowed")}
+          className={cn(
+            "cecyt-slider relative w-full h-2 cursor-pointer appearance-none rounded-full",
+            disabled && "cursor-not-allowed"
+          )}
           style={{
-            background: `linear-gradient(to right, var(--tw-gradient-from, currentColor) ${pct}%, hsl(var(--secondary)) ${pct}%)`,
+            background: `linear-gradient(to right, ${c.fill} ${pct}%, var(--secondary) ${pct}%)`,
+            ["--slider-thumb" as string]: c.fill,
           }}
         />
       </div>
@@ -99,12 +105,12 @@ export function PlayControls({
         {running ? "Pausar" : "Iniciar"}
       </Button>
       {onStepBack && (
-        <Button size="sm" variant="outline" onClick={onStepBack} className="rounded-full border-border" title="Retroceder 0.1 s">
+        <Button size="sm" variant="outline" onClick={onStepBack} className="rounded-full border-border" title="Retroceder 0.1 s" aria-label="Retroceder 0.1 s">
           <StepBack className="h-3.5 w-3.5" />
         </Button>
       )}
       {onStepForward && (
-        <Button size="sm" variant="outline" onClick={onStepForward} className="rounded-full border-border" title="Avanzar 0.1 s">
+        <Button size="sm" variant="outline" onClick={onStepForward} className="rounded-full border-border" title="Avanzar 0.1 s" aria-label="Avanzar 0.1 s">
           <StepForward className="h-3.5 w-3.5" />
         </Button>
       )}
@@ -392,7 +398,7 @@ export function SimHeader({
       <div className={cn("h-9 w-1.5 rounded-full bg-gradient-to-b flex-shrink-0 mt-1", cmap[color])} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-xl font-bold text-foreground leading-tight">{title}</h2>
+          <h1 className="text-xl font-bold text-foreground leading-tight">{title}</h1>
           {badge && (
             <span className="inline-flex items-center rounded-full bg-secondary text-muted-foreground px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
               {badge}

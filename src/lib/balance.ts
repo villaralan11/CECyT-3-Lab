@@ -1,9 +1,23 @@
 // Solver dinámico de balanceo — matriz estequiométrica + RREF con fracciones
 // Para 8 reacciones pre-cargadas y cualquier reacción nueva ingresada por el alumno
 
+const UNICODE_MAP: Record<string, string> = {
+  "₀": "0", "₁": "1", "₂": "2", "₃": "3", "₄": "4", "₅": "5", "₆": "6", "₇": "7", "₈": "8", "₉": "9",
+  "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9",
+  "⁺": "+", "⁻": "-", "±": "+",
+};
+
+// Convierte subíndices/superíndices unicode (O₂, Fe³⁺) a ASCII y descarta cargas.
+// Las cargas van al final (Fe³⁺ → Fe, SO₄²⁻ → SO₄) y NO cuentan como subíndices.
+export function normalizeFormula(formula: string): string {
+  const noCharge = formula.replace(/[⁰-⁹]*[⁺⁻±]+$/, "");
+  return noCharge.replace(/[₀-₉⁰-⁹⁺⁻±]/g, (c) => UNICODE_MAP[c] ?? c);
+}
+
 export function parseFormula(formula: string): Record<string, number> {
+  const clean = normalizeFormula(formula);
   // Expande paréntesis (OH)2 -> O2H2 etc.
-  let expanded = formula.replace(/\(([^)]+)\)(\d*)/g, (_, inside: string, mult: string) => {
+  let expanded = clean.replace(/\(([^)]+)\)(\d*)/g, (_, inside: string, mult: string) => {
     const m = mult ? parseInt(mult, 10) : 1;
     return inside.replace(/([A-Z][a-z]?)(\d*)/g, (_: string, el: string, n: string) => el + (n ? parseInt(n, 10) * m : m));
   });

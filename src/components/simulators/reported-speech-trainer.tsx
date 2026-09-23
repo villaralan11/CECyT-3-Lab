@@ -106,14 +106,14 @@ const ITEMS: QItem[] = [
     prompt: "Convierte a reported speech. Directo: «'Let's start the titration,' the professor suggested.»",
     options: [
       "The professor suggested starting the titration.",
-      "The professor suggested that we start the titration.",
-      "Both A and B are correct.",
+      "The professor suggested to start the titration.",
+      "The professor suggested us to start the titration.",
       "The professor said to start the titration.",
     ],
-    correct: 2,
-    explanation: "'Let's...' con 'suggest' admite DOS estructuras válidas: 'suggested + -ing' o 'suggested (that) we + verbo'.",
-    hint: "'Let's' con 'suggest' admite dos estructuras válidas.",
-    extra: "Suggest es especial: NO admite 'suggested me to' (incorrecto). Solo: 'suggested -ing' o 'suggested (that) + sujeto + verbo'.",
+    correct: 0,
+    explanation: "'Suggest' se construye con -ing: 'suggested starting'. NO admite to-infinitive ('suggested to start') ni objeto + to ('suggested us to'). Nota: 'suggested (that) we start' también sería válida, pero no está entre las opciones.",
+    hint: "'Suggest' solo admite -ing (o that + sujeto + verbo).",
+    extra: "Suggest es especial: NO admite 'suggested me to' ni 'suggested to + verbo' (incorrectos). Solo: 'suggested -ing' o 'suggested (that) + sujeto + verbo'.",
   },
   {
     type: "write",
@@ -142,12 +142,13 @@ const ITEMS: QItem[] = [
 export default function ReportedSpeechTrainer() {
   return (
     <QuizTrainer
+      topicId="10_reported"
       title="Grammar · Reported Speech"
       description="Cuenta lo que alguien dijo sin citarlo: backshift de tiempos, ajuste de pronombres y marcadores (now→then, yesterday→the day before), preguntas sin auxiliar e imperativos con to + infinitivo."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 10 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de reported speech."
+      intro="Has completado los 10 ejercicios de reported speech."
     />
   );
 }

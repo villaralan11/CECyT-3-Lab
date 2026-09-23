@@ -3,7 +3,7 @@ import ModalVerbsTrainer from "@/components/simulators/modal-verbs-trainer";
 
 export const metadata = {
   title: "Grammar · Modal Verbs — CECyT No. 3 Lab",
-  description: "8 ejercicios sobre must, can, might, should: obligación, prohibición, posibilidad, deducción, permiso.",
+  description: "10 ejercicios sobre must, can, might, should: obligación, prohibición, posibilidad, deducción, permiso.",
 };
 
 export default function ModalVerbsPage() {

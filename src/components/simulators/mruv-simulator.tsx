@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Car, TrendingUp, TrendingDown, Square, Gauge, Flame, Zap, Pause, Play, StepBack, StepForward, RotateCcw } from "lucide-react";
 import { Readout, SimHeader, Slider, Graph, Insight } from "./shared";
+import { useAnimationLoop } from "@/hooks/use-animation-loop";
+import { useProgress } from "@/hooks/use-progress";
 
 export default function MRUVSimulator() {
   const [v0, setV0] = useState(0);
@@ -12,13 +14,13 @@ export default function MRUVSimulator() {
   const [t, setT] = useState(0);
   const [running, setRunning] = useState(false);
   const [trail, setTrail] = useState<{ x: number; o: number; speed: number }[]>([]);
-  const rafRef = useRef<number | null>(null);
-  const lastTsRef = useRef<number | null>(null);
-  const accumulatorRef = useRef(0);
+  const lastTrailTsRef = useRef(0);
   const trailRef = useRef<{ x: number; o: number; speed: number }[]>([]);
   const sceneRef = useRef<HTMLDivElement>(null);
   const tRef = useRef(t);
   useEffect(() => { tRef.current = t; }, [t]);
+  const { save } = useProgress();
+  const completedRef = useRef(false);
 
   const TMAX = 8;
   const TRACK_LEN = 80;
@@ -29,56 +31,41 @@ export default function MRUVSimulator() {
   const vMin = Math.min(v0, v0 + a * TMAX);
 
   let motionState: "acelerando" | "frenando" | "reposo";
-  if (Math.abs(v0) < 0.01 && Math.abs(a) < 0.01) motionState = "reposo";
-  else if (Math.abs(v0) < 0.01) motionState = "acelerando";
-  else if (v0 * a >= 0) motionState = "acelerando";
+  if (Math.abs(v) < 0.01 && Math.abs(a) < 0.01) motionState = "reposo";
+  else if (Math.abs(v) < 0.01) motionState = "acelerando";
+  else if (v * a >= 0) motionState = "acelerando";
   else motionState = "frenando";
 
-  const FIXED_DT = 1 / 120;
-  useEffect(() => {
-    if (!running) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-      accumulatorRef.current = 0;
-      return;
+  const handleTick = useCallback((dt: number, ts: number) => {
+    const curT = tRef.current + dt;
+    const xnC = x0 + v0 * curT + 0.5 * a * curT * curT;
+    if ((curT >= TMAX || xnC >= TRACK_LEN || xnC < -5) && !completedRef.current) {
+      completedRef.current = true;
+      void save("02_mruv", 1, 1);
     }
-    let lastTrailTs = performance.now();
-    const step = (ts: number) => {
-      if (lastTsRef.current == null) lastTsRef.current = ts;
-      const frameDt = Math.min(0.05, (ts - lastTsRef.current) / 1000);
-      lastTsRef.current = ts;
-      accumulatorRef.current += frameDt;
-      const steps = Math.floor(accumulatorRef.current / FIXED_DT);
-      if (steps > 0) {
-        const delta = steps * FIXED_DT;
-        accumulatorRef.current -= delta;
-        setT((prev) => {
-          const next = prev + delta;
-          const xn = x0 + v0 * next + 0.5 * a * next * next;
-          if (next >= TMAX || xn >= TRACK_LEN || xn < -5) {
-            setRunning(false);
-            return Math.min(next, TMAX);
-          }
-          return next;
-        });
-        if (ts - lastTrailTs > 80) {
-          lastTrailTs = ts;
-          const curT = tRef.current + delta;
-          const xn = x0 + v0 * curT + 0.5 * a * curT * curT;
-          const vn = v0 + a * curT;
-          trailRef.current = [...trailRef.current.slice(-20), { x: xn, o: 1, speed: Math.abs(vn) }];
-          setTrail([...trailRef.current]);
-        }
+    setT((prev) => {
+      const next = prev + dt;
+      const xn = x0 + v0 * next + 0.5 * a * next * next;
+      if (next >= TMAX || xn >= TRACK_LEN || xn < -5) {
+        setRunning(false);
+        return Math.min(next, TMAX);
       }
-      rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [running, v0, a, x0]);
+      return next;
+    });
+    if (ts - lastTrailTsRef.current > 80) {
+      lastTrailTsRef.current = ts;
+      const curT = tRef.current + dt;
+      const xn = x0 + v0 * curT + 0.5 * a * curT * curT;
+      const vn = v0 + a * curT;
+      trailRef.current = [...trailRef.current.slice(-20), { x: xn, o: 1, speed: Math.abs(vn) }];
+      setTrail([...trailRef.current]);
+    }
+  }, [x0, v0, a, save]);
+
+  useAnimationLoop(running, handleTick);
 
   const reset = useCallback(() => {
+    completedRef.current = false;
     setRunning(false);
     setT(0);
     trailRef.current = [];
@@ -434,7 +421,7 @@ export default function MRUVSimulator() {
             </span>
           )}
           <span className="text-xs text-muted-foreground font-mono">
-            v₀·a {v0 * a > 0 ? "> 0" : v0 * a < 0 ? "< 0 (frenado)" : "= 0"}
+            v·a {v * a > 0 ? "> 0" : v * a < 0 ? "< 0 (frenado)" : "= 0"}
           </span>
         </div>
       </div>

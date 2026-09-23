@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Award, Zap, CheckCircle2, BookOpen, RotateCcw, ArrowRight, GraduationCap, Trophy } from "lucide-react";
 import { PageHeader, Breadcrumb } from "@/components/site/ui";
-import { useProgress } from "@/hooks/use-progress";
+import { useProgress, type ProgressItem } from "@/hooks/use-progress";
 
 const LEVELS = [
   { name: "Novato", min: 0, color: "from-amber-400 to-orange-500" },
@@ -25,16 +25,23 @@ const TOPICS = [
   { n: "08", name: "Passive Voice", subject: "Inglés", href: "/ingles/passive-voice", color: "amber" },
   { n: "09", name: "Modal Verbs", subject: "Inglés", href: "/ingles/modal-verbs", color: "amber" },
   { n: "10", name: "Reported Speech", subject: "Inglés", href: "/ingles/reported-speech", color: "amber" },
+  { n: "11", name: "Retos mixtos", subject: "Mixto", href: "/retos", color: "sky" },
 ];
+
+const TOPIC_ID_BY_N: Record<string, string> = {
+  "01": "01_mru", "02": "02_mruv", "03": "03_tiros", "04": "04_iupac",
+  "05": "05_balanceo", "06": "06_estequiometria", "07": "07_verb", "08": "08_passive",
+  "09": "09_modal", "10": "10_reported", "11": "11_retos",
+};
+
+const KNOWN_TOPIC_IDS = new Set(Object.values(TOPIC_ID_BY_N));
 
 export default function ProgresoPage() {
   const { progress, userId, exportJSON, isSyncing } = useProgress();
-  // puntos = suma de scores + 2 por tema completado (simple)
-  const topicIds = ["04_iupac", "05_balanceo", "06_estequiometria", "01_mru", "02_mruv", "03_tiros", "07_verb", "08_passive", "09_modal", "10_reported"];
   const points = Object.values(progress).reduce((acc, p) => acc + p.score + (p.completed ? 2 : 0), 0);
   const completedCount = Object.values(progress).filter((p) => p.completed).length;
   const totalAttempts = Object.values(progress).reduce((acc, p) => acc + p.attempts, 0);
-  const currentLevel = LEVELS.find((l) => points >= l.min) ?? LEVELS[0];
+  const currentLevel = [...LEVELS].reverse().find((l) => points >= l.min) ?? LEVELS[0];
   const nextLevel = LEVELS.find((l) => l.min > points);
   const pointsToNext = nextLevel ? nextLevel.min - points : 0;
   const progressPct = nextLevel
@@ -45,6 +52,7 @@ export default function ProgresoPage() {
     emerald: { text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", dot: "bg-emerald-500" },
     fuchsia: { text: "text-fuchsia-700", bg: "bg-fuchsia-50", border: "border-fuchsia-200", dot: "bg-fuchsia-500" },
     amber: { text: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", dot: "bg-amber-500" },
+    sky: { text: "text-sky-700", bg: "bg-sky-50", border: "border-sky-200", dot: "bg-sky-500" },
   };
 
   return (
@@ -82,7 +90,7 @@ export default function ProgresoPage() {
             </div>
             <div className="rounded-xl border border-border bg-white p-4 text-center">
               <BookOpen className="h-5 w-5 mx-auto text-amber-600" />
-              <div className="mt-2 text-2xl font-bold text-foreground font-mono">{completedCount}/10</div>
+              <div className="mt-2 text-2xl font-bold text-foreground font-mono">{completedCount}/{TOPICS.length}</div>
               <div className="text-xs text-muted-foreground">Temas</div>
             </div>
           </div>
@@ -163,7 +171,7 @@ export default function ProgresoPage() {
               </button>
               <label className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 text-white px-3 py-1.5 text-xs font-semibold hover:bg-amber-600 cursor-pointer transition-colors">
                 Importar
-                <input type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const txt = r.result as string; const j = JSON.parse(txt); if (j.progress) localStorage.setItem("cecyt3-progress-v2", JSON.stringify(j.progress)); else localStorage.setItem("cecyt3-progress-v2", txt); location.reload(); } catch { alert("Archivo inválido"); } }; r.readAsText(f); }} />
+                <input type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const txt = r.result as string; const j = JSON.parse(txt); const data = (j && typeof j === "object" && j.progress) ? j.progress : j; const clean: Record<string, ProgressItem> = {}; if (data && typeof data === "object") { for (const [key, v] of Object.entries(data as Record<string, unknown>)) { const it = v as Record<string, unknown>; if (KNOWN_TOPIC_IDS.has(key) && typeof it?.score === "number" && typeof it?.total === "number" && typeof it?.completed === "boolean" && it.score >= 0 && it.total > 0) { clean[key] = { topicId: key, score: Math.max(0, Math.min(it.score, it.total)), total: it.total, completed: !!it.completed, attempts: typeof it.attempts === "number" ? it.attempts : 0 }; } } } localStorage.setItem("cecyt3-progress-v2", JSON.stringify(clean)); if (Object.keys(clean).length === 0) throw new Error("vacío"); location.reload(); } catch { alert("Archivo inválido o sin datos de progreso reconocibles"); } }; r.readAsText(f); }} />
               </label>
               <button onClick={() => { localStorage.removeItem("cecyt3-progress-v2"); location.reload(); }} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-secondary/40 transition-colors">
                 Reiniciar
@@ -215,8 +223,7 @@ export default function ProgresoPage() {
         <div className="grid gap-3 sm:grid-cols-2">
           {TOPICS.map((t, i) => {
             const c = colorMap[t.color as keyof typeof colorMap];
-            const map: Record<string, string> = { "01": "01_mru", "02": "02_mruv", "03": "03_tiros", "04": "04_iupac", "05": "05_balanceo", "06": "06_estequiometria", "07": "07_verb", "08": "08_passive", "09": "09_modal", "10": "10_reported" };
-            const pid = map[t.n];
+            const pid = TOPIC_ID_BY_N[t.n];
             const p = progress[pid];
             const pct = p ? Math.round((p.score / Math.max(1, p.total)) * 100) : 0;
             const label = !p ? "Sin empezar" : p.completed ? "Completado" : `${p.score}/${p.total}`;

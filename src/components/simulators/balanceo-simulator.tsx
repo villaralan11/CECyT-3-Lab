@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Minus, Plus, CheckCircle2, RotateCcw, AlertTriangle, Scale } from "lucide-react";
 import { SimHeader, Insight } from "./shared";
-import { balanceReaction } from "@/lib/balance";
+import { balanceReaction, parseFormula } from "@/lib/balance";
 import { useProgress } from "@/hooks/use-progress";
 
 type Species = { formula: string; defaultCoef: number };
@@ -121,23 +121,9 @@ const REACTIONS: Reaction[] = [
 
 // Parse formula and count atoms (handles elements + subscript digits)
 function countAtoms(formula: string, coef: number): Record<string, number> {
+  const atoms = parseFormula(formula);
   const result: Record<string, number> = {};
-  // Remove parentheses by distributing (simplified: treat (OH)2 as O2H2)
-  // First, expand simple parenthetical groups like (OH)2 -> O2H2
-  let expanded = formula.replace(/\(([^)]+)\)(\d*)/g, (_, inside, mult) => {
-    const m = mult ? parseInt(mult, 10) : 1;
-    // Inside: O H → multiply each element's subscript
-    return inside.replace(/([A-Z][a-z]?)(\d*)/g, (_m: string, el: string, n: string) => el + (n ? parseInt(n, 10) * m : m));
-  });
-  // Now match element + optional number
-  const regex = /([A-Z][a-z]?)(\d*)/g;
-  let m;
-  while ((m = regex.exec(expanded)) !== null) {
-    if (!m[1]) continue;
-    const el = m[1];
-    const n = m[2] ? parseInt(m[2], 10) : 1;
-    result[el] = (result[el] || 0) + n * coef;
-  }
+  for (const [el, n] of Object.entries(atoms)) result[el] = n * coef;
   return result;
 }
 
@@ -151,8 +137,11 @@ export default function BalanceoSimulator() {
   const reaction = REACTIONS[rIdx];
   const allSpecies = [...reaction.reactants, ...reaction.products];
   const [coefs, setCoefs] = useState<number[]>(allSpecies.map((s) => s.defaultCoef));
+  const interactedRef = useRef(false);
+  const balSavedRef = useRef<Set<number>>(new Set());
 
   const switchReaction = (i: number) => {
+    interactedRef.current = false;
     setRIdx(i);
     const r = REACTIONS[i];
     setCoefs([...r.reactants, ...r.products].map((s) => s.defaultCoef));
@@ -163,6 +152,7 @@ export default function BalanceoSimulator() {
   };
 
   const bump = (i: number, delta: number) => {
+    interactedRef.current = true;
     setCoefs((c) => {
       const next = [...c];
       next[i] = Math.max(1, next[i] + delta);
@@ -171,6 +161,7 @@ export default function BalanceoSimulator() {
   };
 
   const setCoef = (i: number, value: number) => {
+    interactedRef.current = true;
     setCoefs((c) => {
       const next = [...c];
       next[i] = Math.max(1, Math.min(20, Math.floor(value || 1)));
@@ -179,6 +170,7 @@ export default function BalanceoSimulator() {
   };
 
   const showSolution = () => {
+    interactedRef.current = false;
     setCoefs([...reaction.balanced]);
   };
 
@@ -219,15 +211,13 @@ export default function BalanceoSimulator() {
     if (res) { setCustomRes(res); setCustomErr(null); }
     else { setCustomRes(null); setCustomErr("No se pudo balancear con coeficientes ≤100. Revisa fórmulas."); }
   };
-  const balSavedRef = useRef(false);
   useEffect(() => {
-    if (isBalanced && !balSavedRef.current) {
-      balSavedRef.current = true;
-      save("05_balanceo", 1, 1);
-    } else if (!isBalanced) {
-      balSavedRef.current = false;
-    }
-  }, [isBalanced, save]);
+    if (!isBalanced || !interactedRef.current) return;
+    if (balSavedRef.current.has(rIdx)) return;
+    const next = new Set(balSavedRef.current).add(rIdx);
+    balSavedRef.current = next;
+    void save("05_balanceo", next.size, REACTIONS.length);
+  }, [isBalanced, rIdx, save]);
 
   return (
     <div className="space-y-5">

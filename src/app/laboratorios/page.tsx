@@ -38,7 +38,7 @@ const LABS = [
     title: "Nomenclatura IUPAC",
     subject: "Química",
     href: "/quimica/iupac",
-    description: "Fórmula ⇄ nombre en inorgánica y orgánica: 24 compuestos con explicación de las reglas.",
+    description: "Fórmula ⇄ nombre en inorgánica y orgánica: 25 compuestos con explicación de las reglas.",
     color: "fuchsia",
   },
 ];
@@ -170,7 +170,7 @@ export default function LaboratoriosPage() {
       <div className="mt-12">
         <CtaStrip
           title="¿Quieres más retos?"
-          description="Prueba los retos de 5 minutos: quizzes rápidos con feedback pedagógico que te dan puntos para subir de nivel."
+          description="Prueba los retos rápidos: quizzes rápidos con feedback pedagógico que te dan puntos para subir de nivel."
           primaryLabel="Ver retos"
           primaryHref="/retos"
           secondaryLabel="Ver mi progreso"

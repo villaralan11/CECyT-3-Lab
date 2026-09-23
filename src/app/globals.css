@@ -172,4 +172,34 @@
   animation: marquee 30s linear infinite;
 }
 
+/* Sliders (cecyt-slider) — thumb grande y accesible, color por variable */
+.cecyt-slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+}
+.cecyt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border-radius: 9999px;
+  background: var(--slider-thumb, #d946ef);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+  cursor: grab;
+}
+.cecyt-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: var(--slider-thumb, #d946ef);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+  cursor: grab;
+}
+.cecyt-slider:disabled::-webkit-slider-thumb,
+.cecyt-slider:disabled::-moz-range-thumb {
+  cursor: not-allowed;
+}
+
 

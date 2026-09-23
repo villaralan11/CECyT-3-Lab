@@ -9,10 +9,10 @@ const SIMS = [
   {
     n: "07",
     name: "Verb Tenses",
-    desc: "Doce ejercicios de presente y pasado, simple y continuo, perfecto y condicionales de tiempo: la señal está en los marcadores ('since', 'last year', 'look!') y en la lógica de la ciencia.",
+    desc: "Catorce ejercicios de presente y pasado, simple y continuo, perfecto y condicionales de tiempo: la señal está en los marcadores ('since', 'last year', 'look!') y en la lógica de la ciencia.",
     href: "/ingles/verb-tenses",
     icon: Clock,
-    points: ["12 ejercicios con marcadores temporales", "Stats de aciertos y % de acierto", "Feedback con reglas generales"],
+    points: ["14 ejercicios con marcadores temporales", "Stats de aciertos y % de acierto", "Feedback con reglas generales"],
   },
   {
     n: "08",
@@ -20,7 +20,7 @@ const SIMS = [
     desc: "Transforma oraciones activas en pasivas y domina la estructura be + participio en todos los tiempos. El foco cambia: del quien hace al que recibe.",
     href: "/ingles/passive-voice",
     icon: Repeat,
-    points: ["8 transformaciones (simple, continuo, perfecto, modal)", "Casos especiales: people, modales", "Fórmula general S + be + participio"],
+    points: ["9 transformaciones (simple, continuo, perfecto, modal)", "Casos especiales: people, modales", "Fórmula general S + be + participio"],
   },
   {
     n: "09",
@@ -28,7 +28,7 @@ const SIMS = [
     desc: "must, can, might, should y compañía: obligación, prohibición, posibilidad, deducción y permiso. El matiz que cambia una recomendación en una norma de seguridad del laboratorio.",
     href: "/ingles/modal-verbs",
     icon: Sparkles,
-    points: ["8 ejercicios con contexto de laboratorio", "Escala de certeza (will → might → can't)", "Diferencia must not vs don't have to"],
+    points: ["10 ejercicios con contexto de laboratorio", "Escala de certeza (will → might → can't)", "Diferencia must not vs don't have to"],
   },
   {
     n: "10",
@@ -36,7 +36,7 @@ const SIMS = [
     desc: "Cuenta lo que alguien dijo sin citarlo: backshift de tiempos, ajuste de pronombres y marcadores (now→then), preguntas sin auxiliar e imperativos con to + infinitivo.",
     href: "/ingles/reported-speech",
     icon: MessageSquare,
-    points: ["8 transformaciones (statements, questions, imperatives)", "Tabla de backshift de tiempos", "Marcadores temporales (yesterday → the day before)"],
+    points: ["10 transformaciones (statements, questions, imperatives)", "Tabla de backshift de tiempos", "Marcadores temporales (yesterday → the day before)"],
   },
 ];
 

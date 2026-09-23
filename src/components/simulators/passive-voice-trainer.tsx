@@ -66,12 +66,12 @@ const ITEMS: QItem[] = [
       "The exams will be graded tomorrow.",
       "The exams are graded tomorrow.",
       "The exams were graded tomorrow.",
-      "The exams will being graded tomorrow.",
+      "The exams will be grade tomorrow.",
     ],
     correct: 0,
     explanation: "Futuro simple → 'will be + participio'. El 'tomorrow' se conserva.",
     hint: "Futuro → 'will be + participio'.",
-    extra: "Futuro simple pasivo: will be + participio. No confundir con 'will being' (incorrecto).",
+    extra: "Futuro simple pasivo: will be + participio. Ojo con 'will be grade' (falta el participio: graded).",
   },
   {
     type: "transform",
@@ -131,12 +131,13 @@ const ITEMS: QItem[] = [
 export default function PassiveVoiceTrainer() {
   return (
     <QuizTrainer
+      topicId="08_passive"
       title="Grammar · Passive Voice"
       description="Transforma oraciones activas en pasivas y domina la estructura be + participio en todos los tiempos. El foco cambia: del quien hace al que recibe."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 9 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de voz pasiva."
+      intro="Has completado los 9 ejercicios de voz pasiva."
     />
   );
 }

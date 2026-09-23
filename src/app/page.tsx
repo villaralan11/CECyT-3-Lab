@@ -73,10 +73,10 @@ const TOPICS = [
   { n: "01", subject: "fisica", name: "Cinemática · MRU", desc: "Movimiento Rectilíneo Uniforme", href: "/fisica/mru" },
   { n: "02", subject: "fisica", name: "Cinemática · MRUV", desc: "Aceleración Constante", href: "/fisica/mruv" },
   { n: "03", subject: "fisica", name: "Los 3 tiros", desc: "Vertical, Horizontal y Parabólico", href: "/fisica/tiros" },
-  { n: "04", subject: "quimica", name: "Nomenclatura IUPAC", desc: "Orgánica e Inorgánica · 24 compuestos", href: "/quimica/iupac" },
+  { n: "04", subject: "quimica", name: "Nomenclatura IUPAC", desc: "Orgánica e Inorgánica · 25 compuestos", href: "/quimica/iupac" },
   { n: "05", subject: "quimica", name: "Balanceo de ecuaciones", desc: "Steppers + tabla de átomos en vivo", href: "/quimica/balanceo" },
   { n: "06", subject: "quimica", name: "Estequiometría", desc: "Reactivo limitante y rendimiento", href: "/quimica/estequiometria" },
-  { n: "07", subject: "ingles", name: "Verb Tenses", desc: "12 ejercicios con marcadores temporales", href: "/ingles/verb-tenses" },
+  { n: "07", subject: "ingles", name: "Verb Tenses", desc: "14 ejercicios con marcadores temporales", href: "/ingles/verb-tenses" },
   { n: "08", subject: "ingles", name: "Passive Voice", desc: "Transformaciones activa → pasiva", href: "/ingles/passive-voice" },
   { n: "09", subject: "ingles", name: "Modal Verbs", desc: "Obligación, prohibición, deducción", href: "/ingles/modal-verbs" },
   { n: "10", subject: "ingles", name: "Reported Speech", desc: "Backshift + marcadores + imperativos", href: "/ingles/reported-speech" },
@@ -354,10 +354,11 @@ export default function Home() {
               de aprender.
             </h2>
             <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
-              Física, Química e Inglés del plan DEMS, cada tema con su secuencia
+              Física, Química e Inglés del plan DEMS. Química trae secuencia
               completa: <strong className="text-foreground">falla productiva</strong>,{" "}
               <strong className="text-foreground">simulador</strong>,{" "}
-              <strong className="text-foreground">ejemplo resuelto</strong>. Del MRU al
+              <strong className="text-foreground">ejemplo resuelto</strong>; el resto,
+              entrenador interactivo. Del MRU al
               tiro parabólico, del nombre IUPAC al reactivo limitante, del presente simple
               al reported speech.
             </p>
@@ -441,13 +442,13 @@ export default function Home() {
                 Descubrir temas
               </span>
               <h2 className="mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
-                10 de 10 temas · cada uno con{" "}
+                10 de 10 temas · todos con{" "}
                 <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-                  falla, simulador y ejemplo
+                  práctica interactiva
                 </span>
               </h2>
               <p className="mt-3 text-sm text-muted-foreground">
-                Haz clic en cualquier tema para abrir su página y simulador interactivo.
+                Haz clic en cualquier tema para abrir su página y práctica interactiva.
               </p>
             </div>
           </div>
@@ -510,7 +511,7 @@ export default function Home() {
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
                 <Flame className="h-6 w-6 text-white" />
               </div>
-              <h3 className="mt-4 text-xl font-bold text-foreground">Retos de 5 minutos</h3>
+              <h3 className="mt-4 text-xl font-bold text-foreground">Retos rápidos</h3>
               <p className="mt-2 text-sm text-muted-foreground">Quizzes rápidos con feedback pedagógico. Suma puntos y sube de nivel.</p>
               <div className="mt-4 inline-flex items-center gap-1 text-amber-600 text-sm font-semibold group-hover:gap-2 transition-all">
                 Probar un reto <ArrowRight className="h-3.5 w-3.5" />

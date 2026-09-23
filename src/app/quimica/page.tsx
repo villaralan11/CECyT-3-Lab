@@ -12,7 +12,7 @@ const SIMS = [
     desc: "Entrenador bidireccional: te muestra la fórmula y eliges el nombre, o al revés. Óxidos, hidróxidos, ácidos y sales por el lado inorgánico; alcanos, alquenos, alcoholes, cetonas y ácidos por el orgánico.",
     href: "/quimica/iupac",
     icon: Beaker,
-    points: ["24 compuestos con 9 categorías visuales", "Toggle Fórmula ⇄ Nombre", "Pistas + explicaciones pedagógicas"],
+    points: ["25 compuestos con 9 categorías visuales", "Toggle Fórmula ⇄ Nombre", "Pistas + explicaciones pedagógicas"],
   },
   {
     n: "05",

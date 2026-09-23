@@ -38,7 +38,7 @@ export function Footer() {
                 { l: "Química", h: "/quimica" },
                 { l: "Inglés", h: "/ingles" },
                 { l: "Laboratorios", h: "/laboratorios" },
-                { l: "Retos de 5 minutos", h: "/retos" },
+                { l: "Retos rápidos", h: "/retos" },
                 { l: "Mi progreso", h: "/progreso" },
               ].map((it) => (
                 <li key={it.l}>
@@ -57,13 +57,13 @@ export function Footer() {
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="https://www.cecyt3.ipn.mx/" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-emerald-400">›</span>
                   Sitio oficial CECyT No. 3
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="https://www.ipn.mx/" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-amber-400">›</span>
                   Instituto Politécnico Nacional
                 </a>

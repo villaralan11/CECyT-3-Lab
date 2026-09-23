@@ -1,6 +1,6 @@
 import { Breadcrumb } from "@/components/site/ui";
 import IUPACTrainer from "@/components/simulators/iupac-trainer";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
@@ -9,15 +9,15 @@ export const metadata = {
 };
 
 const FAILURE = {
-  question: "Tu compañero dice: «Fe₂O₃ es trióxido de dihierro, como CO₂ es dióxido de carbono». ¿Tiene razón?",
+  question: "Tu compañero dice que Fe₂O₃ es «óxido de hierro (II)». ¿Tiene razón?",
   options: [
-    "Sí, misma regla: prefijos griegos para todo",
-    "No, Fe₂O₃ es óxido de hierro (III) — lleva romano porque el hierro tiene dos valencias",
-    "No, Fe₂O₃ es óxido ferroso",
-    "Sí, pero sería trióxido de hierro",
+    "Sí, el hierro siempre actúa con valencia II",
+    "No: cada O aporta −2 (×3 = −6), así que cada Fe es +3 → óxido de hierro (III)",
+    "No, lo correcto es trióxido de dihierro",
+    "Sí, (II) y (III) son equivalentes",
   ],
   correct: 1,
-  reveal: "Los prefijos di-/tri- son para no-metales con enlace covalente (CO₂, SO₃). Para metales de transición con valencia variable (Fe²⁺/Fe³⁺) usas Stock: óxido de hierro (III). El Fe²O³ no es 'trióxido', es Fe(III). Esta confusión es justo lo que entrenarás abajo.",
+  reveal: "3 oxígenos × (−2) = −6 y la fórmula es neutra, así que los 2 Fe deben sumar +6: cada uno es Fe³⁺. Por eso el DEMS pide el nombre Stock óxido de hierro (III); (II) correspondería a FeO. Ojo: «trióxido de dihierro» es un nombre sistemático válido, pero no es el que se evalúa aquí. Confundir la valencia es justo el error que entrenarás abajo.",
 };
 
 const EXAMPLE = {
@@ -66,7 +66,7 @@ export default function IUPACPage() {
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="04_iupac" />
 
       <IUPACTrainer />
 

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Flame, Trophy, Target, Zap, CheckCircle2, X, RotateCcw, ChevronRight, ArrowRight } from "lucide-react";
 import { PageHeader, Breadcrumb, CtaStrip } from "@/components/site/ui";
+import { useProgress } from "@/hooks/use-progress";
 
 type Q = {
   subject: "Física" | "Química" | "Inglés";
@@ -68,6 +69,16 @@ export default function RetosPage() {
   const q = QUESTIONS[idx];
   const score = results.filter((r) => r === true).length;
   const answered = results.filter((r) => r !== null).length;
+  const { save } = useProgress();
+  const savedRef = useRef(false);
+
+  // Guarda el puntaje una vez por ciclo al terminar las 6 preguntas.
+  useEffect(() => {
+    if (answered === QUESTIONS.length && !savedRef.current) {
+      savedRef.current = true;
+      void save("11_retos", score, QUESTIONS.length);
+    }
+  }, [answered, score, save]);
 
   const onPick = (i: number) => {
     if (pickedHistory[idx] !== null) return;
@@ -97,6 +108,7 @@ export default function RetosPage() {
     }
   };
   const reset = () => {
+    savedRef.current = false;
     setIdx(0);
     setPicked(null);
     setResults(QUESTIONS.map(() => null));
@@ -108,13 +120,13 @@ export default function RetosPage() {
       <Breadcrumb items={[{ label: "Inicio", href: "/" }, { label: "Retos" }]} />
 
       <PageHeader
-        eyebrow="Quiz de 5 minutos"
+        eyebrow="Quiz rápido"
         accent="amber"
         title={
           <>
             Retos rápidos ·{" "}
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-              5 minutos también enseñan
+              La práctica breve también enseña
             </span>
           </>
         }
