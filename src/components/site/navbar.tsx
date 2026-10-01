@@ -98,7 +98,9 @@ export function Navbar() {
           <button
             onClick={() => setOpen((v) => !v)}
             className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
-            aria-label="Abrir menú"
+            aria-label={open ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -111,6 +113,7 @@ export function Navbar() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              id="mobile-navigation"
               className="lg:hidden overflow-hidden"
             >
               <div className="py-3 space-y-1 border-t border-border">

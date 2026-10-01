@@ -127,7 +127,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.15 }}
-                className="mt-6 max-w-2xl mx-auto lg:mx-0 text-lg sm:text-xl text-muted-foreground leading-relaxed"
+                className="mt-6 max-w-2xl mx-auto lg:mx-0 px-1 text-lg sm:text-xl text-muted-foreground leading-relaxed break-words"
               >
                 Laboratorio virtual de{" "}
                 <Link href="/fisica" className="text-emerald-600 font-semibold hover:underline">Física</Link>,{" "}
