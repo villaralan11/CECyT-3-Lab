@@ -1,6 +1,6 @@
 import { Breadcrumb } from "@/components/site/ui";
 import EstequiometriaSimulator from "@/components/simulators/estequiometria-simulator";
-import { FailureWithSave } from "@/components/didactic/failure-with-save";
+import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
@@ -66,7 +66,7 @@ export default function EstequiometriaPage() {
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="06_estequiometria" />
+      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
 
       <EstequiometriaSimulator />
 

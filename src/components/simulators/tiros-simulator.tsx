@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Rocket, ArrowUp, ArrowRight, Crosshair, Target, Zap, Gauge, Maximize2, Pause, Play, StepBack, StepForward, RotateCcw, Wind } from "lucide-react";
 import { Readout, SimHeader, Slider, Graph, Insight } from "./shared";
-import { useProgress } from "@/hooks/use-progress";
 
 type Mode = "vertical" | "horizontal" | "parabolico";
 
@@ -25,65 +24,28 @@ export default function TirosSimulator() {
   const accumulatorRef = useRef(0);
   const trailRef = useRef<{ x: number; y: number; age: number }[]>([]);
   const sceneRef = useRef<HTMLDivElement>(null);
-  const tRef = useRef(t);
-  useEffect(() => { tRef.current = t; }, [t]);
 
   const rad = (angle * Math.PI) / 180;
   const v0x = mode === "vertical" ? 0 : mode === "horizontal" ? v0 : v0 * Math.cos(rad);
   const v0y = mode === "vertical" ? v0 : mode === "horizontal" ? 0 : v0 * Math.sin(rad);
-  const airCfg = `${v0x}|${v0y}|${h0}|${air}`;
-  const [airPos, setAirPos] = useState<{ cfg: string; x: number; y: number; vx: number; vy: number } | null>(null);
-  const startPos = { x: 0, y: h0, vx: v0x, vy: v0y };
-  const airPosRef = useRef(startPos);
-  useEffect(() => { airPosRef.current = startPos; }, [v0x, v0y, h0, air]);
-  const { save } = useProgress();
-  const completedRef = useRef(false);
 
-  const vacTEnd = useMemo(() => {
+  const initialAirPos = useMemo(() => ({ x: 0, y: h0, vx: v0x, vy: v0y }), [v0x, v0y, h0]);
+  const [airPos, setAirPos] = useState(initialAirPos);
+
+  const tEnd = useMemo(() => {
     const disc = v0y * v0y + 2 * G * h0;
     if (disc < 0) return 0.1;
     return Math.max(0.1, (v0y + Math.sqrt(disc)) / G);
   }, [v0y, h0]);
 
-  const airT = useMemo(() => {
-    let xv = v0x, yv = v0y, xx = 0, yy = h0, tS = 0;
-    const dtS = 1 / 120;
-    for (let i = 0; i < 30000; i++) {
-      const v = Math.hypot(xv, yv);
-      xv += -K_DRAG * xv * v * dtS;
-      yv += (-G - K_DRAG * yv * v) * dtS;
-      xx += xv * dtS;
-      yy += yv * dtS;
-      tS += dtS;
-      if (yy <= 0 && i > 2) break;
-    }
-    return tS;
-  }, [v0x, v0y, h0]);
-  const airR = useMemo(() => {
-    let xv = v0x, yv = v0y, xx = 0, yy = h0;
-    const dtS = 1 / 120;
-    for (let i = 0; i < 30000; i++) {
-      const v = Math.hypot(xv, yv);
-      xv += -K_DRAG * xv * v * dtS;
-      yv += (-G - K_DRAG * yv * v) * dtS;
-      xx += xv * dtS;
-      yy += yv * dtS;
-      if (yy <= 0 && i > 2) break;
-    }
-    return Math.max(0, xx);
-  }, [v0x, v0y, h0]);
-
-  const tEnd = air ? airT : vacTEnd;
-
-  const cur = airPos && airPos.cfg === airCfg ? airPos : startPos;
-  const x = air ? cur.x : v0x * t;
-  const y = air ? cur.y : Math.max(0, h0 + v0y * t - 0.5 * G * t * t);
+  const x = air ? airPos.x : v0x * t;
+  const y = air ? Math.max(0, airPos.y) : Math.max(0, h0 + v0y * t - 0.5 * G * t * t);
   const yRaw = h0 + v0y * t - 0.5 * G * t * t;
-  const vy = air ? cur.vy : v0y - G * t;
-  const vx = air ? cur.vx : v0x;
+  const vx = air ? airPos.vx : v0x;
+  const vy = air ? airPos.vy : v0y - G * t;
   const speed = Math.sqrt(vx * vx + vy * vy);
 
-  const range = air ? airR : v0x * tEnd;
+  const range = v0x * tEnd;
   const tApex = Math.max(0, v0y / G);
   const maxH = mode === "horizontal" ? h0 : h0 + (v0y * v0y) / (2 * G);
 
@@ -106,44 +68,49 @@ export default function TirosSimulator() {
         const delta = steps * FIXED_DT;
         accumulatorRef.current -= delta;
         if (air) {
-          for (let k = 0; k < steps; k++) {
-            const v = Math.hypot(airPosRef.current.vx, airPosRef.current.vy);
-            const ax = -K_DRAG * airPosRef.current.vx * v;
-            const ay = -G - K_DRAG * airPosRef.current.vy * v;
-            airPosRef.current.vx += ax * FIXED_DT;
-            airPosRef.current.vy += ay * FIXED_DT;
-            airPosRef.current.x += airPosRef.current.vx * FIXED_DT;
-            airPosRef.current.y += airPosRef.current.vy * FIXED_DT;
-            if (airPosRef.current.y < 0) {
-              airPosRef.current.y = 0;
-              break;
+          // Integración Euler-Cromer con arrastre cuadrático
+          setAirPos((prev) => {
+            let { x, y, vx, vy } = prev;
+            for (let k = 0; k < steps; k++) {
+              const v = Math.hypot(vx, vy);
+              const ax = -K_DRAG * vx * v;
+              const ay = -G - K_DRAG * vy * v;
+              vx += ax * FIXED_DT;
+              vy += ay * FIXED_DT;
+              x += vx * FIXED_DT;
+              y += vy * FIXED_DT;
+              if (y < 0) {
+                y = 0;
+                break;
+              }
             }
-          }
-          setAirPos({ cfg: `${v0x}|${v0y}|${h0}|${air}`, ...airPosRef.current });
+            return { x, y, vx, vy };
+          });
         }
-        const rawNext = tRef.current + delta;
-        if (air && airPosRef.current.y <= 0 && tRef.current > 0.1) {
-          setT(rawNext);
-          setRunning(false);
-          if (!completedRef.current) {
-            completedRef.current = true;
-            void save("03_tiros", 1, 1);
+        setT((prev) => {
+          const next = prev + delta;
+          if (!air && next >= tEnd) {
+            setRunning(false);
+            return tEnd;
           }
-        } else if (!air && rawNext >= tEnd) {
-          setT(tEnd);
-          setRunning(false);
-          if (!completedRef.current) {
-            completedRef.current = true;
-            void save("03_tiros", 1, 1);
+          if (air) {
+            // Check if projectile hit ground
+            setAirPos((current) => {
+              if (current.y <= 0 && prev > 0.1) {
+                setRunning(false);
+              }
+              return current;
+            });
+            return next;
           }
-        } else {
-          setT(rawNext);
-        }
+          return next;
+        });
         if (ts - lastTrailTs > 50) {
           lastTrailTs = ts;
-          const px = air ? airPosRef.current.x : v0x * rawNext;
-          const py = air ? airPosRef.current.y : h0 + v0y * rawNext - 0.5 * G * rawNext * rawNext;
-          trailRef.current = [...trailRef.current.slice(-30), { x: px, y: py, age: 0 }];
+          const curT = t + delta;
+          const xn = v0x * curT;
+          const yn = h0 + v0y * curT - 0.5 * G * curT * curT;
+          trailRef.current = [...trailRef.current.slice(-30), { x: xn, y: yn, age: 0 }];
           setTrail([...trailRef.current]);
         }
       }
@@ -153,17 +120,14 @@ export default function TirosSimulator() {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [running, tEnd, v0x, v0y, h0, air, save]);
+  }, [running, tEnd, v0x, v0y, h0, air]);
 
   const reset = useCallback(() => {
-    completedRef.current = false;
     setRunning(false);
     setT(0);
-    setAirPos(null);
     trailRef.current = [];
     setTrail([]);
-    airPosRef.current = startPos;
-  }, [h0, v0x, v0y]);
+  }, []);
 
   const stepBack = useCallback(() => {
     setRunning(false);
@@ -194,7 +158,6 @@ export default function TirosSimulator() {
 
   const switchMode = (m: Mode) => {
     setMode(m);
-    completedRef.current = false;
     setRunning(false);
     setT(0);
     trailRef.current = [];

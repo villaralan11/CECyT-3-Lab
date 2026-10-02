@@ -85,11 +85,11 @@ export function SimCard({
     >
       <Link
         href={href}
-        className="group block h-full rounded-2xl border border-border bg-white p-5 hover:shadow-xl hover:-translate-y-1 transition-all"
+        className="group relative block h-full overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-sm hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 transition-all duration-300"
       >
-        <div className={cn("absolute top-0 left-0 right-0 h-1 bg-gradient-to-r rounded-t-2xl", accentBg)} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1 bg-gradient-to-r scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500", accentBg)} />
         <div className="flex items-start justify-between">
-          <span className="text-xs font-mono font-bold text-muted-foreground">{index}</span>
+          <span className="text-xs font-mono font-bold text-muted-foreground group-hover:text-foreground transition-colors">{index}</span>
           <div className="flex items-center gap-1.5">
             {badge && (
               <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide", accentBgSoft, accentText)}>
@@ -108,7 +108,9 @@ export function SimCard({
             <Play className="h-3 w-3" />
             Abrir simulador
           </span>
-          <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground group-hover:text-white group-hover:border-transparent group-hover:bg-gradient-to-br group-hover:from-fuchsia-500 group-hover:to-pink-500 transition-all duration-300">
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </span>
         </div>
       </Link>
     </motion.div>
@@ -154,25 +156,29 @@ export function CtaStrip({
   secondaryHref?: string;
 }) {
   return (
-    <div className="rounded-3xl border border-border bg-gradient-to-br from-fuchsia-50 via-pink-50 to-amber-50 p-8 text-center">
-      <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h2>
-      <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">{description}</p>
-      <div className="mt-6 flex flex-wrap gap-3 justify-center">
-        <Link
-          href={primaryHref}
-          className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:scale-105 transition-all"
-        >
-          {primaryLabel}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-        {secondaryLabel && secondaryHref && (
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-fuchsia-50 via-pink-50 to-amber-50 p-8 text-center">
+      <div className="absolute inset-0 dots-pattern opacity-30" aria-hidden="true" />
+      <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-fuchsia-300/25 blur-3xl" aria-hidden="true" />
+      <div className="relative">
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h2>
+        <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">{description}</p>
+        <div className="mt-6 flex flex-wrap gap-3 justify-center">
           <Link
-            href={secondaryHref}
-            className="inline-flex items-center gap-2 rounded-full bg-white border border-border px-6 py-3 text-sm font-semibold text-foreground hover:border-fuchsia-300 hover:bg-fuchsia-50/40 transition-all"
+            href={primaryHref}
+            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:-translate-y-px active:translate-y-0 active:scale-95 transition-all"
           >
-            {secondaryLabel}
+            {primaryLabel}
+            <ArrowRight className="h-4 w-4" />
           </Link>
-        )}
+          {secondaryLabel && secondaryHref && (
+            <Link
+              href={secondaryHref}
+              className="inline-flex items-center gap-2 rounded-full bg-white border border-border px-6 py-3 text-sm font-semibold text-foreground hover:border-fuchsia-300 hover:bg-fuchsia-50/40 active:scale-95 transition-all"
+            >
+              {secondaryLabel}
+            </Link>
+          )}
+        </div>
       </div>
     </div>
   );

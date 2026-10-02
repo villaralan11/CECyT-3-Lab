@@ -46,7 +46,7 @@ const ITEMS: QItem[] = [
   {
     type: "blank",
     prompt: "Elige el tiempo verbal correcto.",
-    sentence: "By 2020, scientists ____ a vaccine for malaria.",
+    sentence: "By 2025, scientists ____ a vaccine for malaria.",
     options: ["discovered", "have discovered", "had discovered", "discover"],
     correct: 2,
     explanation: "'Had discovered' — pasado perfecto. 'By + fecha pasada' exige una acción ya completada antes de ese punto.",
@@ -143,20 +143,19 @@ const ITEMS: QItem[] = [
     explanation: "Look! + now → presente continuo is crossing.",
     hint: "Look! → is/are + -ing",
     placeholder: "is crossing",
-    extra: "Toleramos un typo y el punto final.",
+    extra: "Toleramos typo1.",
   },
 ];
 
 export default function VerbTensesTrainer() {
   return (
     <QuizTrainer
-      topicId="07_verb"
       title="Grammar · Verb Tenses"
-      description="Catorce ejercicios que cubren presente, pasado y futuro en sus formas simple, continuo, perfecto y condicional. La clave está en los marcadores temporales ('since', 'last year', 'look!', 'by+fecha')."
-      badge="Inglés · 14 ejercicios"
+      description="Doce ejercicios que cubren presente, pasado y futuro en sus formas simple, continuo, perfecto y condicional. La clave está en los marcadores temporales ('since', 'last year', 'look!', 'by+fecha')."
+      badge="Inglés · 12 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 14 ejercicios de tiempos verbales."
+      intro="Has completado los 12 ejercicios de tiempos verbales."
     />
   );
 }

@@ -52,38 +52,3 @@ prompt
 server.log
 # Skills directory
 /skills/
-
-# --- cecyt3-lab: limpieza de artefactos temporales ---
-# capturas de iteraciones (root, no public/)
-/*.png
-/original-page.html
-audit-*.png
-mpa-*.png
-orig-*.png
-original-*.png
-redesign-*.png
-sim-*.png
-v2-*.png
-v3-*.png
-v4-*.png
-
-# workbench / agentes
-/tool-results/
-/upload/
-/download/
-
-# base de datos local (sqlite)
-/db/*.db
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-
-# runtime pid / logs de .zscripts
-.zscripts/dev.pid
-.zscripts/*.log
-.zscripts/mini-service-*.log
-
-# agentes (generados por next dev)
-AGENTS.md
-CLAUDE.md

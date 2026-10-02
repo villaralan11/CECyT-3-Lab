@@ -119,11 +119,86 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
+  ::selection {
+    background: oklch(0.65 0.28 350 / 0.22);
+    color: var(--foreground);
+  }
+  :focus-visible {
+    outline: 2px solid oklch(0.65 0.28 350);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ---- Grid pattern (hero + stats texture) ---- */
+.grid-pattern {
+  background-image:
+    linear-gradient(to right, oklch(0.5 0.03 290 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.5 0.03 290 / 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+}
+
+.grid-pattern-light {
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* ---- Dotted texture for soft sections ---- */
+.dots-pattern {
+  background-image: radial-gradient(oklch(0.5 0.03 290 / 0.10) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* ---- Marquee edge fade ---- */
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+.marquee-mask:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
+/* ---- Shine sweep for primary cards ---- */
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.18) 50%, transparent 60%);
+  background-size: 250% 100%;
+  background-position: 120% 0;
+  opacity: 0;
+  transition: background-position 0.9s ease, opacity 0.3s ease;
+  pointer-events: none;
+}
+.shine:hover::after {
+  background-position: -60% 0;
+  opacity: 1;
 }
 
 /* Custom utility for animated gradient text */
@@ -152,6 +227,23 @@
   background: oklch(0.7 0.15 350);
 }
 
+/* Global scrollbar (webkit) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.85 0.02 350);
+  border-radius: 8px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.72 0.08 350);
+}
+
 /* Floating blob animation */
 @keyframes float-blob {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -169,37 +261,25 @@
   to { transform: translateX(-50%); }
 }
 .animate-marquee {
-  animation: marquee 30s linear infinite;
+  animation: marquee 32s linear infinite;
 }
 
-/* Sliders (cecyt-slider) — thumb grande y accesible, color por variable */
-.cecyt-slider::-webkit-slider-runnable-track {
-  height: 8px;
-  border-radius: 9999px;
+/* Scroll cue bounce */
+@keyframes scroll-cue {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(6px); opacity: 0.5; }
 }
-.cecyt-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  margin-top: -6px;
-  border-radius: 9999px;
-  background: var(--slider-thumb, #d946ef);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
-  cursor: grab;
+.animate-scroll-cue {
+  animation: scroll-cue 2s ease-in-out infinite;
 }
-.cecyt-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: var(--slider-thumb, #d946ef);
-  border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
-  cursor: grab;
+
+/* Slow ping for badge dot (softer than default) */
+@keyframes soft-ping {
+  0% { transform: scale(1); opacity: 0.7; }
+  75%, 100% { transform: scale(2.1); opacity: 0; }
 }
-.cecyt-slider:disabled::-webkit-slider-thumb,
-.cecyt-slider:disabled::-moz-range-thumb {
-  cursor: not-allowed;
+.animate-soft-ping {
+  animation: soft-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 

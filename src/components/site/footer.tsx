@@ -1,10 +1,16 @@
 import Link from "next/link";
-import { Atom, GraduationCap } from "lucide-react";
+import { GraduationCap } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-foreground text-background/80 mt-auto">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+    <footer className="relative bg-foreground text-background/80 mt-auto overflow-hidden">
+      {/* Top gradient hairline */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-400/60 via-fuchsia-400/60 to-amber-400/60" aria-hidden="true" />
+      {/* Ambient glows */}
+      <div className="pointer-events-none absolute -top-24 left-1/4 h-48 w-48 rounded-full bg-fuchsia-500/10 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -bottom-24 right-1/4 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden="true" />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
@@ -38,7 +44,7 @@ export function Footer() {
                 { l: "Química", h: "/quimica" },
                 { l: "Inglés", h: "/ingles" },
                 { l: "Laboratorios", h: "/laboratorios" },
-                { l: "Retos rápidos", h: "/retos" },
+                { l: "Retos de 5 minutos", h: "/retos" },
                 { l: "Mi progreso", h: "/progreso" },
               ].map((it) => (
                 <li key={it.l}>
@@ -57,13 +63,13 @@ export function Footer() {
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <a href="https://www.cecyt3.ipn.mx/" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-emerald-400">›</span>
                   Sitio oficial CECyT No. 3
                 </a>
               </li>
               <li>
-                <a href="https://www.ipn.mx/" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-amber-400">›</span>
                   Instituto Politécnico Nacional
                 </a>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Atom, Menu, X, Rocket } from "lucide-react";
+import { Menu, X, Rocket } from "lucide-react";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
@@ -23,7 +23,8 @@ export function Navbar() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
-    window.addEventListener("scroll", onScroll);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -32,10 +33,10 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-background/85 backdrop-blur-xl border-b border-border shadow-sm"
-          : "bg-transparent"
+          ? "top-3 mx-3 sm:mx-4 lg:mx-6 rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-lg shadow-black/[0.06]"
+          : "top-0 border border-transparent bg-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -100,7 +101,6 @@ export function Navbar() {
             className="lg:hidden p-2 rounded-lg hover:bg-secondary transition-colors"
             aria-label={open ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={open}
-            aria-controls="mobile-navigation"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -113,7 +113,6 @@ export function Navbar() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              id="mobile-navigation"
               className="lg:hidden overflow-hidden"
             >
               <div className="py-3 space-y-1 border-t border-border">
