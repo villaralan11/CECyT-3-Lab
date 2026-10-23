@@ -189,7 +189,13 @@ function HeroInstrument() {
 function Hero() {
   return (
     <section className="relative overflow-hidden">
-      <div className="graph-paper pointer-events-none absolute inset-0 -z-10 opacity-60" aria-hidden="true" />
+      {/* Campo de color: la navbar glass refracta ESTE espectro al hacer scroll */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px]" aria-hidden="true">
+        <div className="graph-paper absolute inset-0 opacity-60" />
+        <div className="prism-band absolute -top-36 left-[6%] h-72 w-[560px] max-w-[80vw]" />
+        <div className="prism-band prism-slow absolute -top-24 right-[10%] h-56 w-[420px] max-w-[70vw]" />
+        <div className="prism-band prism-tight absolute top-40 left-[30%] h-40 w-[380px] max-w-[60vw]" />
+      </div>
       <div className="mx-auto grid min-h-[calc(100svh-88px)] max-w-6xl items-center gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16 lg:py-20">
         <div>
           <motion.div

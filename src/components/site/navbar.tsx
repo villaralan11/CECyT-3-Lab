@@ -264,7 +264,6 @@ export function Navbar() {
           as="header"
           variant="nav"
           interactive
-          refraction={5}
           className={cn(
             "mx-auto flex h-[52px] w-full max-w-4xl items-center gap-2 rounded-[18px] px-2.5 transition-shadow duration-300 sm:px-3",
             scrolled
