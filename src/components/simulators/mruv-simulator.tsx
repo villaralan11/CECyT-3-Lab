@@ -370,7 +370,7 @@ export default function MRUVSimulator() {
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 px-2 py-1.5 shadow-2xl">
           <button
             onClick={handleToggle}
-            className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r ${motionState === "frenando" ? "from-rose-500 to-orange-500" : "from-fuchsia-500 to-pink-500"} px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:scale-105 transition-transform`}
+            className={`inline-flex items-center gap-1 rounded-full bg-gradient-to-r ${motionState === "frenando" ? "from-rose-500 to-orange-500" : "from-guinda-600 to-guinda-500"} px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:scale-105 transition-transform`}
           >
             {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
             {running ? "Pausar" : "Iniciar"}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -51,7 +51,7 @@ export default function InglesPage() {
         title={
           <>
             Inglés ·{" "}
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="text-amber-700">
               Grammar Trainer
             </span>
           </>

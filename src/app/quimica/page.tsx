@@ -43,7 +43,7 @@ export default function QuimicaPage() {
         title={
           <>
             Química ·{" "}
-            <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
+            <span className="text-fuchsia-700">
               IUPAC, Balanceo y Moles
             </span>
           </>

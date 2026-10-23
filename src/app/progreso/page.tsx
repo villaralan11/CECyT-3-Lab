@@ -57,7 +57,7 @@ export default function ProgresoPage() {
         title={
           <>
             Todo lo que aprendes{" "}
-            <span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">
+            <span className="text-guinda-700">
               deja una huella
             </span>
             .

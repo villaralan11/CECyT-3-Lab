@@ -54,7 +54,7 @@ export default function LaboratoriosPage() {
         title={
           <>
             Del concepto al{" "}
-            <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
+            <span className="text-guinda-700">
               experimento
             </span>
             .
@@ -84,7 +84,7 @@ export default function LaboratoriosPage() {
             </div>
             <Link
               href="/quimica/estequiometria"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-guinda-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
             >
               <FlaskConical className="h-4 w-4" />
               Abrir laboratorio
@@ -107,7 +107,7 @@ export default function LaboratoriosPage() {
                 className="relative flex gap-4 rounded-2xl border border-border bg-white p-5 hover:shadow-md transition-shadow"
               >
                 <div className="flex-shrink-0">
-                  <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
+                  <div className="relative h-12 w-12 rounded-xl bg-guinda-600 flex items-center justify-center text-white font-bold shadow-md">
                     {step.n}
                   </div>
                   {i < LAB_STEPS.length - 1 && (

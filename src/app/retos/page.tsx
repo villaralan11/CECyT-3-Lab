@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -113,7 +113,7 @@ export default function RetosPage() {
         title={
           <>
             Retos rápidos ·{" "}
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
+            <span className="text-amber-700">
               5 minutos también enseñan
             </span>
           </>

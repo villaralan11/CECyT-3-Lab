@@ -93,7 +93,7 @@ export function PlayControls({
       <Button
         size="sm"
         onClick={onToggle}
-        className="rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:from-fuchsia-600 hover:to-pink-600 text-white shadow-md border-0"
+        className="rounded-full bg-guinda-600 hover:bg-guinda-700 text-white shadow-md border-0"
       >
         {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
         {running ? "Pausar" : "Iniciar"}

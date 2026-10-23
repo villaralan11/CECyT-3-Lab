@@ -43,42 +43,70 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* ================================================================
+   IDENTIDAD INSTITUCIONAL
+   Guinda IPN #6C1D45 — acento de marca (navegación, foco, footer).
+   Los colores de materia viven en su propia escala Tailwind
+   (emerald/teal Física · fuchsia/rose Química · amber/orange Inglés)
+   y se usan solo donde comunican información.
+   ================================================================ */
+@theme {
+  --color-guinda-50: #f9f2f6;
+  --color-guinda-100: #f0e2ea;
+  --color-guinda-200: #e0c6d4;
+  --color-guinda-300: #c89fb3;
+  --color-guinda-400: #a76a8c;
+  --color-guinda-500: #8a3e66;
+  --color-guinda-600: #6c1d45;
+  --color-guinda-700: #57163a;
+  --color-guinda-800: #421029;
+  --color-guinda-900: #2e0b1d;
+}
+
 :root {
   --radius: 0.875rem;
-  /* Vibrant cream + warm whites */
-  --background: oklch(0.99 0.008 80);
-  --foreground: oklch(0.18 0.04 290);
+  /* Neutral warm white — papel de laboratorio */
+  --background: oklch(0.995 0.004 85);
+  --foreground: oklch(0.2 0.02 60);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.04 290);
+  --card-foreground: oklch(0.2 0.02 60);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.04 290);
-  /* Vibrant fuchsia primary */
-  --primary: oklch(0.65 0.28 350);
+  --popover-foreground: oklch(0.2 0.02 60);
+  /* Acento de sistema: guinda institucional */
+  --primary: #6c1d45;
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.02 80);
-  --secondary-foreground: oklch(0.25 0.04 290);
-  --muted: oklch(0.96 0.015 80);
-  --muted-foreground: oklch(0.5 0.03 290);
-  /* Emerald accent */
-  --accent: oklch(0.92 0.08 165);
-  --accent-foreground: oklch(0.3 0.15 165);
+  --secondary: oklch(0.96 0.008 80);
+  --secondary-foreground: oklch(0.25 0.02 60);
+  --muted: oklch(0.96 0.006 80);
+  --muted-foreground: oklch(0.52 0.015 60);
+  --accent: oklch(0.95 0.02 330);
+  --accent-foreground: oklch(0.3 0.06 330);
   --destructive: oklch(0.62 0.26 25);
-  --border: oklch(0.92 0.01 80);
-  --input: oklch(0.94 0.01 80);
-  --ring: oklch(0.65 0.28 350);
-  --chart-1: oklch(0.65 0.28 350);
-  --chart-2: oklch(0.7 0.19 165);
-  --chart-3: oklch(0.75 0.18 75);
-  --chart-4: oklch(0.6 0.24 25);
-  --chart-5: oklch(0.55 0.22 290);
-  --sidebar: oklch(0.99 0.008 80);
-  --sidebar-foreground: oklch(0.18 0.04 290);
-  --sidebar-primary: oklch(0.65 0.28 350);
+  --border: oklch(0.915 0.008 80);
+  --input: oklch(0.94 0.008 80);
+  --ring: #6c1d45;
+  --chart-1: #6c1d45;
+  --chart-2: oklch(0.6 0.12 180);
+  --chart-3: oklch(0.72 0.15 80);
+  --chart-4: oklch(0.65 0.24 330);
+  --chart-5: oklch(0.62 0.16 260);
+  --sidebar: oklch(0.995 0.004 85);
+  --sidebar-foreground: oklch(0.2 0.02 60);
+  --sidebar-primary: #6c1d45;
   --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.02 80);
-  --sidebar-accent-foreground: oklch(0.18 0.04 290);
-  --sidebar-border: oklch(0.92 0.01 80);
-  --sidebar-ring: oklch(0.65 0.28 350);
+  --sidebar-accent: oklch(0.96 0.008 80);
+  --sidebar-accent-foreground: oklch(0.2 0.02 60);
+  --sidebar-border: oklch(0.915 0.008 80);
+  --sidebar-ring: #6c1d45;
+
+  /* --- Tokens Liquid Glass --- */
+  --glass-blur: 18px;
+  --glass-saturate: 1.8;
+  --glass-tint: 255 255 255;
+  --glass-tint-alpha: 0.55;
+  --glass-edge: oklch(1 0 0 / 0.65);
+  --glass-edge-inner: oklch(0.55 0.02 60 / 0.16);
+  --glass-shadow: 0 2px 6px oklch(0.25 0.03 60 / 0.06), 0 12px 32px oklch(0.25 0.03 60 / 0.09);
 }
 
 .dark {
@@ -88,7 +116,7 @@
   --card-foreground: oklch(0.98 0.005 80);
   --popover: oklch(0.2 0.03 290);
   --popover-foreground: oklch(0.98 0.005 80);
-  --primary: oklch(0.72 0.27 350);
+  --primary: #d98fb4;
   --primary-foreground: oklch(0.15 0.02 290);
   --secondary: oklch(0.27 0.04 290);
   --secondary-foreground: oklch(0.98 0.005 80);
@@ -99,20 +127,15 @@
   --destructive: oklch(0.7 0.21 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.27 350);
-  --chart-1: oklch(0.7 0.27 350);
-  --chart-2: oklch(0.75 0.19 165);
-  --chart-3: oklch(0.78 0.18 75);
-  --chart-4: oklch(0.65 0.24 25);
-  --chart-5: oklch(0.6 0.22 290);
+  --ring: #d98fb4;
   --sidebar: oklch(0.15 0.02 290);
   --sidebar-foreground: oklch(0.98 0.005 80);
-  --sidebar-primary: oklch(0.72 0.27 350);
+  --sidebar-primary: #d98fb4;
   --sidebar-primary-foreground: oklch(0.15 0.02 290);
   --sidebar-accent: oklch(0.27 0.04 290);
   --sidebar-accent-foreground: oklch(0.98 0.005 80);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.27 350);
+  --sidebar-ring: #d98fb4;
 }
 
 @layer base {
@@ -127,15 +150,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    font-feature-settings: "ss01" on, "cv11" on;
   }
   ::selection {
-    background: oklch(0.65 0.28 350 / 0.22);
-    color: var(--foreground);
+    background: rgb(108 29 69 / 0.16);
+    color: oklch(0.22 0.05 330);
   }
   :focus-visible {
-    outline: 2px solid oklch(0.65 0.28 350);
+    outline: 2px solid #6c1d45;
     outline-offset: 2px;
     border-radius: 4px;
+  }
+  h1, h2, h3, h4 {
+    text-wrap: balance;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -151,83 +178,75 @@
   }
 }
 
-/* ---- Grid pattern (hero + stats texture) ---- */
-.grid-pattern {
+/* ================================================================
+   TEXTURAS — papel milimetrado de laboratorio, muy sutil.
+   ================================================================ */
+.graph-paper {
   background-image:
-    linear-gradient(to right, oklch(0.5 0.03 290 / 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(0.5 0.03 290 / 0.07) 1px, transparent 1px);
-  background-size: 44px 44px;
-  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
-  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 75%);
+    linear-gradient(to right, oklch(0.55 0.03 330 / 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.55 0.03 330 / 0.07) 1px, transparent 1px);
+  background-size: 36px 36px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 0%, black 25%, transparent 80%);
 }
 
-.grid-pattern-light {
-  background-image:
-    linear-gradient(to right, oklch(1 0 0 / 0.08) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(1 0 0 / 0.08) 1px, transparent 1px);
-  background-size: 44px 44px;
-}
-
-/* ---- Dotted texture for soft sections ---- */
 .dots-pattern {
-  background-image: radial-gradient(oklch(0.5 0.03 290 / 0.10) 1px, transparent 1px);
+  background-image: radial-gradient(oklch(0.5 0.02 60 / 0.10) 1px, transparent 1px);
   background-size: 18px 18px;
 }
 
-/* ---- Marquee edge fade ---- */
-.marquee-mask {
-  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-}
-.marquee-mask:hover .animate-marquee {
-  animation-play-state: paused;
-}
-
-/* ---- Shine sweep for primary cards ---- */
-.shine::after {
+/* ================================================================
+   BORDE HAIRLINE con luz (para contenedores glass o paneles).
+   Doble máscara: relleno transparente + trazo degradado.
+   ================================================================ */
+.hairline-border::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.18) 50%, transparent 60%);
-  background-size: 250% 100%;
-  background-position: 120% 0;
-  opacity: 0;
-  transition: background-position 0.9s ease, opacity 0.3s ease;
+  padding: 1px;
+  background: linear-gradient(
+    to bottom,
+    oklch(1 0 0 / 0.75),
+    oklch(1 0 0 / 0.25) 30%,
+    oklch(0.4 0.03 60 / 0.18)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
   pointer-events: none;
 }
-.shine:hover::after {
-  background-position: -60% 0;
-  opacity: 1;
+
+/* Cruces de registro en esquinas de paneles "instrumento" */
+.corner-ticks::before,
+.corner-ticks::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0.4;
+}
+.corner-ticks::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1px solid currentColor;
+  border-left: 1px solid currentColor;
+}
+.corner-ticks::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1px solid currentColor;
+  border-right: 1px solid currentColor;
 }
 
-/* Custom utility for animated gradient text */
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+/* Texto énfasis en color institucional (reemplaza bloques de gradiente) */
+.text-brand {
+  color: var(--color-guinda-600);
 }
 
-.animated-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-}
-
-/* Custom scrollbar for chip rows */
-.scrollbar-thin::-webkit-scrollbar {
-  height: 6px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: oklch(0.85 0.04 350);
-  border-radius: 3px;
-}
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.7 0.15 350);
-}
-
-/* Global scrollbar (webkit) */
+/* Scrollbar neutra (antes rosa) */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -236,50 +255,41 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.85 0.02 350);
+  background: oklch(0.86 0.015 80);
   border-radius: 8px;
   border: 2px solid var(--background);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.72 0.08 350);
+  background: oklch(0.76 0.02 80);
 }
 
-/* Floating blob animation */
-@keyframes float-blob {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(20px, -20px) scale(1.05); }
-  66% { transform: translate(-15px, 15px) scale(0.97); }
+.scrollbar-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: oklch(0.85 0.02 330);
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0.06 330);
 }
 
-.blob-float {
-  animation: float-blob 14s ease-in-out infinite;
+/* Subrayado editorial que se expande al hover (filas de índice) */
+.row-highlight {
+  position: relative;
 }
-
-/* Marquee */
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+.row-highlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent, white, transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
 }
-.animate-marquee {
-  animation: marquee 32s linear infinite;
+.row-highlight:hover::after {
+  opacity: 0.6;
 }
-
-/* Scroll cue bounce */
-@keyframes scroll-cue {
-  0%, 100% { transform: translateY(0); opacity: 0.9; }
-  50% { transform: translateY(6px); opacity: 0.5; }
-}
-.animate-scroll-cue {
-  animation: scroll-cue 2s ease-in-out infinite;
-}
-
-/* Slow ping for badge dot (softer than default) */
-@keyframes soft-ping {
-  0% { transform: scale(1); opacity: 0.7; }
-  75%, 100% { transform: scale(2.1); opacity: 0; }
-}
-.animate-soft-ping {
-  animation: soft-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
-}
-
-

@@ -1,98 +1,100 @@
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
 
+/**
+ * Cierre del producto: sobrio, estructurado, sin decoración.
+ * La única concesión cromática es el acento guinda institucional.
+ */
 export function Footer() {
   return (
-    <footer className="relative bg-foreground text-background/80 mt-auto overflow-hidden">
-      {/* Top gradient hairline */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-400/60 via-fuchsia-400/60 to-amber-400/60" aria-hidden="true" />
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute -top-24 left-1/4 h-48 w-48 rounded-full bg-fuchsia-500/10 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-24 right-1/4 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden="true" />
+    <footer className="relative border-t border-black/[0.07] bg-[#fbf8fa] text-foreground">
+      {/* hairline institucional */}
+      <div className="absolute inset-x-0 top-0 h-[2px] bg-guinda-600" aria-hidden="true" />
 
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid gap-10 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white" />
-              <div>
-                <div className="text-base font-bold text-background">CECyT No. 3 IPN</div>
-                <div className="text-[10px] uppercase tracking-[0.18em] opacity-70 font-semibold">
-                  Laboratorio virtual
-                </div>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed max-w-md">
-              Simuladores, retos y ejemplos resueltos de Física, Química e Inglés con
-              secuencia didáctica basada en evidencia: falla productiva, simulador,
-              ejemplo resuelto.
+      <div className="mx-auto max-w-6xl px-5 pb-10 pt-14 sm:px-8">
+        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr]">
+          {/* Marca + descripción */}
+          <div>
+            <Link href="/" className="flex items-center gap-3">
+              <img
+                src="/cecyt3-logo.png"
+                alt=""
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded-xl object-cover ring-1 ring-black/[0.08] bg-white"
+              />
+              <span className="leading-tight">
+                <span className="block text-[15px] font-semibold tracking-tight">CECyT No. 3 «Estanislao Ramírez Ruiz»</span>
+                <span className="mt-0.5 block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  Instituto Politécnico Nacional
+                </span>
+              </span>
+            </Link>
+            <p className="mt-5 max-w-[44ch] text-[13.5px] leading-[1.75] text-muted-foreground">
+              Laboratorio virtual con simuladores, retos y ejemplos resueltos de
+              Física, Química e Inglés — construido sobre la secuencia didáctica
+              de falla productiva, experimentación y explicación.
             </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
-              <GraduationCap className="h-3.5 w-3.5 text-amber-300" />
-              <span className="opacity-80">Plan DEMS · IPN</span>
-            </div>
           </div>
 
-          <div>
-            <div className="text-xs uppercase tracking-wider font-bold text-background/60">
-              Plataforma
-            </div>
-            <ul className="mt-4 space-y-2 text-sm">
+          {/* Navegación */}
+          <nav aria-label="Navegación del pie">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Laboratorio</p>
+            <ul className="mt-4 space-y-2.5 text-[13.5px]">
               {[
-                { l: "Explorar materias", h: "/" },
+                { l: "Inicio", h: "/" },
                 { l: "Física", h: "/fisica" },
                 { l: "Química", h: "/quimica" },
                 { l: "Inglés", h: "/ingles" },
                 { l: "Laboratorios", h: "/laboratorios" },
-                { l: "Retos de 5 minutos", h: "/retos" },
-                { l: "Mi progreso", h: "/progreso" },
+                { l: "Retos", h: "/retos" },
+                { l: "Progreso", h: "/progreso" },
               ].map((it) => (
                 <li key={it.l}>
-                  <Link href={it.h} className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                    <span className="text-fuchsia-400">›</span>
+                  <Link href={it.h} className="transition-colors hover:text-guinda-700">
                     {it.l}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
+          {/* Institución */}
           <div>
-            <div className="text-xs uppercase tracking-wider font-bold text-background/60">
-              Institución
-            </div>
-            <ul className="mt-4 space-y-2 text-sm">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Institución</p>
+            <ul className="mt-4 space-y-2.5 text-[13.5px]">
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-emerald-400">›</span>
+                <a
+                  href="https://www.cecyt3.ipn.mx/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-guinda-700"
+                >
                   Sitio oficial CECyT No. 3
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-amber-400">›</span>
+                <a
+                  href="https://www.ipn.mx/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="transition-colors hover:text-guinda-700"
+                >
                   Instituto Politécnico Nacional
                 </a>
               </li>
             </ul>
-            <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-3 text-xs leading-relaxed">
-              <div className="font-semibold text-background">Dirección técnica y desarrollo</div>
-              <div className="mt-1 opacity-70">
-                Alan Antonio Molina Villar — Servicio Social / Portafolio
-              </div>
-            </div>
+            <p className="mt-6 max-w-[34ch] text-[12px] leading-[1.7] text-muted-foreground">
+              Av. Carlos Hank González S/N, Col. Vista Hermosa,
+              Ecatepec de Morelos, Estado de México.
+            </p>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="opacity-70">
-            CECyT No. 3 «Estanislao Ramírez Ruiz» · Av. Carlos Hank González S/N ·
-            Ecatepec de Morelos
-          </div>
-          <div className="opacity-60">
-            Codebase con generación y sintaxis asistida por IA · QA, auditoría y
-            validación bajo supervisión directa
-          </div>
+        <div className="mt-12 flex flex-col gap-2 border-t border-black/[0.07] pt-6 text-[11.5px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p>CECyT No. 3 · IPN — Laboratorio Virtual</p>
+          <p className="opacity-70">
+            Dirección técnica: Alan Antonio Molina Villar · Plan DEMS · Servicio social
+          </p>
         </div>
       </div>
     </footer>

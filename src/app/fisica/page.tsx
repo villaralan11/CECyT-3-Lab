@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -43,7 +43,7 @@ export default function FisicaPage() {
         title={
           <>
             Física ·{" "}
-            <span className="bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent">
+            <span className="text-teal-700">
               Cinemática
             </span>
           </>

@@ -153,7 +153,7 @@ export default function EstequiometriaSimulator() {
               onClick={() => switchReaction(i)}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 i === rIdx
-                  ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-sm"
+                  ? "bg-guinda-600 text-white shadow-sm"
                   : "bg-white border border-border text-muted-foreground hover:text-foreground"
               }`}
             >

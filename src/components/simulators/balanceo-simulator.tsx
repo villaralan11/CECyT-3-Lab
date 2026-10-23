@@ -250,7 +250,7 @@ export default function BalanceoSimulator() {
               onClick={() => switchReaction(i)}
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 i === rIdx
-                  ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-sm"
+                  ? "bg-guinda-600 text-white shadow-sm"
                   : "bg-white border border-border text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -454,7 +454,7 @@ export default function BalanceoSimulator() {
             <input value={customP} onChange={(e) => setCustomP(e.target.value)} placeholder="ej: CO2, H2O" className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 font-mono text-sm" />
           </label>
         </div>
-        <button onClick={tryCustom} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm">
+        <button onClick={tryCustom} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-guinda-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm">
           Balancear con álgebra lineal
         </button>
         {customRes && (() => {

@@ -1,8 +1,14 @@
 "use client";
 
+/**
+ * Componentes compartidos del sistema visual — usados por todas las
+ * páginas internas. Lenguaje: editorial, hairlines, guinda institucional,
+ * tipografía jerárquica. Sin cards 3D, sin gradientes decorativos.
+ */
+
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // =================== SECTION HEADER ===================
@@ -11,39 +17,31 @@ export function PageHeader({
   eyebrow,
   title,
   subtitle,
-  accent = "fuchsia",
+  accent = "guinda",
 }: {
   eyebrow: string;
   title: React.ReactNode;
   subtitle?: string;
-  accent?: "fuchsia" | "emerald" | "amber";
+  /** Mantiene la API previa: cada página usaba fuchsia|emerald|amber */
+  accent?: "fuchsia" | "emerald" | "amber" | "guinda";
 }) {
-  const cmap = {
-    fuchsia: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
-    emerald: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    amber: "border-amber-200 bg-amber-50 text-amber-700",
-  };
-  const dot = {
+  const dotMap = {
     fuchsia: "bg-fuchsia-500",
-    emerald: "bg-emerald-500",
+    emerald: "bg-teal-500",
     amber: "bg-amber-500",
+    guinda: "bg-guinda-600",
   };
   return (
     <div className="max-w-3xl">
-      <span
-        className={cn(
-          "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wider",
-          cmap[accent]
-        )}
-      >
-        <span className={cn("h-1.5 w-1.5 rounded-full", dot[accent])} />
+      <p className="flex items-center gap-2.5 font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-guinda-600">
+        <span className={cn("h-1.5 w-1.5 rounded-full", dotMap[accent])} aria-hidden="true" />
         {eyebrow}
-      </span>
-      <h1 className="mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-foreground leading-tight">
+      </p>
+      <h1 className="mt-3 text-[clamp(2rem,4.4vw,3.2rem)] font-semibold tracking-[-0.025em] leading-[1.08] text-foreground">
         {title}
       </h1>
       {subtitle && (
-        <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+        <p className="mt-4 max-w-[62ch] text-[16px] leading-[1.75] text-muted-foreground">
           {subtitle}
         </p>
       )}
@@ -51,7 +49,7 @@ export function PageHeader({
   );
 }
 
-// =================== SIM CARD (link to a simulator page) ===================
+// =================== SIM CARD ===================
 
 export function SimCard({
   index,
@@ -59,10 +57,7 @@ export function SimCard({
   description,
   type,
   href,
-  accentBg,
   accentText,
-  accentBorder,
-  accentBgSoft,
   badge,
 }: {
   index: string;
@@ -70,48 +65,50 @@ export function SimCard({
   description: string;
   type: string;
   href: string;
-  accentBg: string;
+  /** Compat: props previas se aceptan y se ignoran si ya no aplican */
+  accentBg?: string;
+  accentBorder?: string;
+  accentBgSoft?: string;
   accentText: string;
-  accentBorder: string;
-  accentBgSoft: string;
   badge?: string;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.45 }}
     >
       <Link
         href={href}
-        className="group relative block h-full overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-sm hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 transition-all duration-300"
+        className="group row-highlight relative flex h-full items-stretch gap-5 border border-black/[0.07] bg-white p-5 transition-all duration-300 hover:border-black/[0.14] hover:shadow-[0_16px_40px_-24px_rgb(46_11_29/0.25)]"
       >
-        <div className={cn("absolute top-0 left-0 right-0 h-1 bg-gradient-to-r scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500", accentBg)} />
-        <div className="flex items-start justify-between">
-          <span className="text-xs font-mono font-bold text-muted-foreground group-hover:text-foreground transition-colors">{index}</span>
-          <div className="flex items-center gap-1.5">
+        <span className="hidden w-10 shrink-0 items-start justify-between sm:flex">
+          <span className="pt-0.5 font-mono text-[11px] font-medium text-muted-foreground/70">{index}</span>
+          <span aria-hidden="true" className="h-px w-full pt-0.5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
             {badge && (
-              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide", accentBgSoft, accentText)}>
+              <span className={cn("font-mono text-[10px] font-semibold uppercase tracking-wider", accentText)}>
                 {badge}
               </span>
             )}
-            <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", accentBgSoft, accentText, accentBorder)}>
+            <span className="rounded-md border border-black/[0.08] px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-muted-foreground">
               {type}
             </span>
-          </div>
-        </div>
-        <h3 className="mt-3 text-lg font-bold text-foreground leading-tight">{name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{description}</p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", accentText)}>
-            <Play className="h-3 w-3" />
-            Abrir simulador
           </span>
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground group-hover:text-white group-hover:border-transparent group-hover:bg-gradient-to-br group-hover:from-fuchsia-500 group-hover:to-pink-500 transition-all duration-300">
+          <span className="mt-2 block text-[17px] font-semibold leading-snug tracking-tight text-foreground">
+            {name}
+          </span>
+          <span className="mt-1.5 block text-[13px] leading-[1.65] text-muted-foreground line-clamp-3">
+            {description}
+          </span>
+          <span className={cn("mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium transition-all duration-200 group-hover:gap-3", accentText)}>
+            Abrir simulador
             <ArrowUpRight className="h-3.5 w-3.5" />
           </span>
-        </div>
+        </span>
       </Link>
     </motion.div>
   );
@@ -121,17 +118,17 @@ export function SimCard({
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6">
+    <nav className="mb-7 flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.14em] text-muted-foreground" aria-label="Miga de pan">
       {items.map((it, i) => (
         <span key={i} className="inline-flex items-center gap-1.5">
           {it.href ? (
-            <Link href={it.href} className="hover:text-foreground transition-colors">
+            <Link href={it.href} className="transition-colors hover:text-guinda-700">
               {it.label}
             </Link>
           ) : (
-            <span className="text-foreground font-semibold">{it.label}</span>
+            <span className="text-foreground">{it.label}</span>
           )}
-          {i < items.length - 1 && <span className="text-muted-foreground/50">/</span>}
+          {i < items.length - 1 && <span aria-hidden="true" className="text-muted-foreground/40">/</span>}
         </span>
       ))}
     </nav>
@@ -156,24 +153,25 @@ export function CtaStrip({
   secondaryHref?: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-fuchsia-50 via-pink-50 to-amber-50 p-8 text-center">
-      <div className="absolute inset-0 dots-pattern opacity-30" aria-hidden="true" />
-      <div className="pointer-events-none absolute -top-16 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-fuchsia-300/25 blur-3xl" aria-hidden="true" />
+    <div className="relative overflow-hidden rounded-[20px] border border-black/[0.07] bg-white p-8 sm:p-10">
+      <div className="dots-pattern absolute inset-0 opacity-40" aria-hidden="true" />
       <div className="relative">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">{title}</h2>
-        <p className="mt-3 max-w-2xl mx-auto text-muted-foreground">{description}</p>
-        <div className="mt-6 flex flex-wrap gap-3 justify-center">
+        <h2 className="max-w-[24ch] text-[clamp(1.5rem,3vw,2.1rem)] font-semibold tracking-[-0.02em] text-foreground">
+          {title}
+        </h2>
+        <p className="mt-3 max-w-[58ch] text-[14.5px] leading-[1.7] text-muted-foreground">{description}</p>
+        <div className="mt-7 flex flex-wrap gap-3">
           <Link
             href={primaryHref}
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:-translate-y-px active:translate-y-0 active:scale-95 transition-all"
+            className="group inline-flex h-11 items-center gap-2 rounded-full bg-guinda-600 px-6 text-sm font-medium text-white shadow-[0_10px_28px_-10px_rgb(108_29_69/0.5)] transition-all duration-200 hover:bg-guinda-700 active:scale-[0.98]"
           >
             {primaryLabel}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
           {secondaryLabel && secondaryHref && (
             <Link
               href={secondaryHref}
-              className="inline-flex items-center gap-2 rounded-full bg-white border border-border px-6 py-3 text-sm font-semibold text-foreground hover:border-fuchsia-300 hover:bg-fuchsia-50/40 active:scale-95 transition-all"
+              className="inline-flex h-11 items-center gap-2 rounded-full border border-black/[0.09] bg-white/70 px-6 text-sm font-medium text-foreground backdrop-blur transition-colors duration-200 hover:bg-white"
             >
               {secondaryLabel}
             </Link>

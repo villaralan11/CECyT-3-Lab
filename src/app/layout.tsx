@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     "cinemática", "nomenclatura IUPAC", "estequiometría", "laboratorio virtual",
   ],
   authors: [{ name: "Alan Antonio Molina Villar" }],
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f9f2f6",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

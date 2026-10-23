@@ -203,7 +203,7 @@ export default function IUPACTrainer() {
               onClick={() => changeFilter(t.id)}
               className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
                 filter === t.id
-                  ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-sm"
+                  ? "bg-guinda-600 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
@@ -303,7 +303,7 @@ export default function IUPACTrainer() {
         {picked !== null && (
           <button
             onClick={next}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md transition-shadow"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-guinda-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md transition-shadow"
           >
             Siguiente <ChevronRight className="h-3.5 w-3.5" />
           </button>
