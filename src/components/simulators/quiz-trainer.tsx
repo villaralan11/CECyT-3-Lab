@@ -147,7 +147,7 @@ export function QuizTrainer({
 
   const accentMap = {
     amber: {
-      text: "text-amber-600",
+      text: "text-amber-700",
       bgSoft: "bg-amber-50",
       border: "border-amber-200",
       gradient: "from-amber-400 to-orange-500",
@@ -155,7 +155,7 @@ export function QuizTrainer({
       solidText: "text-amber-700",
     },
     fuchsia: {
-      text: "text-fuchsia-600",
+      text: "text-fuchsia-700",
       bgSoft: "bg-fuchsia-50",
       border: "border-fuchsia-200",
       gradient: "from-fuchsia-400 to-pink-500",
@@ -163,7 +163,7 @@ export function QuizTrainer({
       solidText: "text-fuchsia-700",
     },
     emerald: {
-      text: "text-emerald-600",
+      text: "text-emerald-700",
       bgSoft: "bg-emerald-50",
       border: "border-emerald-200",
       gradient: "from-emerald-400 to-teal-500",
@@ -322,7 +322,7 @@ export function QuizTrainer({
                 ) : showWrong ? (
                   <XCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">
+                  <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
                     {String.fromCharCode(65 + i)}
                   </div>
                 )}

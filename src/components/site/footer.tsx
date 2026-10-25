@@ -3,41 +3,47 @@ import { GraduationCap } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="relative bg-foreground text-background/80 mt-auto overflow-hidden">
-      {/* Top gradient hairline */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-400/60 via-fuchsia-400/60 to-amber-400/60" aria-hidden="true" />
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute -top-24 left-1/4 h-48 w-48 rounded-full bg-fuchsia-500/10 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -bottom-24 right-1/4 h-48 w-48 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden="true" />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid gap-10 md:grid-cols-4">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-2.5">
-              <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white" />
-              <div>
-                <div className="text-base font-bold text-background">CECyT No. 3 IPN</div>
-                <div className="text-[10px] uppercase tracking-[0.18em] opacity-70 font-semibold">
-                  Laboratorio virtual
-                </div>
-              </div>
-            </div>
-            <p className="mt-4 text-sm leading-relaxed max-w-md">
-              Simuladores, retos y ejemplos resueltos de Física, Química e Inglés con
-              secuencia didáctica basada en evidencia: falla productiva, simulador,
-              ejemplo resuelto.
-            </p>
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
-              <GraduationCap className="h-3.5 w-3.5 text-amber-300" />
-              <span className="opacity-80">Plan DEMS · IPN</span>
+    <footer className="mt-auto border-t border-border bg-secondary">
+      <div className="module-col py-12">
+        {/* Marca */}
+        <div className="flex items-center gap-3">
+          <img
+            src="/cecyt3-logo.png"
+            alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-lg object-cover ring-1 ring-border bg-white"
+          />
+          <div>
+            <div className="app-subhead font-semibold text-foreground">CECyT No. 3 IPN</div>
+            <div className="app-caption uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+              Laboratorio virtual
             </div>
           </div>
+        </div>
 
-          <div>
-            <div className="text-xs uppercase tracking-wider font-bold text-background/60">
-              Plataforma
-            </div>
-            <ul className="mt-4 space-y-2 text-sm">
+        {/* Notas al pie */}
+        <div className="mt-6 max-w-3xl space-y-2 app-footnote text-muted-foreground">
+          <p>
+            Simuladores, retos y ejemplos resueltos de Física, Química e Inglés con
+            secuencia didáctica basada en evidencia: falla productiva, simulador,
+            ejemplo resuelto.
+          </p>
+          <p>
+            Codebase con generación y sintaxis asistida por IA · QA, auditoría y
+            validación bajo supervisión directa.
+          </p>
+        </div>
+        <div className="mt-4 inline-flex items-center gap-1.5 app-footnote text-muted-foreground">
+          <GraduationCap className="h-3.5 w-3.5" aria-hidden="true" />
+          Plan DEMS · IPN
+        </div>
+
+        {/* Directorio */}
+        <div className="mt-8 grid gap-10 border-t border-border pt-8 sm:grid-cols-3">
+          <nav aria-label="Plataforma">
+            <h3 className="app-footnote font-semibold text-foreground">Plataforma</h3>
+            <ul className="mt-4 space-y-2.5 app-footnote">
               {[
                 { l: "Explorar materias", h: "/" },
                 { l: "Física", h: "/fisica" },
@@ -48,51 +54,65 @@ export function Footer() {
                 { l: "Mi progreso", h: "/progreso" },
               ].map((it) => (
                 <li key={it.l}>
-                  <Link href={it.h} className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                    <span className="text-fuchsia-400">›</span>
+                  <Link
+                    href={it.h}
+                    className="text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-2"
+                  >
                     {it.l}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
+          </nav>
 
-          <div>
-            <div className="text-xs uppercase tracking-wider font-bold text-background/60">
-              Institución
-            </div>
-            <ul className="mt-4 space-y-2 text-sm">
+          <nav aria-label="Institución">
+            <h3 className="app-footnote font-semibold text-foreground">Institución</h3>
+            <ul className="mt-4 space-y-2.5 app-footnote">
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-emerald-400">›</span>
+                <a
+                  href="https://cecyt3.ipn.mx/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-2"
+                >
                   Sitio oficial CECyT No. 3
+                  <span className="sr-only">(abre en nueva pestaña)</span>
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
-                  <span className="text-amber-400">›</span>
+                <a
+                  href="https://www.ipn.mx/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground transition-colors hover:text-foreground hover:underline underline-offset-2"
+                >
                   Instituto Politécnico Nacional
+                  <span className="sr-only">(abre en nueva pestaña)</span>
                 </a>
               </li>
             </ul>
-            <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-3 text-xs leading-relaxed">
-              <div className="font-semibold text-background">Dirección técnica y desarrollo</div>
-              <div className="mt-1 opacity-70">
-                Alan Antonio Molina Villar — Servicio Social / Portafolio
-              </div>
-            </div>
+          </nav>
+
+          <div>
+            <h3 className="app-footnote font-semibold text-foreground">
+              Dirección técnica y desarrollo
+            </h3>
+            <p className="mt-4 app-footnote text-muted-foreground">
+              Alan Antonio Molina Villar — Servicio Social / Portafolio
+            </p>
           </div>
         </div>
 
-        <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="opacity-70">
-            CECyT No. 3 «Estanislao Ramírez Ruiz» · Av. Carlos Hank González S/N ·
-            Ecatepec de Morelos
-          </div>
-          <div className="opacity-60">
-            Codebase con generación y sintaxis asistida por IA · QA, auditoría y
-            validación bajo supervisión directa
-          </div>
+        {/* Dirección */}
+        <div className="mt-8 border-t border-border pt-4 app-footnote text-muted-foreground">
+          CECyT No. 3 «Estanislao Ramírez Ruiz» · Av. Carlos Hank González S/N ·
+          Ecatepec de Morelos
+        </div>
+
+        {/* Barra final */}
+        <div className="mt-3 flex flex-col gap-2 border-t border-border pt-3 app-footnote text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div>Copyright © 2026 CECyT No. 3 — Estanislao Ramírez Ruiz — IPN</div>
+          <div>México</div>
         </div>
       </div>
     </footer>

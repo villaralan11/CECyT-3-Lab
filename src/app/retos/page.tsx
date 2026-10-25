@@ -200,7 +200,7 @@ export default function RetosPage() {
 
           {/* Right panel */}
           <div className="lg:col-span-3 p-6">
-            <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug">{q.prompt}</h3>
+            <h2 className="text-base sm:text-lg font-bold text-foreground leading-snug">{q.prompt}</h2>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
               {q.options.map((opt, i) => {
                 const isCorrect = i === q.correct;
@@ -225,7 +225,7 @@ export default function RetosPage() {
                     ) : showWrong ? (
                       <X className="h-4 w-4 text-rose-500" />
                     ) : (
-                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">
+                      <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
                         {String.fromCharCode(65 + i)}
                       </div>
                     )}

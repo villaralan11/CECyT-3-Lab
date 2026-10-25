@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Award, Zap, CheckCircle2, BookOpen, RotateCcw, ArrowRight, GraduationCap, Trophy } from "lucide-react";
+import { Award, Zap, CheckCircle2, BookOpen, ArrowRight, GraduationCap, Trophy } from "lucide-react";
 import { PageHeader, Breadcrumb } from "@/components/site/ui";
 import { useProgress } from "@/hooks/use-progress";
 
@@ -124,10 +124,6 @@ export default function ProgresoPage() {
                 <div className="text-xl font-bold text-foreground">{currentLevel.name}</div>
               </div>
             </div>
-            <button onClick={() => { localStorage.removeItem("cecyt3-progress-v2"); localStorage.removeItem("cecyt3-lab-v3"); location.reload(); }} className="text-xs font-semibold text-muted-foreground hover:text-rose-600 transition-colors inline-flex items-center gap-1">
-              <RotateCcw className="h-3 w-3" />
-              Reiniciar
-            </button>
           </div>
 
           <div className="mt-6">
@@ -165,7 +161,7 @@ export default function ProgresoPage() {
                 Importar
                 <input type="file" accept="application/json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const txt = r.result as string; const j = JSON.parse(txt); if (j.progress) localStorage.setItem("cecyt3-progress-v2", JSON.stringify(j.progress)); else localStorage.setItem("cecyt3-progress-v2", txt); location.reload(); } catch { alert("Archivo inválido"); } }; r.readAsText(f); }} />
               </label>
-              <button onClick={() => { localStorage.removeItem("cecyt3-progress-v2"); location.reload(); }} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-secondary/40 transition-colors">
+              <button onClick={() => { localStorage.removeItem("cecyt3-progress-v2"); localStorage.removeItem("cecyt3-lab-v3"); location.reload(); }} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-secondary/40 transition-colors">
                 Reiniciar
               </button>
             </div>
@@ -191,13 +187,13 @@ export default function ProgresoPage() {
                       {i + 1}
                     </div>
                     <div className="flex-1">
-                      <div className={`text-sm font-bold ${isUnlocked ? "text-foreground" : "text-muted-foreground/60"}`}>
+                      <div className={`text-sm font-bold ${isUnlocked ? "text-foreground" : "text-muted-foreground"}`}>
                         {lvl.name}
                       </div>
                       <div className="text-[10px] text-muted-foreground">{lvl.min} puntos mínimos</div>
                     </div>
                     {isCurrent && (
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-600">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-fuchsia-700">
                         Actual
                       </span>
                     )}
