@@ -142,8 +142,9 @@ export function ModuleTile({
     <motion.article
       initial={{ opacity: 0, y: reduce ? 0 : 24 }}
       whileInView={{ opacity: 1, y: 0 }}
+      whileHover={reduce ? undefined : { y: -4 }}
       viewport={{ once: true, margin: "-64px" }}
-      transition={{ duration: 0.7, delay, ease: "easeOut" }}
+      transition={{ duration: 0.7, delay, ease: "easeOut", y: { duration: 0.25, ease: "easeOut", delay: 0 } }}
       className={cn(
         "module-tile relative flex flex-col p-8 sm:p-10",
         dark

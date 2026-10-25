@@ -23,6 +23,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { CtaGhost, CtaPrimary, ModuleGrid, ModuleHeader, ModuleTile } from "@/components/site/modules";
+import { CountUp } from "@/components/site/motion";
 
 const SUBJECTS = [
   {
@@ -505,7 +506,7 @@ export default function Home() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
                     <s.icon className="h-5 w-5 text-background" />
                   </div>
-                  <div className="mt-4 app-large tabular-nums text-background">{s.value}</div>
+                  <div className="mt-4 app-large tabular-nums text-background"><CountUp value={Number(s.value)} /></div>
                   <div className="mt-1 app-headline text-background">{s.label}</div>
                   <div className="mt-1 app-caption text-background/70">{s.sub}</div>
                 </motion.div>
