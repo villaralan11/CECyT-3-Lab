@@ -401,4 +401,18 @@
   }
 }
 
+/* Material dock oscuro: controles del simulador flotando sobre la escena.
+   Mismo blur del sistema (30px); veladura negra al grado de dock. */
+.app-dock {
+  backdrop-filter: saturate(1.5) blur(30px);
+  background: oklch(0.2 0.02 260 / 0.7);
+  border: 1px solid oklch(1 0 0 / 0.14);
+  box-shadow: 0 22px 48px -22px oklch(0.22 0.03 260 / 0.55);
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .app-dock {
+    background: oklch(0.24 0.03 260);
+  }
+}
+
 

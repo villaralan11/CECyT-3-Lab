@@ -94,7 +94,7 @@ export function PlayControls({
       <Button
         size="sm"
         onClick={onToggle}
-        className="h-11 px-4 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:from-fuchsia-600 hover:to-pink-600 text-white shadow-md border-0"
+        className="h-11 px-4 rounded-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white shadow-md border-0"
       >
         {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
         {running ? "Pausar" : "Iniciar"}
@@ -359,7 +359,7 @@ export function Readout({
       <div className="app-caption font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </div>
-      <div className={cn("mt-1 font-mono app-title3", cmap[color])}>
+      <div className={cn("mt-1 font-mono app-title3 tabular-nums", cmap[color])}>
         {typeof value === "number" ? value.toFixed(2) : value}
         {unit && <span className="text-xs text-muted-foreground ml-1 font-normal">{unit}</span>}
       </div>
