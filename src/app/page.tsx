@@ -34,6 +34,7 @@ const SUBJECTS = [
     bgSoft: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border-emerald-200",
+    ring: "ring-emerald-200",
     chip: "bg-emerald-50 text-emerald-700 border-emerald-100",
     hoverBorder: "hover:border-emerald-200",
     glow: "shadow-emerald-500/25",
@@ -50,6 +51,7 @@ const SUBJECTS = [
     bgSoft: "bg-fuchsia-50",
     text: "text-fuchsia-700",
     border: "border-fuchsia-200",
+    ring: "ring-fuchsia-200",
     chip: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100",
     hoverBorder: "hover:border-fuchsia-200",
     glow: "shadow-fuchsia-500/25",
@@ -66,6 +68,7 @@ const SUBJECTS = [
     bgSoft: "bg-amber-50",
     text: "text-amber-700",
     border: "border-amber-200",
+    ring: "ring-amber-200",
     chip: "bg-amber-50 text-amber-700 border-amber-100",
     hoverBorder: "hover:border-amber-200",
     glow: "shadow-amber-500/25",
@@ -433,7 +436,7 @@ export default function Home() {
                     eyebrow={s.count}
                     title={
                       <span className="inline-flex items-center gap-3">
-                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.bgSoft} ring-1 ${s.border}`}>
+                        <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${s.bgSoft} ring-1 ${s.ring}`}>
                           <Icon className={`h-5 w-5 ${s.text}`} />
                         </span>
                         {s.name}
