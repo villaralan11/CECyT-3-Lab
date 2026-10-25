@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Atom, ArrowRight, Zap, TrendingUp, Crosshair } from "lucide-react";
+import { Atom, ArrowRight, Zap, TrendingUp, Crosshair, Library } from "lucide-react";
 import { PageHeader, Breadcrumb, CtaStrip } from "@/components/site/ui";
 
 const SIMS = [
@@ -29,6 +29,14 @@ const SIMS = [
     href: "/fisica/tiros",
     icon: Crosshair,
     points: ["Vectores vₓ y vᵧ separados en vivo", "Marcadores de ápice y aterrizaje", "Tiempo de vuelo analítico"],
+  },
+  {
+    n: "04",
+    name: "Biblioteca PhET · 35 simulaciones",
+    desc: "Amplía tu laboratorio con la biblioteca embebida oficial de PhET: péndulo, masas y resortes, circuitos, ondas, óptica, fluidos y más, con filtros por área del temario.",
+    href: "/fisica/phet",
+    icon: Library,
+    points: ["Iframes oficiales de phet.colorado.edu", "Filtros por área del temario", "Atribución y enlace directo a PhET"],
   },
 ];
 
@@ -64,6 +72,8 @@ export default function FisicaPage() {
               con marcadores de tiempo actual, y áreas sombreadas que muestran visualmente el
               significado físico de pendientes e integrales. Cada simulador incluye botones de
               paso (avanzar/retroceder 0.1 s), readouts con fórmulas, e insights pedagógicos.
+              ¿Buscas temas fuera de la cinemática? La Biblioteca PhET embebida añade 35
+              simulaciones oficiales listas para abrir.
             </p>
           </div>
         </div>
