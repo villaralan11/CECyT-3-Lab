@@ -245,21 +245,21 @@ export default function TirosSimulator() {
             <button
               key={m.id}
               onClick={() => switchMode(m.id)}
-              className={`text-left rounded-xl border px-3 py-2.5 transition-colors ${
+              className={`text-left rounded-xl border-2 px-3 py-2.5 transition-all ${
                 active
-                  ? "border-emerald-500 bg-emerald-50/70"
-                  : "border-border bg-card hover:border-emerald-200"
+                  ? "border-emerald-400 bg-emerald-50 shadow-md scale-[1.02]"
+                  : "border-border bg-white hover:border-emerald-200"
               }`}
             >
               <div className="flex items-center gap-2">
-                <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${active ? "bg-emerald-500 text-white" : "bg-secondary text-muted-foreground"}`}>
+                <div className={`h-7 w-7 rounded-lg flex items-center justify-center ${active ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white" : "bg-secondary text-muted-foreground"}`}>
                   <m.icon className="h-3.5 w-3.5" />
                 </div>
                 <div>
-                  <div className={`text-sm font-semibold ${active ? "text-emerald-700" : "text-foreground"}`}>
+                  <div className={`text-sm font-bold ${active ? "text-emerald-700" : "text-foreground"}`}>
                     {m.label}
                   </div>
-                  <div className="app-caption text-muted-foreground">{m.desc}</div>
+                  <div className="text-[10px] text-muted-foreground">{m.desc}</div>
                 </div>
               </div>
             </button>
@@ -271,54 +271,135 @@ export default function TirosSimulator() {
       <div className="flex items-center gap-2">
         <button
           onClick={() => setAir(!air)}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${air ? "bg-emerald-500 text-white border-emerald-500" : "bg-card border-border text-muted-foreground hover:text-foreground"}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${air ? "bg-sky-500 text-white border-sky-500" : "bg-white border-border text-muted-foreground hover:text-foreground"}`}
         >
           <Wind className="h-3.5 w-3.5" />
           Aire: {air ? "ON (arrastre v²)" : "OFF (vacío)"}
         </button>
-        <span className="app-caption text-muted-foreground">{air ? "F_drag = -k·v·|v|  k=0.02" : "Vacío ideal DEMS"}</span>
+        <span className="text-[11px] text-muted-foreground">{air ? "F_drag = -k·v·|v|  k=0.02" : "Vacío ideal DEMS"}</span>
       </div>
 
       {/* ============ CINEMATIC SCENE ============ */}
-      <div ref={sceneRef} className="relative overflow-hidden rounded-3xl border border-border shadow-sm bg-background scroll-mt-20 max-sm:max-h-[42vh] max-sm:sticky max-sm:top-16 max-sm:z-10">
-        {/* Cielo papel */}
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-50 via-white to-emerald-50" />
+      <div ref={sceneRef} className="relative overflow-hidden rounded-3xl border-2 border-emerald-200 shadow-xl scroll-mt-20 max-sm:max-h-[42vh] max-sm:sticky max-sm:top-16 max-sm:z-10">
+        {/* Sky gradient with sunset feel */}
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-cyan-200 to-emerald-100" />
 
-        {/* Silueta lejana baja-contraste */}
-        <svg className="absolute bottom-[34%] left-0 w-full" viewBox="0 0 600 80" preserveAspectRatio="none" style={{ height: "68px" }}>
-          <polygon points="0,80 70,38 140,58 210,26 290,48 370,20 460,44 540,30 600,52 600,80" fill="#0f766e" opacity="0.1" />
+        {/* Sun */}
+        <motion.div
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-4 right-8 h-16 w-16 rounded-full bg-gradient-to-br from-yellow-300 to-orange-400 shadow-[0_0_80px_25px_rgba(253,224,71,0.5)]"
+        />
+
+        {/* Sun rays */}
+        <svg className="absolute top-2 right-4 h-20 w-20" viewBox="0 0 80 80">
+          {Array.from({ length: 8 }, (_, i) => {
+            const angle = i * 45;
+            return (
+              <line
+                key={i}
+                x1="40"
+                y1="40"
+                x2={40 + Math.cos((angle * Math.PI) / 180) * 38}
+                y2={40 + Math.sin((angle * Math.PI) / 180) * 38}
+                stroke="#fef3c7"
+                strokeWidth="2"
+                opacity="0.5"
+              >
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from="0 40 40"
+                  to="360 40 40"
+                  dur="20s"
+                  repeatCount="indefinite"
+                />
+              </line>
+            );
+          })}
+        </svg>
+
+        {/* Clouds */}
+        {[
+          { top: "12%", left: "10%", scale: 1, dur: 60 },
+          { top: "20%", left: "60%", scale: 0.7, dur: 45 },
+          { top: "8%", left: "85%", scale: 0.5, dur: 80 },
+        ].map((c, i) => (
+          <motion.div
+            key={i}
+            animate={{ x: [-50, 700] }}
+            transition={{ duration: c.dur, repeat: Infinity, ease: "linear" }}
+            style={{ top: c.top, left: c.left, transform: `scale(${c.scale})` }}
+            className="absolute"
+          >
+            <svg width="80" height="36" viewBox="0 0 80 36">
+              <ellipse cx="20" cy="22" rx="20" ry="11" fill="white" opacity="0.85" />
+              <ellipse cx="42" cy="18" rx="22" ry="13" fill="white" opacity="0.85" />
+              <ellipse cx="62" cy="22" rx="16" ry="10" fill="white" opacity="0.85" />
+            </svg>
+          </motion.div>
+        ))}
+
+        {/* Mountains far */}
+        <svg className="absolute bottom-[35%] left-0 w-full" viewBox="0 0 600 80" preserveAspectRatio="none" style={{ height: "70px" }}>
+          <polygon points="0,80 60,30 130,55 200,20 280,45 360,15 450,40 540,25 600,50 600,80" fill="#0c4a6e" opacity="0.35" />
+        </svg>
+        {/* Hills near */}
+        <svg className="absolute bottom-[30%] left-0 w-full" viewBox="0 0 600 60" preserveAspectRatio="none" style={{ height: "55px" }}>
+          <polygon points="0,60 50,40 120,25 200,42 280,20 360,38 460,18 540,32 600,22 600,60" fill="#047857" opacity="0.6" />
         </svg>
 
         {/* SVG Scene */}
         <svg role="img" aria-label="Simulador tiros" viewBox={`0 0 ${W} ${Hsvg}`} className="relative w-full h-auto" preserveAspectRatio="xMidYMid meet">
           {/* Ground with gradient */}
-          {/* Material plano: sin filtros ni gradientes cargados */}
+          <defs>
+            <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#84cc16" />
+              <stop offset="100%" stopColor="#365314" />
+            </linearGradient>
+            <linearGradient id="trailGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#fbbf24" stopOpacity="0" />
+              <stop offset="100%" stopColor="#ef4444" stopOpacity="1" />
+            </linearGradient>
+            <radialGradient id="projGrad2" cx="0.3" cy="0.3">
+              <stop offset="0%" stopColor="#fef3c7" />
+              <stop offset="50%" stopColor="#f59e0b" />
+              <stop offset="100%" stopColor="#dc2626" />
+            </radialGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="2" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
           {/* Ground */}
-          <rect x="0" y={padT + plotH} width={W} height={padB} fill="#d9e5de" />
+          <rect x="0" y={padT + plotH} width={W} height={padB} fill="url(#ground)" />
           {/* Grass texture (small lines) */}
           {Array.from({ length: 40 }, (_, i) => {
             const px = (i / 40) * W;
             return (
-              <line key={i} x1={px} y1={padT + plotH} x2={px - 1} y2={padT + plotH - 3} stroke="#8aa697" strokeWidth="0.8" opacity="0.5" />
+              <line key={i} x1={px} y1={padT + plotH} x2={px - 1} y2={padT + plotH - 3} stroke="#365314" strokeWidth="0.8" opacity="0.6" />
             );
           })}
 
           {/* Grid (subtle) */}
           {Array.from({ length: 7 }, (_, i) => {
             const px = padL + (i / 6) * plotW;
-            return <line key={`gx${i}`} x1={px} y1={padT} x2={px} y2={padT + plotH} stroke="#0f172a" strokeWidth="0.4" opacity="0.06" />;
+            return <line key={`gx${i}`} x1={px} y1={padT} x2={px} y2={padT + plotH} stroke="#10b981" strokeWidth="0.4" opacity="0.2" />;
           })}
           {Array.from({ length: 5 }, (_, i) => {
             const py = padT + (i / 4) * plotH;
-            return <line key={`gy${i}`} x1={padL} y1={py} x2={padL + plotW} y2={py} stroke="#0f172a" strokeWidth="0.4" opacity="0.06" />;
+            return <line key={`gy${i}`} x1={padL} y1={py} x2={padL + plotW} y2={py} stroke="#10b981" strokeWidth="0.4" opacity="0.2" />;
           })}
 
           {/* Axes labels */}
-          <text x={padL + plotW / 2} y={Hsvg - 6} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="600">
+          <text x={padL + plotW / 2} y={Hsvg - 6} textAnchor="middle" fontSize="10" fill="#064e3b" fontWeight="700">
             x (m) · alcance máx = {range.toFixed(1)} m
           </text>
-          <text x={10} y={padT + plotH / 2} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="600" transform={`rotate(-90 10 ${padT + plotH / 2})`}>
+          <text x={10} y={padT + plotH / 2} textAnchor="middle" fontSize="10" fill="#064e3b" fontWeight="700" transform={`rotate(-90 10 ${padT + plotH / 2})`}>
             y (m) · altura máx = {maxH.toFixed(1)} m
           </text>
 
@@ -326,12 +407,12 @@ export default function TirosSimulator() {
           {Array.from({ length: 4 }, (_, i) => {
             const val = ((i + 1) / 4) * XMAX;
             const px = sx(val);
-            return <text key={`tx${i}`} x={px} y={padT + plotH + 14} textAnchor="middle" fontSize="9" fill="#64748b">{val.toFixed(0)}</text>;
+            return <text key={`tx${i}`} x={px} y={padT + plotH + 14} textAnchor="middle" fontSize="8" fill="#064e3b">{val.toFixed(0)}</text>;
           })}
           {Array.from({ length: 4 }, (_, i) => {
             const val = ((i + 1) / 4) * YMAX;
             const py = sy(val);
-            return <text key={`ty${i}`} x={padL - 5} y={py + 3} textAnchor="end" fontSize="9" fill="#64748b">{val.toFixed(0)}</text>;
+            return <text key={`ty${i}`} x={padL - 5} y={py + 3} textAnchor="end" fontSize="8" fill="#064e3b">{val.toFixed(0)}</text>;
           })}
 
           {/* Trajectory ghost (dotted) */}
@@ -346,21 +427,22 @@ export default function TirosSimulator() {
                 cx={sx(p.x)}
                 cy={sy(p.y)}
                 r={1.5 + age * 3}
-                fill="#34d399"
-                opacity={age * 0.5}
+                fill="#fbbf24"
+                opacity={age * 0.7}
+                filter="url(#glow)"
               />
             );
           })}
 
-          {/* Traveled trajectory (solid) */}
-          <path d={traveledPath} fill="none" stroke="#334155" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
+          {/* Traveled trajectory (solid, glowing) */}
+          <path d={traveledPath} fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" />
 
           {/* Apex marker */}
           {maxH > 0.5 && tApex > 0 && tApex < tEnd && (
             <g>
-              <circle cx={sx(v0x * tApex)} cy={sy(maxH)} r="4" fill="#f59e0b" stroke="#ffffff" strokeWidth="1.5" />
-              <line x1={sx(v0x * tApex)} y1={sy(maxH)} x2={sx(v0x * tApex)} y2={sy(0)} stroke="#f59e0b" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.5" />
-              <text x={sx(v0x * tApex)} y={sy(maxH) - 8} textAnchor="middle" fontSize="10" fill="#b45309" fontWeight="600">
+              <circle cx={sx(v0x * tApex)} cy={sy(maxH)} r="4" fill="#fbbf24" stroke="#fff" strokeWidth="2" filter="url(#glow)" />
+              <line x1={sx(v0x * tApex)} y1={sy(maxH)} x2={sx(v0x * tApex)} y2={sy(0)} stroke="#fbbf24" strokeWidth="0.8" strokeDasharray="2 2" opacity="0.6" />
+              <text x={sx(v0x * tApex)} y={sy(maxH) - 8} textAnchor="middle" fontSize="10" fill="#d97706" fontWeight="bold">
                 ↑ {maxH.toFixed(1)} m
               </text>
             </g>
@@ -369,8 +451,8 @@ export default function TirosSimulator() {
           {/* Landing marker */}
           {range > 0.5 && (
             <g>
-              <line x1={sx(range)} y1={padT + plotH - 10} x2={sx(range)} y2={padT + plotH} stroke="#475569" strokeWidth="2.5" />
-              <text x={sx(range)} y={padT + plotH - 14} textAnchor="middle" fontSize="10" fill="#475569" fontWeight="600">
+              <line x1={sx(range)} y1={padT + plotH - 10} x2={sx(range)} y2={padT + plotH} stroke="#dc2626" strokeWidth="2.5" />
+              <text x={sx(range)} y={padT + plotH - 14} textAnchor="middle" fontSize="10" fill="#dc2626" fontWeight="bold">
                 {range.toFixed(1)} m
               </text>
             </g>
@@ -379,18 +461,18 @@ export default function TirosSimulator() {
           {/* Launch point (cannon) */}
           <g transform={`translate(${sx(0)}, ${sy(h0)})`}>
             {/* Cannon base */}
-            <rect x="-8" y="0" width="16" height="8" fill="#334155" rx="2" />
+            <rect x="-8" y="0" width="16" height="8" fill="#1f2937" rx="2" />
             {/* Cannon barrel (rotates with angle) */}
             {mode !== "horizontal" && (
               <g transform={`rotate(${-angle})`}>
-                <rect x="0" y="-3" width="20" height="6" fill="#475569" rx="2" />
-                <circle cx="20" cy="0" r="3" fill="#10b981" />
+                <rect x="0" y="-3" width="20" height="6" fill="#374151" rx="2" />
+                <circle cx="20" cy="0" r="3" fill="#dc2626" />
               </g>
             )}
             {mode === "horizontal" && (
-              <rect x="0" y="-3" width="20" height="6" fill="#475569" rx="2" />
+              <rect x="0" y="-3" width="20" height="6" fill="#374151" rx="2" />
             )}
-            <text x="0" y="-12" textAnchor="middle" fontSize="9" fill="#475569" fontWeight="600">
+            <text x="0" y="-12" textAnchor="middle" fontSize="9" fill="#d97706" fontWeight="bold">
               {h0 > 0 ? `h₀=${h0}m` : "lanzamiento"}
             </text>
           </g>
@@ -398,8 +480,10 @@ export default function TirosSimulator() {
           {/* Projectile + vectors */}
           {y >= 0 && (
             <g transform={`translate(${sx(x)}, ${sy(y)})`}>
+              {/* Glow halo */}
+              <circle r="12" fill="#fbbf24" opacity="0.3" filter="url(#glow)" />
               {/* Projectile */}
-              <circle r="7" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+              <circle r="7" fill="url(#projGrad2)" stroke="#fff" strokeWidth="2" filter="url(#glow)" />
 
               {/* Horizontal velocity vector vₓ (blue) */}
               {Math.abs(vx) > 0.1 && (
@@ -436,10 +520,10 @@ export default function TirosSimulator() {
                   y1="0"
                   x2={(vx / Math.max(speed, 1)) * 30}
                   y2={-(vy / Math.max(speed, 1)) * 30}
-                  stroke="#334155"
-                  strokeWidth="1.6"
+                  stroke="white"
+                  strokeWidth="1.8"
                   strokeDasharray="3 2"
-                  opacity="0.55"
+                  opacity="0.8"
                 />
               )}
             </g>
@@ -447,39 +531,39 @@ export default function TirosSimulator() {
         </svg>
 
         {/* Overlay info cards */}
-        <div className="app-glass absolute top-3 left-3 rounded-2xl border border-black/5 px-3.5 py-2 shadow-sm">
-          <div className="app-caption uppercase tracking-wider font-semibold text-foreground/55">Tiempo</div>
-          <div className="font-mono app-title3 tabular-nums text-foreground">{t.toFixed(2)}s / {tEnd.toFixed(2)}s</div>
+        <div className="absolute top-3 left-3 rounded-xl bg-white/85 backdrop-blur-md border border-white/60 px-3 py-2 shadow-lg">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Tiempo</div>
+          <div className="font-mono font-bold text-lg text-foreground">{t.toFixed(2)}s / {tEnd.toFixed(2)}s</div>
         </div>
-        <div className="app-glass absolute top-3 right-3 rounded-2xl border border-black/5 px-3.5 py-2 shadow-sm">
-          <div className="app-caption uppercase tracking-wider font-semibold text-foreground/55">Altura</div>
-          <div className="font-mono app-title3 tabular-nums text-foreground">{y.toFixed(2)}m</div>
+        <div className="absolute top-3 right-3 rounded-xl bg-white/85 backdrop-blur-md border border-white/60 px-3 py-2 shadow-lg">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Altura</div>
+          <div className="font-mono font-bold text-lg text-emerald-600">{y.toFixed(2)}m</div>
         </div>
 
         {/* Floating play controls overlay (bottom-center, like a video player) */}
-        <div className="app-dock absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full px-2 py-1.5">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 px-2 py-1.5 shadow-2xl">
           <button
             onClick={handleToggle}
-            className="inline-flex h-11 items-center gap-1.5 rounded-full bg-emerald-500 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-600 active:bg-emerald-700"
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:scale-105 transition-transform"
           >
-            {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+            {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
             {running ? "Pausar" : "Iniciar"}
           </button>
-          <button onClick={stepBack} className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white" title="Retroceder 0.1 s">
-            <StepBack className="h-4 w-4" />
+          <button onClick={stepBack} className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors" title="Retroceder 0.1 s">
+            <StepBack className="h-3 w-3" />
           </button>
-          <button onClick={stepFwd} className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white" title="Avanzar 0.1 s">
-            <StepForward className="h-4 w-4" />
+          <button onClick={stepFwd} className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors" title="Avanzar 0.1 s">
+            <StepForward className="h-3 w-3" />
           </button>
-          <button onClick={reset} className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/85 transition-colors hover:bg-white/10 hover:text-white" title="Reiniciar">
-            <RotateCcw className="h-4 w-4" />
+          <button onClick={reset} className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors" title="Reiniciar">
+            <RotateCcw className="h-3 w-3" />
           </button>
         </div>
 
         {/* Progress bar */}
-        <div className="absolute bottom-1.5 left-3 right-3 h-1 rounded-full bg-white/25 overflow-hidden">
+        <div className="absolute bottom-2 left-3 right-3 h-1.5 rounded-full bg-black/20 overflow-hidden">
           <motion.div
-            className="h-full bg-emerald-400"
+            className="h-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-400"
             animate={{ width: `${(t / tEnd) * 100}%` }}
             transition={{ duration: 0.05 }}
           />
@@ -515,18 +599,18 @@ export default function TirosSimulator() {
       </div>
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="app-caption text-muted-foreground">
+        <div className="text-xs text-muted-foreground italic">
           ↑ Usa los controles flotantes sobre la escena para iniciar la simulación
         </div>
-        <div className="app-caption font-mono tabular-nums bg-secondary px-3 py-2 rounded-xl text-foreground">
-          v₀ₓ = <span className="text-sky-700 font-semibold">{v0x.toFixed(1)}</span> m/s · v₀ᵧ = <span className="text-rose-700 font-semibold">{v0y.toFixed(1)}</span> m/s · g = <span className="font-semibold">{G}</span> m/s²
+        <div className="text-xs text-muted-foreground font-mono bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 px-3 py-2 rounded-lg">
+          v₀ₓ = <span className="text-sky-600 font-bold">{v0x.toFixed(1)}</span> m/s · v₀ᵧ = <span className="text-rose-600 font-bold">{v0y.toFixed(1)}</span> m/s · g = <span className="text-foreground font-bold">{G}</span> m/s²
         </div>
       </div>
 
       {/* ============ GRAPHS ============ */}
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 app-caption font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider">
             <ArrowUp className="h-3.5 w-3.5" />
             Altura vs Tiempo (parábola)
           </div>
@@ -539,12 +623,12 @@ export default function TirosSimulator() {
             yLabel="altura y (m)"
             xDomain={[0, tEnd]}
             yDomain={[0, YMAX]}
-            markers={[{ x: t, color: "#334155", label: "t" }]}
+            markers={[{ x: t, color: "#f43f5e", label: "t" }]}
             caption="Parábola: sube, llega al ápice, baja"
           />
         </div>
         <div className="space-y-2">
-          <div className="flex items-center gap-1.5 app-caption font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs font-bold text-sky-700 uppercase tracking-wider">
             <ArrowRight className="h-3.5 w-3.5" />
             Alcance vs Tiempo (MRU)
           </div>
@@ -557,7 +641,7 @@ export default function TirosSimulator() {
             yLabel="alcance x (m)"
             xDomain={[0, tEnd]}
             yDomain={[0, XMAX]}
-            markers={[{ x: t, color: "#334155", label: "t" }]}
+            markers={[{ x: t, color: "#f43f5e", label: "t" }]}
             caption="x(t) siempre es línea recta (MRU horizontal)"
           />
         </div>
@@ -574,49 +658,49 @@ export default function TirosSimulator() {
       </div>
 
       {/* ============ EQUATIONS REFERENCE ============ */}
-      <div className="rounded-xl border border-border bg-card p-3">
-        <div className="app-caption uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+      <div className="rounded-xl border border-border bg-gradient-to-r from-emerald-50/50 to-sky-50/50 p-3">
+        <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
           Ecuaciones (componentes)
         </div>
         <div className="grid sm:grid-cols-2 gap-2 text-sm font-mono">
           <div>
             <span className="text-muted-foreground">x(t) =</span>{" "}
-            <span className="font-semibold text-sky-700">v₀ₓ · t</span>
+            <span className="font-bold text-sky-600">v₀ₓ · t</span>
             <span className="text-xs text-muted-foreground ml-2">(MRU)</span>
           </div>
           <div>
             <span className="text-muted-foreground">y(t) =</span>{" "}
-            <span className="font-semibold text-rose-700">h₀ + v₀ᵧ · t − ½ · g · t²</span>
+            <span className="font-bold text-rose-600">h₀ + v₀ᵧ · t − ½ · g · t²</span>
             <span className="text-xs text-muted-foreground ml-2">(MRUV)</span>
           </div>
           <div>
             <span className="text-muted-foreground">vₓ(t) =</span>{" "}
-            <span className="font-semibold text-sky-700">v₀ₓ</span>
+            <span className="font-bold text-sky-600">v₀ₓ</span>
             <span className="text-xs text-muted-foreground ml-2">(constante)</span>
           </div>
           <div>
             <span className="text-muted-foreground">vᵧ(t) =</span>{" "}
-            <span className="font-semibold text-rose-700">v₀ᵧ − g · t</span>
+            <span className="font-bold text-rose-600">v₀ᵧ − g · t</span>
           </div>
         </div>
       </div>
 
       {/* ============ FUN FACTS ============ */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-3">
           <Gauge className="h-4 w-4 text-amber-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-muted-foreground">Rapidez actual</div>
-          <div className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{speed.toFixed(2)} m/s = {(speed * 3.6).toFixed(1)} km/h</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-amber-700">Rapidez actual</div>
+          <div className="text-sm font-bold text-foreground">{speed.toFixed(2)} m/s = {(speed * 3.6).toFixed(1)} km/h</div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="rounded-xl bg-gradient-to-br from-sky-50 to-cyan-50 border border-sky-200 p-3">
           <Maximize2 className="h-4 w-4 text-sky-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-muted-foreground">Alcance máx</div>
-          <div className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{range.toFixed(2)} m</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-sky-700">Alcance máx</div>
+          <div className="text-sm font-bold text-foreground">{range.toFixed(2)} m</div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
+        <div className="rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 p-3">
           <Zap className="h-4 w-4 text-rose-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-muted-foreground">Tiempo vuelo</div>
-          <div className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">{tEnd.toFixed(2)} s</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-rose-700">Tiempo vuelo</div>
+          <div className="text-sm font-bold text-foreground">{tEnd.toFixed(2)} s</div>
         </div>
       </div>
     </div>
