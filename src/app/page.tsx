@@ -33,6 +33,7 @@ const SUBJECTS = [
     bg: "from-emerald-400 via-teal-400 to-cyan-400",
     bgSoft: "bg-emerald-50",
     text: "text-emerald-700",
+    dot: "bg-emerald-500",
     border: "border-emerald-200",
     chip: "bg-emerald-50 text-emerald-700 border-emerald-100",
     hoverBorder: "hover:border-emerald-200",
@@ -49,6 +50,7 @@ const SUBJECTS = [
     bg: "from-fuchsia-400 via-pink-400 to-rose-400",
     bgSoft: "bg-fuchsia-50",
     text: "text-fuchsia-700",
+    dot: "bg-fuchsia-500",
     border: "border-fuchsia-200",
     chip: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100",
     hoverBorder: "hover:border-fuchsia-200",
@@ -65,6 +67,7 @@ const SUBJECTS = [
     bg: "from-amber-400 via-orange-400 to-rose-400",
     bgSoft: "bg-amber-50",
     text: "text-amber-700",
+    dot: "bg-amber-500",
     border: "border-amber-200",
     chip: "bg-amber-50 text-amber-700 border-amber-100",
     hoverBorder: "hover:border-amber-200",
@@ -76,10 +79,10 @@ const SUBJECTS = [
 ];
 
 const STATS = [
-  { value: "3", label: "Materias", sub: "Física · Química · Inglés", icon: Layers, c: "from-emerald-400 to-teal-500" },
-  { value: "10", label: "Temas", sub: "Cada uno con falla + sim + ejemplo", icon: BookOpen, c: "from-fuchsia-400 to-pink-500" },
-  { value: "10", label: "Simuladores", sub: "Euler-Cromer · IUPAC real · Moles", icon: Microscope, c: "from-amber-400 to-orange-500" },
-  { value: "82", label: "Ejercicios", sub: "Bancos + reacciones + transformaciones", icon: Target, c: "from-rose-400 to-pink-500" },
+  { value: "3", label: "Materias", sub: "Física · Química · Inglés", icon: Layers, tint: "text-emerald-300", aura: "bg-emerald-400/10" },
+  { value: "10", label: "Temas", sub: "Cada uno con falla + sim + ejemplo", icon: BookOpen, tint: "text-fuchsia-300", aura: "bg-fuchsia-400/10" },
+  { value: "10", label: "Simuladores", sub: "Euler-Cromer · IUPAC real · Moles", icon: Microscope, tint: "text-amber-300", aura: "bg-amber-400/10" },
+  { value: "82", label: "Ejercicios", sub: "Bancos + reacciones + transformaciones", icon: Target, tint: "text-rose-300", aura: "bg-rose-400/10" },
 ];
 
 const TOPICS = [
@@ -683,114 +686,152 @@ export default function Home() {
         </div>
       </section>
 
-      {/* STATS — tarjeta oscura contenida */}
-      <section className="py-4 sm:py-6">
+      {/* STATS — panel Liquid Glass oscuro */}
+      <section id="plataforma" className="relative scroll-mt-24 py-4 sm:py-6">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-foreground px-6 py-12 text-background sm:px-10 sm:py-14">
-            <div className="absolute inset-0 grid-pattern-light opacity-40" aria-hidden="true" />
-            <div className="pointer-events-none absolute -top-24 left-1/4 h-64 w-64 rounded-full bg-fuchsia-500/25 blur-3xl" aria-hidden="true" />
-            <div className="pointer-events-none absolute -bottom-28 right-1/5 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl" aria-hidden="true" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" aria-hidden="true" />
-
-            <div className="relative mb-10 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-background/50">
-                  La plataforma en números
-                </div>
-                <h2 className="mt-2 text-[clamp(1.4rem,2.6vw,1.875rem)] font-bold tracking-tight">
-                  Todo listo para practicar hoy
-                </h2>
-              </div>
-              <Link
-                href="/progreso"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold backdrop-blur transition-colors hover:bg-white/10"
-              >
-                Ver mi progreso <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17171a]/95 text-white shadow-[0_32px_80px_-32px_rgba(23,23,26,0.6)] backdrop-blur-xl sm:rounded-[2.5rem]"
+          >
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+              <div className="absolute -top-32 left-[8%] h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[100px]" />
+              <div className="absolute -bottom-40 right-[6%] h-80 w-80 rounded-full bg-emerald-400/15 blur-[100px]" />
+              <div className="absolute inset-0 grid-pattern-light opacity-[0.16]" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
             </div>
 
-            <div className="relative grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              {STATS.map((s, i) => (
-                <motion.div
-                  key={s.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  className="group rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10"
-                >
-                  <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${s.c} shadow-lg transition-transform duration-300 group-hover:scale-110`}>
-                    <s.icon className="h-5 w-5 text-white" />
+            <div className="relative p-6 sm:p-9 lg:p-10">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-white/50">
+                    <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.9)]" />
+                    La plataforma en números
                   </div>
-                  <div className="mt-3 text-4xl font-bold tracking-tight">{s.value}</div>
-                  <div className="mt-1 text-sm font-semibold">{s.label}</div>
-                  <div className="mt-0.5 text-xs opacity-60">{s.sub}</div>
-                </motion.div>
-              ))}
+                  <h2 className="mt-3 text-[clamp(1.5rem,2.5vw,2rem)] font-semibold tracking-[-0.025em] text-white">
+                    Todo listo para practicar hoy
+                  </h2>
+                </div>
+                <Link
+                  href="/progreso"
+                  className="group inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-4 py-2.5 text-[13px] font-semibold text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-md transition-colors hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98]"
+                >
+                  Ver mi progreso
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-10 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-0">
+                {STATS.map((s, i) => (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 + i * 0.07, duration: 0.4 }}
+                    className={`relative lg:px-7 ${i > 0 ? "lg:border-l lg:border-white/10" : ""} ${
+                      i === 0 ? "lg:pl-0" : ""
+                    } ${i === STATS.length - 1 ? "lg:pr-0" : ""}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/10 ${s.aura} ${s.tint} shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]`}>
+                        <s.icon className="h-[18px] w-[18px]" />
+                      </span>
+                      <span className="text-[13px] font-semibold text-white/90">{s.label}</span>
+                    </div>
+                    <div className="mt-4 text-[clamp(2.75rem,4.2vw,3.5rem)] font-semibold leading-none tracking-[-0.05em] tabular-nums text-white">
+                      {s.value}
+                    </div>
+                    <div className="mt-2.5 max-w-[15rem] text-[12px] leading-relaxed text-white/55">{s.sub}</div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* TOPICS GRID */}
-      <section className="py-[clamp(3.5rem,7vw,6rem)]">
+      {/* TOPICS — lista agrupada estilo iOS/macOS */}
+      <section id="temas" className="relative scroll-mt-24 py-[clamp(3.5rem,7vw,6rem)]">
+        <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+          <div className="absolute left-[8%] top-24 h-72 w-72 rounded-full bg-fuchsia-200/30 blur-[100px]" />
+          <div className="absolute bottom-10 right-[10%] h-80 w-80 rounded-full bg-emerald-200/25 blur-[110px]" />
+        </div>
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
-          <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Descubrir temas
-            </span>
-            <h2 className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
-              Explora los{" "}
-              <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-                10 temas
-              </span>{" "}
-              de la plataforma
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Cada uno con su secuencia completa: falla productiva, simulador interactivo y ejemplo resuelto.
-              Haz clic en cualquier tema para abrir su página.
-            </p>
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white/70 px-3 py-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground shadow-[0_1px_2px_rgba(24,24,27,0.04)] backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                Descubrir temas
+              </span>
+              <h2 className="mt-4 text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold tracking-[-0.035em] text-foreground">
+                Explora los <span className="text-fuchsia-600">10 temas</span> de la plataforma
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                Cada uno con su secuencia completa: falla productiva, simulador interactivo y ejemplo resuelto.
+                Haz clic en cualquier tema para abrir su página.
+              </p>
+            </div>
+            <div className="hidden items-center gap-2 rounded-full border border-black/[0.06] bg-white/70 px-3.5 py-2 text-[12px] font-medium text-muted-foreground shadow-[0_1px_2px_rgba(24,24,27,0.04)] backdrop-blur-md md:inline-flex">
+              <Layers className="h-3.5 w-3.5 text-fuchsia-500" />
+              10 temas · 3 materias
+            </div>
           </div>
 
-          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {TOPICS.map((t, i) => {
-              const s = subjectOf(t.subject);
-              return (
-                <motion.div
-                  key={t.n}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.25, delay: (i % 6) * 0.05 }}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11"
+          >
+            <div className="grid min-w-0 md:grid-cols-2">
+              {[0, 1].map((col) => (
+                <div
+                  key={col}
+                  className={`min-w-0 ${col === 1 ? "border-t border-black/[0.06] md:border-l md:border-t-0" : ""}`}
                 >
-                  <Link
-                    href={t.href}
-                    className={`group relative block overflow-hidden rounded-2xl border border-border bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/[0.05] ${s.hoverBorder}`}
-                  >
-                    <div className={`absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r ${s.bg} transition-transform duration-500 group-hover:scale-x-100`} />
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-xs font-mono font-semibold text-muted-foreground/60">{t.n}</span>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${s.bgSoft} ${s.text} ${s.border}`}>
-                        {s.name}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 text-lg font-bold leading-tight text-foreground">{t.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{t.desc}</p>
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className={`inline-flex items-center gap-1 text-xs font-semibold ${s.text}`}>
-                        <BookOpen className="h-3 w-3" />
-                        Abrir página
-                      </span>
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-all duration-300 group-hover:border-transparent group-hover:bg-gradient-to-br group-hover:from-fuchsia-500 group-hover:to-pink-500 group-hover:text-white">
-                        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-px" />
-                      </span>
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </div>
+                  {TOPICS.slice(col * 5, col * 5 + 5).map((t, idx) => {
+                    const s = subjectOf(t.subject);
+                    return (
+                      <Link
+                        key={t.n}
+                        href={t.href}
+                        className="group relative flex min-w-0 items-center gap-3 px-3.5 py-4 transition-colors hover:bg-white/80 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-500/40 sm:gap-4 sm:px-5"
+                      >
+                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border font-mono text-[11px] font-semibold tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-11 sm:w-11 sm:rounded-[13px] ${s.bgSoft} ${s.border} ${s.text}`}>
+                          {t.n}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[14.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[15px]">
+                            {t.name}
+                          </span>
+                          <span className="mt-0.5 block text-pretty text-[12px] leading-snug text-muted-foreground sm:text-[12.5px]">
+                            {t.desc}
+                          </span>
+                          <span className={`mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.13em] ${s.text}`}>
+                            <span className={`h-1 w-1 rounded-full ${s.dot}`} />
+                            {s.name}
+                          </span>
+                        </span>
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/[0.06] bg-white/60 text-muted-foreground shadow-[0_1px_2px_rgba(24,24,27,0.03)] transition-all duration-300 group-hover:border-transparent group-hover:bg-foreground group-hover:text-white">
+                          <ChevronRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-px" />
+                        </span>
+                        {idx < 4 && (
+                          <span
+                            className="pointer-events-none absolute inset-x-3.5 bottom-0 h-px bg-black/[0.05] sm:inset-x-5"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </section>
 
