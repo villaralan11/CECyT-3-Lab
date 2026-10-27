@@ -30,10 +30,10 @@ export function Slider({
   description?: string;
 }) {
   const colorMap = {
-    fuchsia: { accent: "accent-fuchsia-500", text: "text-fuchsia-700", track: "bg-fuchsia-500" },
-    emerald: { accent: "accent-emerald-500", text: "text-emerald-700", track: "bg-emerald-500" },
-    amber: { accent: "accent-amber-500", text: "text-amber-700", track: "bg-amber-500" },
-    rose: { accent: "accent-rose-500", text: "text-rose-700", track: "bg-rose-500" },
+    fuchsia: { accent: "accent-fuchsia-500", text: "text-fuchsia-600", track: "bg-fuchsia-500" },
+    emerald: { accent: "accent-emerald-500", text: "text-emerald-600", track: "bg-emerald-500" },
+    amber: { accent: "accent-amber-500", text: "text-amber-600", track: "bg-amber-500" },
+    rose: { accent: "accent-rose-500", text: "text-rose-600", track: "bg-rose-500" },
   };
   const c = colorMap[color];
   const pct = ((value - min) / (max - min)) * 100;
@@ -43,9 +43,9 @@ export function Slider({
       <div className="flex items-center justify-between text-xs font-semibold">
         <div className="flex flex-col">
           <span className="text-muted-foreground">{label}</span>
-          {description && <span className="app-caption font-normal text-muted-foreground">{description}</span>}
+          {description && <span className="text-[10px] text-muted-foreground/70 font-normal">{description}</span>}
         </div>
-        <span className={cn("font-mono app-headline", c.text)}>
+        <span className={cn("font-mono font-bold text-base", c.text)}>
           {value.toFixed(step < 1 ? 2 : 0)}
           <span className="text-xs ml-1 text-muted-foreground font-normal">{unit}</span>
         </span>
@@ -58,7 +58,6 @@ export function Slider({
           step={step}
           value={value}
           disabled={disabled}
-          aria-label={label + (unit ? ` (${unit})` : "")}
           onChange={(e) => onChange(parseFloat(e.target.value))}
           className={cn("relative w-full h-2 cursor-pointer appearance-none rounded-full bg-secondary", c.accent, disabled && "cursor-not-allowed")}
           style={{
@@ -66,7 +65,7 @@ export function Slider({
           }}
         />
       </div>
-      <div className="mt-1 flex justify-between app-caption text-muted-foreground font-mono">
+      <div className="mt-1 flex justify-between text-[10px] text-muted-foreground/60 font-mono">
         <span>{min}{unit}</span>
         <span>{max}{unit}</span>
       </div>
@@ -94,28 +93,28 @@ export function PlayControls({
       <Button
         size="sm"
         onClick={onToggle}
-        className="h-11 px-4 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:from-fuchsia-600 hover:to-pink-600 text-white shadow-md border-0"
+        className="rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 hover:from-fuchsia-600 hover:to-pink-600 text-white shadow-md border-0"
       >
         {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
         {running ? "Pausar" : "Iniciar"}
       </Button>
       {onStepBack && (
-        <Button size="sm" variant="outline" onClick={onStepBack} className="h-11 w-11 rounded-full border-border p-0" title="Retroceder 0.1 s">
-          <StepBack className="h-4 w-4" />
+        <Button size="sm" variant="outline" onClick={onStepBack} className="rounded-full border-border" title="Retroceder 0.1 s">
+          <StepBack className="h-3.5 w-3.5" />
         </Button>
       )}
       {onStepForward && (
-        <Button size="sm" variant="outline" onClick={onStepForward} className="h-11 w-11 rounded-full border-border p-0" title="Avanzar 0.1 s">
-          <StepForward className="h-4 w-4" />
+        <Button size="sm" variant="outline" onClick={onStepForward} className="rounded-full border-border" title="Avanzar 0.1 s">
+          <StepForward className="h-3.5 w-3.5" />
         </Button>
       )}
       <Button
         size="sm"
         variant="outline"
         onClick={onReset}
-        className="h-11 px-4 rounded-full border-border"
+        className="rounded-full border-border"
       >
-        <RotateCcw className="h-4 w-4" />
+        <RotateCcw className="h-3.5 w-3.5" />
         Reiniciar
       </Button>
     </div>
@@ -311,7 +310,7 @@ export function Graph({
           {series
             .filter((s) => s.label)
             .map((s, i) => (
-              <div key={i} className="flex items-center gap-1.5 app-caption text-muted-foreground">
+              <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <div
                   className="h-2.5 w-4 rounded-sm"
                   style={{
@@ -325,7 +324,7 @@ export function Graph({
         </div>
       )}
       {caption && (
-        <div className="mt-1 text-center app-caption text-muted-foreground">{caption}</div>
+        <div className="mt-1 text-center text-[10px] text-muted-foreground italic">{caption}</div>
       )}
     </div>
   );
@@ -348,23 +347,23 @@ export function Readout({
 }) {
   const cmap = {
     foreground: "text-foreground",
-    fuchsia: "text-fuchsia-700",
-    emerald: "text-emerald-700",
-    amber: "text-amber-700",
-    rose: "text-rose-700",
-    teal: "text-teal-700",
+    fuchsia: "text-fuchsia-600",
+    emerald: "text-emerald-600",
+    amber: "text-amber-600",
+    rose: "text-rose-600",
+    teal: "text-teal-600",
   };
   return (
     <div className="rounded-xl border border-border bg-white px-3 py-2.5 text-center">
-      <div className="app-caption font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
         {label}
       </div>
-      <div className={cn("mt-1 font-mono app-title3", cmap[color])}>
+      <div className={cn("mt-1 font-mono font-bold text-xl", cmap[color])}>
         {typeof value === "number" ? value.toFixed(2) : value}
         {unit && <span className="text-xs text-muted-foreground ml-1 font-normal">{unit}</span>}
       </div>
       {formula && (
-        <div className="mt-0.5 app-caption font-mono text-muted-foreground">{formula}</div>
+        <div className="mt-0.5 text-[9px] text-muted-foreground/70 font-mono">{formula}</div>
       )}
     </div>
   );
@@ -383,21 +382,26 @@ export function SimHeader({
   badge?: string;
   color?: "fuchsia" | "emerald" | "amber";
 }) {
-  const soft = {
-    fuchsia: "bg-fuchsia-50 text-fuchsia-700 ring-1 ring-fuchsia-200",
-    emerald: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-    amber: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+  const cmap = {
+    fuchsia: "from-fuchsia-500 to-pink-500",
+    emerald: "from-emerald-500 to-teal-500",
+    amber: "from-amber-500 to-orange-500",
   };
   return (
-    <header className="pb-5 border-b border-border">
-      {badge && (
-        <span className={cn("inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold", soft[color])}>
-          {badge}
-        </span>
-      )}
-      <h1 className={cn("app-large text-foreground", badge && "mt-3")}>{title}</h1>
-      <p className="mt-2 app-subhead text-muted-foreground">{description}</p>
-    </header>
+    <div className="flex items-start gap-3 pb-4 border-b border-border">
+      <div className={cn("h-9 w-1.5 rounded-full bg-gradient-to-b flex-shrink-0 mt-1", cmap[color])} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xl font-bold text-foreground leading-tight">{title}</h2>
+          {badge && (
+            <span className="inline-flex items-center rounded-full bg-secondary text-muted-foreground px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+              {badge}
+            </span>
+          )}
+        </div>
+        <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -421,12 +425,12 @@ export function Insight({
     rose: "bg-rose-50 border-rose-200 text-rose-900",
   };
   return (
-    <div className={cn("app-callout rounded-xl border p-3.5", cmap[color])}>
-      <div className="flex items-center gap-1.5 font-semibold mb-1">
+    <div className={cn("rounded-xl border p-3.5 text-sm", cmap[color])}>
+      <div className="flex items-center gap-1.5 font-bold mb-1">
         {icon}
         {title}
       </div>
-      <div>{children}</div>
+      <div className="leading-relaxed">{children}</div>
     </div>
   );
 }

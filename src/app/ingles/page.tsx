@@ -109,7 +109,7 @@ export default function InglesPage() {
                 ))}
               </ul>
               <div className="mt-4 flex items-center justify-between pt-3 border-t border-border/40">
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-600">
                   <Sparkles className="h-3 w-3" />
                   Abrir trainer
                 </span>

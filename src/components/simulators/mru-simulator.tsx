@@ -180,7 +180,7 @@ export default function MRUSimulator() {
             const px = 20 + (i / 6) * 560;
             return (
               <div key={i} className="absolute flex flex-col items-center" style={{ left: `${((px - 20) / 560) * 100}%`, transform: "translateX(-50%)" }}>
-                                <div className="app-caption font-bold text-emerald-900/70 font-mono">{val.toFixed(0)}m</div>
+                <div className="text-[9px] font-bold text-emerald-900/70 font-mono">{val.toFixed(0)}m</div>
                 <div className="h-3 w-px bg-emerald-900/30" />
               </div>
             );
@@ -286,44 +286,44 @@ export default function MRUSimulator() {
         </svg>
 
         {/* Overlay info card */}
-        <div className="app-glass absolute top-3 left-3 rounded-xl border border-white/60 px-3 py-2 shadow-lg">
-          <div className="app-caption uppercase tracking-wider font-semibold text-emerald-700">Tiempo</div>
-          <div className="font-mono app-title3 text-foreground">{t.toFixed(2)}s</div>
+        <div className="absolute top-3 left-3 rounded-xl bg-white/85 backdrop-blur-md border border-white/60 px-3 py-2 shadow-lg">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Tiempo</div>
+          <div className="font-mono font-bold text-lg text-foreground">{t.toFixed(2)}s</div>
         </div>
-        <div className="app-glass absolute top-3 right-3 rounded-xl border border-white/60 px-3 py-2 shadow-lg">
-          <div className="app-caption uppercase tracking-wider font-semibold text-emerald-700">Posición</div>
-          <div className="font-mono app-title3 text-emerald-600">{x.toFixed(2)}m</div>
+        <div className="absolute top-3 right-3 rounded-xl bg-white/85 backdrop-blur-md border border-white/60 px-3 py-2 shadow-lg">
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Posición</div>
+          <div className="font-mono font-bold text-lg text-emerald-600">{x.toFixed(2)}m</div>
         </div>
 
         {/* Floating play controls overlay (bottom-center, like a video player) */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-full bg-black/55 backdrop-blur-md border border-white/20 px-2 py-1.5 shadow-2xl">
           <button
             onClick={handleToggle}
-            className="inline-flex h-11 items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-5 text-sm font-semibold text-white shadow-md hover:scale-105 transition-transform"
+            className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-md hover:scale-105 transition-transform"
           >
-            {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+            {running ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5 ml-0.5" />}
             {running ? "Pausar" : "Iniciar"}
           </button>
           <button
             onClick={stepBack}
-            className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/90 hover:bg-white/15 transition-colors"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors"
             title="Retroceder 0.1 s"
           >
-            <StepBack className="h-4 w-4" />
+            <StepBack className="h-3 w-3" />
           </button>
           <button
             onClick={stepFwd}
-            className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/90 hover:bg-white/15 transition-colors"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors"
             title="Avanzar 0.1 s"
           >
-            <StepForward className="h-4 w-4" />
+            <StepForward className="h-3 w-3" />
           </button>
           <button
             onClick={reset}
-            className="inline-flex items-center justify-center h-11 w-11 rounded-full text-white/90 hover:bg-white/15 transition-colors"
+            className="inline-flex items-center justify-center h-7 w-7 rounded-full text-white/90 hover:bg-white/15 transition-colors"
             title="Reiniciar"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-3 w-3" />
           </button>
         </div>
 
@@ -413,17 +413,17 @@ export default function MRUSimulator() {
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 p-3">
           <Gauge className="h-4 w-4 text-emerald-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-emerald-700">Velocidad</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-emerald-700">Velocidad</div>
           <div className="text-sm font-bold text-foreground">{v.toFixed(1)} m/s = {(v * 3.6).toFixed(1)} km/h</div>
         </div>
         <div className="rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 p-3">
           <MapPin className="h-4 w-4 text-amber-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-amber-700">Recorrido</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-amber-700">Recorrido</div>
           <div className="text-sm font-bold text-foreground">{distance.toFixed(2)} m en {t.toFixed(2)} s</div>
         </div>
         <div className="rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200 p-3">
           <Flag className="h-4 w-4 text-rose-600" />
-          <div className="mt-1 app-caption uppercase tracking-wider font-semibold text-rose-700">Restante</div>
+          <div className="mt-1 text-[10px] uppercase tracking-wider font-semibold text-rose-700">Restante</div>
           <div className="text-sm font-bold text-foreground">{Math.max(0, TRACK_LEN - x).toFixed(2)} m</div>
         </div>
       </div>

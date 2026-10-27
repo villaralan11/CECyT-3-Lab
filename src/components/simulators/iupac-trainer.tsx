@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import {
   ArrowRightLeft,
   CheckCircle2,
@@ -16,38 +15,6 @@ import {
 import { SimHeader, Insight } from "./shared";
 import { MolViewer, SDFS } from "@/components/chemistry/mol-viewer";
 import { useProgress } from "@/hooks/use-progress";
-
-// PRNG determinista (mulberry32): igual resultado en servidor y cliente,
-// evita el error de hidratación que tenía Math.random() en el memo.
-function seededRandom(seed: number) {
-  let t = seed >>> 0;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashSeed(s: string) {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-// Barajado Fisher–Yates con el PRNG sembrado (uniforme, a diferencia de sort(random)).
-function seededShuffle<T>(arr: T[], rnd: () => number): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 
 type CompoundType = "oxido" | "hidroxido" | "acido" | "sal" | "alcano" | "alqueno" | "alcohol" | "cetona" | "acido_org";
 
@@ -137,11 +104,10 @@ export default function IUPACTrainer() {
     const others = COMPOUNDS.filter((c) => TYPE_META[c.type].group !== TYPE_META[current.type].group);
 
     const candidates = [...sameType, ...sameGroup, ...others].filter((c) => c.name !== current.name);
-    // Dedupe and shuffle (determinista por pregunta → sin mismatch de hidratación)
+    // Dedupe and shuffle
     const unique = Array.from(new Set(candidates.map((c) => c.name))).map((n) => candidates.find((c) => c.name === n)!);
-    const rnd = seededRandom(hashSeed(current.name) ^ (idx * 2654435761));
-    const shuffled = seededShuffle(unique, rnd).slice(0, 3);
-    const opts = seededShuffle([...shuffled, current], rnd);
+    const shuffled = [...unique].sort(() => Math.random() - 0.5).slice(0, 3);
+    const opts = [...shuffled, current].sort(() => Math.random() - 0.5);
     return opts;
   }, [current, idx]);
 
@@ -313,7 +279,7 @@ export default function IUPACTrainer() {
               ) : showWrong ? (
                 <XCircle className="h-5 w-5 text-rose-500 flex-shrink-0" />
               ) : (
-                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground">
+                <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">
                   {String.fromCharCode(65 + i)}
                 </div>
               )}
@@ -329,7 +295,7 @@ export default function IUPACTrainer() {
       <div className="flex items-center gap-3 flex-wrap">
         <button
           onClick={() => setShowHint((v) => !v)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-fuchsia-700 hover:text-fuchsia-800 rounded-full bg-fuchsia-50 px-3 py-1.5 border border-fuchsia-200"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-fuchsia-600 hover:text-fuchsia-700 rounded-full bg-fuchsia-50 px-3 py-1.5 border border-fuchsia-200"
         >
           <Lightbulb className="h-3.5 w-3.5" />
           {showHint ? "Ocultar pista" : "Ver pista"}
@@ -388,7 +354,7 @@ export default function IUPACTrainer() {
           <RefreshCw className="h-3 w-3" />
           Reiniciar marcador
         </button>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[10px] text-muted-foreground/70">
           {pool.length} compuestos en el banco
         </span>
       </div>

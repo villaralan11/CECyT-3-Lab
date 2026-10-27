@@ -28,44 +28,34 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Esc cierra el menú móvil (navegación por teclado)
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
-
   // Helper to close menu (used by mobile link clicks)
   const handleMobileNav = () => setOpen(false);
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b transition-colors duration-300 ${
+      className={`sticky z-50 transition-all duration-300 ${
         scrolled
-          ? "border-border/60 bg-background/70 module-blur"
-          : "border-transparent bg-transparent"
+          ? "top-3 mx-3 sm:mx-4 lg:mx-6 rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-lg shadow-black/[0.06]"
+          : "top-0 border border-transparent bg-transparent"
       }`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-14 items-center justify-between">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group" onClick={handleMobileNav}>
-            <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={36} height={36} className="h-9 w-9 rounded-xl object-cover shadow-sm ring-1 ring-border bg-white group-hover:scale-105 transition-transform" />
+            <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-border bg-white group-hover:scale-105 transition-transform" />
             <div className="leading-tight">
               <div className="text-sm font-bold tracking-tight text-foreground">
                 CECyT No. 3
               </div>
-              <div className="app-caption uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
                 Lab · IPN
               </div>
             </div>
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-0.5">
+          <nav className="hidden lg:flex items-center gap-1">
             {LINKS.map((l) => {
               const active =
                 l.href === "/"
@@ -75,7 +65,7 @@ export function Navbar() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  className={`relative px-3.5 py-2 text-[13px] font-medium rounded-lg transition-colors ${
+                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     active
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
@@ -98,7 +88,7 @@ export function Navbar() {
           <div className="hidden lg:flex items-center gap-2">
             <Link
               href="/fisica"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1.5 text-[13px] font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:scale-105 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:scale-105 transition-all"
             >
               <Rocket className="h-4 w-4" />
               Explorar
