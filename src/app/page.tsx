@@ -348,11 +348,40 @@ function MiniReto() {
   );
 }
 
+function SubjectMarquee({ className = "" }: { className?: string }) {
+  return (
+    <div className={`bg-secondary/50 border-y border-border/60 py-3.5 overflow-hidden marquee-mask ${className}`}>
+      <div className="flex gap-8 animate-marquee whitespace-nowrap w-max">
+        {[...Array(2)].map((_, k) => (
+          <div key={k} className="flex gap-8 items-center">
+            {[
+              { t: "Física", i: Atom, c: "text-emerald-600" },
+              { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
+              { t: "Inglés", i: Languages, c: "text-amber-600" },
+              { t: "Cinemática", i: Zap, c: "text-emerald-600" },
+              { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
+              { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
+              { t: "Reported speech", i: Languages, c: "text-amber-600" },
+              { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
+            ].map((it, i) => (
+              <div key={i} className="flex items-center gap-2 text-foreground/60">
+                <it.i className={`h-4 w-4 ${it.c}`} />
+                <span className="font-semibold text-sm">{it.t}</span>
+                <span className="ml-6 h-1 w-1 rounded-full bg-border" aria-hidden="true" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="relative -mt-16 overflow-hidden bg-gradient-to-b from-fuchsia-100/90 via-rose-50/40 to-transparent pb-16 pt-[calc(4rem_+_clamp(1.25rem,2.5vw,2.5rem))] sm:pb-20 lg:flex lg:min-h-dvh lg:flex-col lg:pb-0">
+      <section className="relative -mt-[4.125rem] overflow-hidden bg-gradient-to-b from-fuchsia-100/90 via-rose-50/40 to-transparent pb-16 pt-[calc(4rem_+_clamp(1.25rem,2.5vw,2.5rem))] sm:pb-20 lg:flex lg:min-h-dvh lg:flex-col lg:pb-0">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-16 -left-24 h-[24rem] w-[24rem] rounded-full bg-fuchsia-200/40 blur-3xl blob-float" />
           <div className="absolute top-20 -right-24 h-[26rem] w-[26rem] rounded-full bg-amber-200/35 blur-3xl blob-float" style={{ animationDelay: "4s" }} />
@@ -362,12 +391,13 @@ export default function Home() {
 
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem] lg:flex lg:flex-1 lg:flex-col lg:justify-center">
           <div className="grid w-full lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 text-center lg:text-left">
+            <div className="min-w-0 max-md:flex max-md:min-h-[calc(100dvh-5.25rem)] max-md:flex-col lg:col-span-7 text-center lg:text-left">
+              <div className="max-md:flex max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2.5 rounded-full border border-border bg-white/80 px-4 py-1.5 text-xs font-semibold text-foreground/80 shadow-sm backdrop-blur"
+                className="hero-compact-hide inline-flex items-center gap-2.5 rounded-full border border-border bg-white/80 px-4 py-1.5 text-xs font-semibold text-foreground/80 shadow-sm backdrop-blur"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75 animate-soft-ping" />
@@ -380,7 +410,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.05 }}
-                className="mt-5 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground"
+                className="hero-compact-title mt-4 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground sm:mt-5 max-[359px]:text-[2.5rem]"
               >
                 <span className="block">Falla.</span>
                 <span className="block bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent animated-gradient">
@@ -419,7 +449,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.15 }}
-                className="mt-6 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed"
+                className="mt-5 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed sm:mt-6"
               >
                 Laboratorio virtual de{" "}
                 <Link href="/fisica" className="text-emerald-600 font-semibold hover:underline">Física</Link>,{" "}
@@ -433,18 +463,18 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.25 }}
-                className="mt-8 flex flex-wrap gap-3 justify-center lg:justify-start"
+                className="mt-6 flex flex-wrap gap-2 justify-center sm:mt-8 sm:gap-3 lg:justify-start"
               >
                 <Link
                   href="/fisica"
-                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition-all hover:-translate-y-px hover:shadow-xl hover:shadow-fuchsia-500/40 active:translate-y-0 active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition-all hover:-translate-y-px hover:shadow-xl hover:shadow-fuchsia-500/40 active:translate-y-0 active:scale-95 sm:px-6 sm:py-3 sm:text-sm max-[359px]:px-2.5 max-[359px]:text-xs"
                 >
                   <Compass className="h-4 w-4" />
                   Explorar Módulos
                 </Link>
                 <Link
                   href="/retos"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-6 py-3 text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-px hover:border-fuchsia-200 hover:bg-fuchsia-50/40 active:translate-y-0 active:scale-95"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2.5 text-[13px] font-semibold text-foreground shadow-sm transition-all hover:-translate-y-px hover:border-fuchsia-200 hover:bg-fuchsia-50/40 active:translate-y-0 active:scale-95 sm:px-6 sm:py-3 sm:text-sm max-[359px]:px-2.5 max-[359px]:text-xs"
                 >
                   <Zap className="h-4 w-4 text-fuchsia-500" />
                   Probar un reto
@@ -455,7 +485,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="mt-10 flex flex-wrap items-center gap-5 justify-center lg:justify-start"
+                className="hero-compact-hide mt-7 flex flex-wrap items-center gap-5 justify-center sm:mt-10 lg:justify-start"
               >
                 <div className="flex -space-x-2.5">
                   {[
@@ -477,6 +507,8 @@ export default function Home() {
                   </div>
                 </div>
               </motion.div>
+              </div>
+              <SubjectMarquee className="hero-compact-hide md:hidden -mx-4 sm:-mx-6 max-[359px]:hidden" />
             </div>
 
             {/* Right visual — tarjetas inclinadas */}
@@ -579,31 +611,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Marquee */}
-        <div className="mt-[clamp(2rem,4vw,3.5rem)] bg-secondary/50 border-y border-border/60 py-3.5 overflow-hidden marquee-mask lg:mt-auto">
-          <div className="flex gap-8 animate-marquee whitespace-nowrap w-max">
-            {[...Array(2)].map((_, k) => (
-              <div key={k} className="flex gap-8 items-center">
-                {[
-                  { t: "Física", i: Atom, c: "text-emerald-600" },
-                  { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
-                  { t: "Inglés", i: Languages, c: "text-amber-600" },
-                  { t: "Cinemática", i: Zap, c: "text-emerald-600" },
-                  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
-                  { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
-                  { t: "Reported speech", i: Languages, c: "text-amber-600" },
-                  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
-                ].map((it, i) => (
-                  <div key={i} className="flex items-center gap-2 text-foreground/60">
-                    <it.i className={`h-4 w-4 ${it.c}`} />
-                    <span className="font-semibold text-sm">{it.t}</span>
-                    <span className="ml-6 h-1 w-1 rounded-full bg-border" aria-hidden="true" />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Marquee (md+) — en móvil vive al fondo del primer viewport */}
+        <SubjectMarquee className="mt-[clamp(2rem,4vw,3.5rem)] max-md:hidden lg:mt-auto" />
       </section>
 
       {/* METHOD / SUBJECTS */}
