@@ -361,19 +361,6 @@ export default function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid items-center gap-12 lg:grid-cols-12">
             <div className="lg:col-span-7 text-center lg:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-fuchsia-700 shadow-sm"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75 animate-soft-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500" />
-                </span>
-                Prácticas Activas · Nuevo
-              </motion.div>
-
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -535,7 +522,6 @@ export default function Home() {
                   <div key={i} className="flex items-center gap-2 text-foreground/70">
                     <it.i className={`h-4 w-4 ${it.c}`} />
                     <span className="font-semibold text-sm">{it.t}</span>
-                    <span className="text-muted-foreground/40">◆</span>
                   </div>
                 ))}
               </div>
