@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://cecyt3-lab.vercel.app"),
   title: "CECyT No. 3 Lab · IPN — Laboratorio virtual de Física, Química e Inglés",
   description:
     "Plataforma educativa interactiva del CECyT No. 3 «Estanislao Ramírez Ruiz» (IPN): simuladores de Física, Química e Inglés con secuencia didáctica basada en evidencia — falla productiva → simulador → ejemplo resuelto.",
@@ -25,6 +26,15 @@ export const metadata: Metadata = {
     "cinemática", "nomenclatura IUPAC", "estequiometría", "laboratorio virtual",
   ],
   authors: [{ name: "Alan Antonio Molina Villar" }],
+  openGraph: {
+    title: "CECyT No. 3 Lab · Física, Química e Inglés",
+    description:
+      "Simuladores, retos y ejemplos resueltos con la secuencia falla productiva → simulador → ejemplo resuelto.",
+    locale: "es_MX",
+    type: "website",
+    siteName: "CECyT No. 3 Lab",
+    images: [{ url: "/cecyt3-logo-full.png" }],
+  },
 };
 
 export default function RootLayout({
