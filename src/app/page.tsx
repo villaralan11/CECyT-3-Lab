@@ -174,7 +174,7 @@ function MiniReto() {
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             Reto exprés
           </span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          <h2 className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
             ¿Puedes con este?{" "}
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
               Respóndelo aquí mismo
@@ -352,7 +352,7 @@ export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="relative -mt-16 overflow-hidden bg-gradient-to-b from-fuchsia-100/90 via-rose-50/40 to-transparent pt-40 pb-16 sm:pt-44 sm:pb-20">
+      <section className="relative -mt-16 overflow-hidden bg-gradient-to-b from-fuchsia-100/90 via-rose-50/40 to-transparent pb-16 pt-[calc(4rem_+_clamp(1.25rem,2.5vw,2.5rem))] sm:pb-20 lg:flex lg:min-h-dvh lg:flex-col lg:pb-0">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-16 -left-24 h-[24rem] w-[24rem] rounded-full bg-fuchsia-200/40 blur-3xl blob-float" />
           <div className="absolute top-20 -right-24 h-[26rem] w-[26rem] rounded-full bg-amber-200/35 blur-3xl blob-float" style={{ animationDelay: "4s" }} />
@@ -360,8 +360,8 @@ export default function Home() {
           <div className="absolute inset-0 grid-pattern opacity-40" />
         </div>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem] lg:flex lg:flex-1 lg:flex-col lg:justify-center">
+          <div className="grid w-full lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-7 text-center lg:text-left">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
@@ -380,7 +380,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.05 }}
-                className="mt-5 text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-foreground"
+                className="mt-5 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground"
               >
                 <span className="block">Falla.</span>
                 <span className="block bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent animated-gradient">
@@ -419,7 +419,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.15 }}
-                className="mt-6 max-w-2xl mx-auto lg:mx-0 text-lg text-muted-foreground leading-relaxed"
+                className="mt-6 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed"
               >
                 Laboratorio virtual de{" "}
                 <Link href="/fisica" className="text-emerald-600 font-semibold hover:underline">Física</Link>,{" "}
@@ -455,7 +455,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="mt-10 flex items-center gap-5 justify-center lg:justify-start"
+                className="mt-10 flex flex-wrap items-center gap-5 justify-center lg:justify-start"
               >
                 <div className="flex -space-x-2.5">
                   {[
@@ -486,9 +486,9 @@ export default function Home() {
               transition={{ duration: 0.7, delay: 0.2 }}
               className="lg:col-span-5 relative"
             >
-              <div className="relative mx-auto max-w-md">
-                <div className="relative h-[420px]">
-                  <Link href="/fisica" className="absolute top-0 left-4 right-4 rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 p-5 shadow-xl shadow-emerald-500/15 ring-1 ring-white/40 rotate-[-2deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine block overflow-hidden">
+              <div className="relative mx-auto w-full max-w-md">
+                <div className="flex flex-col">
+                  <Link href="/fisica" className="relative block w-[92%] self-start rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 p-5 shadow-xl shadow-emerald-500/15 ring-1 ring-white/40 rotate-[-2deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine overflow-hidden">
                     <div className="flex items-center justify-between text-white relative z-10">
                       <div className="flex items-center gap-2.5">
                         <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center ring-1 ring-white/30">
@@ -514,7 +514,7 @@ export default function Home() {
                     </div>
                   </Link>
 
-                  <Link href="/quimica" className="absolute top-32 left-0 right-8 rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-500 p-5 shadow-xl shadow-fuchsia-500/15 ring-1 ring-white/40 rotate-[1.5deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine block overflow-hidden z-10">
+                  <Link href="/quimica" className="relative z-10 mt-[calc(clamp(2.25rem,5vw,3.25rem)*-1)] block w-[88%] self-end rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-500 p-5 shadow-xl shadow-fuchsia-500/15 ring-1 ring-white/40 rotate-[1.5deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine overflow-hidden">
                     <div className="flex items-center justify-between text-white relative z-10">
                       <div className="flex items-center gap-2.5">
                         <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center ring-1 ring-white/30">
@@ -536,7 +536,7 @@ export default function Home() {
                     </div>
                   </Link>
 
-                  <Link href="/ingles" className="absolute top-64 left-8 right-0 rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 shadow-xl shadow-amber-500/15 ring-1 ring-white/40 rotate-[-1deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine block overflow-hidden">
+                  <Link href="/ingles" className="relative z-10 mt-[calc(clamp(1.5rem,4vw,2.5rem)*-1)] block w-[94%] self-end rounded-3xl bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 p-5 shadow-xl shadow-amber-500/15 ring-1 ring-white/40 rotate-[-1deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine overflow-hidden">
                     <div className="flex items-center justify-between text-white relative z-10">
                       <div className="flex items-center gap-2.5">
                         <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center ring-1 ring-white/30">
@@ -580,7 +580,7 @@ export default function Home() {
         </div>
 
         {/* Marquee */}
-        <div className="mt-14 bg-secondary/50 border-y border-border/60 py-3.5 overflow-hidden marquee-mask">
+        <div className="mt-[clamp(2rem,4vw,3.5rem)] bg-secondary/50 border-y border-border/60 py-3.5 overflow-hidden marquee-mask lg:mt-auto">
           <div className="flex gap-8 animate-marquee whitespace-nowrap w-max">
             {[...Array(2)].map((_, k) => (
               <div key={k} className="flex gap-8 items-center">
@@ -607,14 +607,14 @@ export default function Home() {
       </section>
 
       {/* METHOD / SUBJECTS */}
-      <section className="py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-[clamp(3.5rem,7vw,6rem)]">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />
               El método
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            <h2 className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
               Tres materias.{" "}
               <span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">
                 Un mismo método
@@ -676,7 +676,7 @@ export default function Home() {
 
       {/* STATS — tarjeta oscura contenida */}
       <section className="py-4 sm:py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="relative overflow-hidden rounded-[2.5rem] bg-foreground px-6 py-12 text-background sm:px-10 sm:py-14">
             <div className="absolute inset-0 grid-pattern-light opacity-40" aria-hidden="true" />
             <div className="pointer-events-none absolute -top-24 left-1/4 h-64 w-64 rounded-full bg-fuchsia-500/25 blur-3xl" aria-hidden="true" />
@@ -688,7 +688,7 @@ export default function Home() {
                 <div className="text-xs font-semibold uppercase tracking-[0.18em] text-background/50">
                   La plataforma en números
                 </div>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+                <h2 className="mt-2 text-[clamp(1.4rem,2.6vw,1.875rem)] font-bold tracking-tight">
                   Todo listo para practicar hoy
                 </h2>
               </div>
@@ -724,14 +724,14 @@ export default function Home() {
       </section>
 
       {/* TOPICS GRID */}
-      <section className="py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-[clamp(3.5rem,7vw,6rem)]">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Descubrir temas
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+            <h2 className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
               Explora los{" "}
               <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
                 10 temas
@@ -786,15 +786,15 @@ export default function Home() {
       </section>
 
       {/* MINI RETO — adelanto de /retos */}
-      <section className="bg-secondary/50 py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)]">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <MiniReto />
         </div>
       </section>
 
       {/* ACCESOS RÁPIDOS */}
-      <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="py-[clamp(3rem,6vw,6rem)]">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="grid gap-6 md:grid-cols-3">
             <Link href="/laboratorios" className="group relative block overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-200 hover:shadow-xl hover:shadow-fuchsia-500/10">
               <div className="absolute inset-x-0 top-0 h-1 origin-left scale-x-0 bg-gradient-to-r from-fuchsia-400 to-pink-500 transition-transform duration-500 group-hover:scale-x-100" />
