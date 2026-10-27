@@ -350,7 +350,7 @@ function MiniReto() {
 export default function Home() {
   return (
     <>
-      <section className="relative overflow-hidden pt-6 pb-10 sm:pt-11 sm:pb-14">
+      <section className="relative -mt-16 overflow-hidden pt-[5.5rem] pb-10 sm:pt-[6.75rem] sm:pb-14">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-16 -left-24 h-[24rem] w-[24rem] rounded-full bg-fuchsia-200/40 blur-3xl blob-float" />
           <div className="absolute top-20 -right-24 h-[26rem] w-[26rem] rounded-full bg-amber-200/35 blur-3xl blob-float" style={{ animationDelay: "4s" }} />
