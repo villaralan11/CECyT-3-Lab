@@ -380,9 +380,10 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: 0.05 }}
                 className="mt-5 text-5xl font-black tracking-tighter text-foreground sm:text-6xl lg:text-7xl"
               >
-                <span className="block">Aprende haciendo.</span>
+                <span className="block">Falla.</span>
+                <span className="mt-2 block text-muted-foreground">Experimenta.</span>
                 <span className="mt-2 block bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent animated-gradient">
-                  Falla con propósito.
+                  Entiende.
                 </span>
               </motion.h1>
 
