@@ -365,7 +365,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.05 }}
-                className="mt-5 text-5xl font-black tracking-tighter text-foreground sm:text-6xl lg:text-7xl"
+                className="mt-5 text-5xl font-extrabold tracking-tighter text-foreground sm:text-6xl lg:text-7xl"
               >
                 <span className="block">Falla.</span>
                 <span className="mt-2 block text-muted-foreground">Experimenta.</span>
