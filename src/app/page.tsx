@@ -351,26 +351,27 @@ function MiniReto() {
   );
 }
 
+const MARQUEE_ITEMS = [
+  { t: "Física", i: Atom, c: "text-emerald-600" },
+  { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
+  { t: "Inglés", i: Languages, c: "text-amber-600" },
+  { t: "Cinemática", i: Zap, c: "text-emerald-600" },
+  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
+  { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
+  { t: "Reported speech", i: Languages, c: "text-amber-600" },
+  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
+];
+
 function SubjectMarquee({ className = "" }: { className?: string }) {
   return (
-    <div className={`bg-secondary/50 border-y border-border/60 py-3.5 overflow-hidden marquee-mask ${className}`}>
-      <div className="flex gap-8 animate-marquee whitespace-nowrap w-max">
+    <div className={`bg-secondary/40 border-y border-border/50 py-3.5 sm:py-4 overflow-hidden marquee-mask ${className}`}>
+      <div className="flex items-center gap-10 sm:gap-14 animate-marquee motion-reduce:animate-none whitespace-nowrap w-max">
         {[...Array(2)].map((_, k) => (
-          <div key={k} className="flex gap-8 items-center">
-            {[
-              { t: "Física", i: Atom, c: "text-emerald-600" },
-              { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
-              { t: "Inglés", i: Languages, c: "text-amber-600" },
-              { t: "Cinemática", i: Zap, c: "text-emerald-600" },
-              { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
-              { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
-              { t: "Reported speech", i: Languages, c: "text-amber-600" },
-              { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
-            ].map((it, i) => (
-              <div key={i} className="flex items-center gap-2 text-foreground/60">
-                <it.i className={`h-4 w-4 ${it.c}`} />
-                <span className="font-semibold text-sm">{it.t}</span>
-                <span className="ml-6 h-1 w-1 rounded-full bg-border" aria-hidden="true" />
+          <div key={k} className="flex items-center gap-10 sm:gap-14" aria-hidden={k === 1 ? true : undefined}>
+            {MARQUEE_ITEMS.map((it) => (
+              <div key={it.t} className="flex items-center gap-2.5 text-foreground/60">
+                <it.i className={`h-4 w-4 shrink-0 ${it.c}`} />
+                <span className="text-[13px] font-semibold tracking-[-0.01em] sm:text-sm">{it.t}</span>
               </div>
             ))}
           </div>
@@ -392,7 +393,7 @@ export default function Home() {
           <div className="absolute inset-0 grid-pattern opacity-40" />
         </div>
 
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem] lg:flex lg:flex-1 lg:flex-col lg:justify-center">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:px-8 lg:pb-8 2xl:max-w-[88rem]">
           <div className="grid w-full lg:grid-cols-12 gap-12 items-center">
             <div className="min-w-0 max-md:flex max-md:min-h-[calc(100dvh-5.25rem)] max-md:flex-col lg:col-span-7 text-center lg:text-left">
               <div className="max-md:flex max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center">
@@ -484,32 +485,6 @@ export default function Home() {
                 </Link>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="hero-compact-hide mt-7 flex flex-wrap items-center gap-5 justify-center sm:mt-10 lg:justify-start"
-              >
-                <div className="flex -space-x-2.5">
-                  {[
-                    { c: "from-emerald-400 to-teal-500", i: Atom },
-                    { c: "from-fuchsia-400 to-pink-500", i: FlaskConical },
-                    { c: "from-amber-400 to-orange-500", i: Languages },
-                  ].map((it, i) => (
-                    <div key={i} className={`h-10 w-10 rounded-full bg-gradient-to-br ${it.c} ring-2 ring-background flex items-center justify-center shadow-sm`}>
-                      <it.i className="h-4 w-4 text-white" />
-                    </div>
-                  ))}
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-foreground">
-                    10 temas · 3 materias · 82 ejercicios
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Falla productiva → simulador → ejemplo con auto-explicación
-                  </div>
-                </div>
-              </motion.div>
               </div>
               <SubjectMarquee className="hero-compact-hide md:hidden -mx-4 sm:-mx-6 max-[359px]:hidden" />
             </div>
