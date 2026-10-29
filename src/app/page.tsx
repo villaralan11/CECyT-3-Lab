@@ -184,7 +184,7 @@ function MiniReto() {
             </span>
           </h2>
           <p className="mt-3 text-sm text-muted-foreground">
-            Una pregunta real de la sección <Link href="/retos" className="font-semibold text-amber-600 hover:underline">Retos</Link>:
+            Una pregunta real de la sección <Link href="/retos" className="font-semibold text-amber-700 hover:underline">Retos</Link>:
             así se ve el formato: intentas, fallas con propósito y recibes la explicación al instante.
           </p>
         </div>
@@ -352,14 +352,14 @@ function MiniReto() {
 }
 
 const MARQUEE_ITEMS = [
-  { t: "Física", i: Atom, c: "text-emerald-600" },
-  { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
-  { t: "Inglés", i: Languages, c: "text-amber-600" },
-  { t: "Cinemática", i: Zap, c: "text-emerald-600" },
-  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
-  { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
-  { t: "Reported speech", i: Languages, c: "text-amber-600" },
-  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
+  { t: "Física", i: Atom, c: "text-emerald-700" },
+  { t: "Química", i: FlaskConical, c: "text-fuchsia-700" },
+  { t: "Inglés", i: Languages, c: "text-amber-700" },
+  { t: "Cinemática", i: Zap, c: "text-emerald-700" },
+  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-700" },
+  { t: "Estequiometría", i: Target, c: "text-fuchsia-700" },
+  { t: "Reported speech", i: Languages, c: "text-amber-700" },
+  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-700" },
 ];
 
 function SubjectMarquee({ className = "" }: { className?: string }) {
@@ -456,9 +456,9 @@ export default function Home() {
                 className="mt-5 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed sm:mt-6"
               >
                 Laboratorio virtual de{" "}
-                <Link href="/fisica" className="text-emerald-600 font-semibold hover:underline">Física</Link>,{" "}
-                <Link href="/quimica" className="text-fuchsia-600 font-semibold hover:underline">Química</Link> e{" "}
-                <Link href="/ingles" className="text-amber-600 font-semibold hover:underline">Inglés</Link> con la
+                <Link href="/fisica" className="text-emerald-700 font-semibold hover:underline">Física</Link>,{" "}
+                <Link href="/quimica" className="text-fuchsia-700 font-semibold hover:underline">Química</Link> e{" "}
+                <Link href="/ingles" className="text-amber-700 font-semibold hover:underline">Inglés</Link> con la
                 secuencia{" "}
                 <span className="font-semibold text-foreground">falla productiva → simulador → ejemplo resuelto</span>.
               </motion.p>
@@ -840,7 +840,7 @@ export default function Home() {
               </div>
               <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">Retos de 5 minutos</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Quizzes rápidos con feedback pedagógico. Suma puntos y sube de nivel.</p>
-              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-all group-hover:gap-2.5">
+              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition-all group-hover:gap-2.5">
                 Probar un reto <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>
@@ -852,7 +852,7 @@ export default function Home() {
               </div>
               <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">Mi progreso</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Tu bitácora: actividades, ítems resueltos y nivel (Novato → Experto).</p>
-              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition-all group-hover:gap-2.5">
+              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition-all group-hover:gap-2.5">
                 Ver mi avance <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>

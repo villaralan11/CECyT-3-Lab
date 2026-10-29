@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { GraduationCap } from "lucide-react";
 
 export function Footer() {
@@ -14,7 +15,14 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white" />
+              <Image
+                src="/cecyt3-logo-optimized.webp"
+                alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN"
+                width={40}
+                height={40}
+                className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white"
+                priority
+              />
               <div>
                 <div className="text-base font-bold text-background">CECyT No. 3 IPN</div>
                 <div className="text-[10px] uppercase tracking-[0.18em] opacity-70 font-semibold">

@@ -30,10 +30,10 @@ export function Slider({
   description?: string;
 }) {
   const colorMap = {
-    fuchsia: { accent: "accent-fuchsia-500", text: "text-fuchsia-600", track: "bg-fuchsia-500" },
-    emerald: { accent: "accent-emerald-500", text: "text-emerald-600", track: "bg-emerald-500" },
-    amber: { accent: "accent-amber-500", text: "text-amber-600", track: "bg-amber-500" },
-    rose: { accent: "accent-rose-500", text: "text-rose-600", track: "bg-rose-500" },
+    fuchsia: { accent: "accent-fuchsia-500", text: "text-fuchsia-700", track: "bg-fuchsia-500" },
+    emerald: { accent: "accent-emerald-500", text: "text-emerald-700", track: "bg-emerald-500" },
+    amber: { accent: "accent-amber-500", text: "text-amber-700", track: "bg-amber-500" },
+    rose: { accent: "accent-rose-500", text: "text-rose-700", track: "bg-rose-500" },
   };
   const c = colorMap[color];
   const pct = ((value - min) / (max - min)) * 100;
@@ -347,11 +347,11 @@ export function Readout({
 }) {
   const cmap = {
     foreground: "text-foreground",
-    fuchsia: "text-fuchsia-600",
-    emerald: "text-emerald-600",
-    amber: "text-amber-600",
-    rose: "text-rose-600",
-    teal: "text-teal-600",
+    fuchsia: "text-fuchsia-700",
+    emerald: "text-emerald-700",
+    amber: "text-amber-700",
+    rose: "text-rose-700",
+    teal: "text-teal-700",
   };
   return (
     <div className="rounded-xl border border-border bg-white px-3 py-2.5 text-center">

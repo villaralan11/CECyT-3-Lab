@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     locale: "es_MX",
     type: "website",
     siteName: "CECyT No. 3 Lab",
-    images: [{ url: "/cecyt3-logo-full.png" }],
+    images: [{ url: "/cecyt3-logo-full-optimized.webp", width: 1200, height: 630, alt: "CECyT No. 3 Lab" }],
   },
 };
 
@@ -48,6 +48,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es-MX" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cecyt3-lab.vercel.app" />
+      </head>
       <body
         className={`${notoSans.variable} ${notoMono.variable} antialiased bg-background text-foreground`}
       >
