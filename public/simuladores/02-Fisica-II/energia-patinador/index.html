@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Energía del patinador · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-teal">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Energía del patinador</strong><span>Física II · Trabajo y energía</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var G = 9.81;
+  var HMAX = 4;
+  var L = 4;
+
+  var S = {
+    m: 60,
+    h0: 3.2,
+    mu: 0.025,
+    x: 0,
+    v: 0,
+    thermal: 0,
+    running: false,
+    stopped: false,
+    t: 0,
+    rest: 0,
+    side: 1,
+    trail: [],
+    peak: null,
+    showEnergy: true,
+    drag: false
+  };
+
+  var panel = document.getElementById('panel');
+
+  var sSk = Sim.sec(panel, 'Patinador');
+  var mSlider = Sim.slider(sSk, {
+    label: 'Masa del patinador',
+    min: 20, max: 100, step: 5, value: S.m, unit: 'kg', digits: 0,
+    onInput: function (v) {
+      var old = S.m;
+      S.m = v;
+      if (old > 0) S.thermal *= v / old;
+    }
+  });
+  var hSlider = Sim.slider(sSk, {
+    label: 'Altura de partida',
+    min: 0.5, max: 3.9, step: 0.1, value: S.h0, unit: 'm', digits: 1,
+    onInput: function (v) {
+      S.h0 = v;
+      S.side = 1;
+      reset();
+    }
+  });
+  var muSlider = Sim.slider(sSk, {
+    label: 'Fricción de la pista',
+    min: 0, max: 0.2, step: 0.005, value: S.mu, digits: 3,
+    onInput: function (v) { S.mu = v; }
+  });
+  var note = document.createElement('p');
+  note.className = 'note';
+  note.innerHTML = 'Sin fricción la energía mecánica se conserva y el patinador sube siempre a la misma altura.';
+  sSk.appendChild(note);
+
+  var sCtl = Sim.sec(panel, 'Experimento');
+  var tg = Sim.toggle(sCtl, {
+    label: 'Mostrar balance de energía', value: true,
+    onChange: function (v) { S.showEnergy = v; }
+  });
+  var row = Sim.btnrow(sCtl);
+  var btnRun = Sim.button(row, 'Soltar', toggleRun, { primary: true });
+  Sim.button(row, 'Reiniciar', function () { reset(); });
+  var stWrap = document.createElement('div');
+  stWrap.style.marginTop = '10px';
+  var chip = document.createElement('span');
+  chip.className = 'status';
+  chip.textContent = 'Listo';
+  stWrap.appendChild(chip);
+  sCtl.appendChild(stWrap);
+  var dragNote = document.createElement('p');
+  dragNote.className = 'note';
+  dragNote.innerHTML = 'Arrastra al patinador para elegir otra altura de partida.';
+  sCtl.appendChild(dragNote);
+
+  var sLive = Sim.sec(panel, 'Energía y movimiento');
+  var R = Sim.reads(sLive, [
+    ['h', 'Altura'],
+    ['v', 'Rapidez'],
+    ['pe', 'Potencial'],
+    ['ke', 'Cinética'],
+    ['q', 'Fricción'],
+    ['total', 'Total'],
+    ['e0', 'Energía inicial', { wide: true }]
+  ]);
+
+  Sim.help(
+    '<p>El patinador se mueve dentro de una tina en forma de parábola. Su energía se transforma todo el tiempo:</p>' +
+    '<ul><li><b>Ep = m·g·h</b> (potencial, verde)</li><li><b>Ec = ½·m·v²</b> (cinética, azul)</li>' +
+    '<li><b>Q = fricción · distancia</b> (calor, naranja)</li></ul>' +
+    '<p>Sin fricción, <b>Ep + Ec</b> se mantiene constante y el patinador alcanza la misma altura en los dos lados. Con fricción, parte de la energía se convierte en calor y cada subida es menor.</p>' +
+    '<p>Arrastra al patinador hacia arriba o abajo para cambiar la altura inicial, y pulsa <b>Soltar</b>.</p>'
+  );
+
+  /* ---------------------------------------------------------------- estado */
+  function heightAt(x) {
+    var u = x / L;
+    return HMAX * u * u;
+  }
+  function slopeAt(x) {
+    return 2 * HMAX * x / (L * L);
+  }
+  function startX() {
+    return S.side * L * Math.sqrt(Sim.clamp(S.h0 / HMAX, 0, 0.999));
+  }
+
+  function reset() {
+    S.x = startX();
+    S.v = 0;
+    S.thermal = 0;
+    S.running = false;
+    S.stopped = false;
+    S.t = 0;
+    S.rest = 0;
+    S.trail.length = 0;
+    S.peak = null;
+    btnRun.textContent = 'Soltar';
+    chip.className = 'status warn';
+    chip.textContent = 'Listo';
+    paint();
+    v.render();
+  }
+
+  function toggleRun() {
+    if (S.running) {
+      S.running = false;
+      btnRun.textContent = 'Continuar';
+      return;
+    }
+    if (S.stopped) {
+      S.x = startX();
+      S.v = 0;
+      S.thermal = 0;
+      S.stopped = false;
+      S.trail.length = 0;
+      S.peak = null;
+    }
+    S.running = true;
+    S.rest = 0;
+    S.trail.length = 0;
+    btnRun.textContent = 'Pausa';
+    Sim.beep(600, 0.06, 'sine', 0.04);
+    chip.className = 'status ok';
+    chip.textContent = 'Deslizando';
+  }
+
+  function stopByFriction() {
+    S.running = false;
+    S.stopped = true;
+    S.v = 0;
+    btnRun.textContent = 'Otra vez';
+    chip.className = 'status';
+    chip.textContent = 'Se detuvo por la fricción';
+    Sim.beep(300, 0.16, 'triangle', 0.04);
+  }
+
+  function paint() {
+    var h = heightAt(S.x);
+    var pe = S.m * G * h;
+    var ke = 0.5 * S.m * S.v * S.v;
+    var total = pe + ke + S.thermal;
+    var e0 = S.m * G * S.h0;
+    R.set('h', h.toFixed(2) + ' m');
+    R.set('v', Math.abs(S.v).toFixed(2) + ' m/s');
+    R.set('pe', pe.toFixed(0) + ' J');
+    R.set('ke', ke.toFixed(0) + ' J');
+    R.set('q', S.thermal.toFixed(0) + ' J');
+    R.set('total', total.toFixed(0) + ' J');
+    R.set('e0', 'E₀ = ' + e0.toFixed(0) + ' J · se conserva si μ = 0', S.mu < 0.001 ? 'good' : '');
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function geom(w, h) {
+    var margin = w < 560 ? 46 : 78;
+    var leftX = margin;
+    var rightX = w - margin;
+    var bottomY = h - 66;
+    var topY = w < 560 ? 92 : 100;
+    return {
+      leftX: leftX, rightX: rightX, cX: (leftX + rightX) / 2,
+      bottomY: bottomY, topY: topY,
+      sx: (rightX - leftX) / 2 / L,
+      sy: (bottomY - topY) / HMAX
+    };
+  }
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var gm = geom(w, h);
+    function X(x) { return gm.cX + x * gm.sx; }
+    function Y(hh) { return gm.bottomY - hh * gm.sy; }
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#0f1013'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* rejilla de altura */
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (var hm = 1; hm <= HMAX; hm++) {
+      var yy = Y(hm);
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 5]);
+      ctx.beginPath();
+      ctx.moveTo(gm.leftX - 4, yy);
+      ctx.lineTo(gm.rightX + 4, yy);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9, 600);
+      ctx.fillText(hm + ' m', gm.leftX - 8, yy);
+    }
+
+    /* tina */
+    var pts = [];
+    var steps = 90;
+    for (var i = 0; i <= steps; i++) {
+      var u = -1 + 2 * i / steps;
+      var worldX = u * L;
+      pts.push({ x: gm.cX + u * (gm.rightX - gm.leftX) / 2, y: Y(heightAt(worldX)) });
+    }
+    ctx.beginPath();
+    ctx.moveTo(gm.leftX, gm.bottomY);
+    ctx.lineTo(pts[0].x, pts[0].y);
+    for (var j = 1; j < pts.length; j++) ctx.lineTo(pts[j].x, pts[j].y);
+    ctx.lineTo(gm.rightX, gm.bottomY);
+    ctx.closePath();
+    var fill = ctx.createLinearGradient(0, gm.topY, 0, gm.bottomY);
+    if (C.dark) { fill.addColorStop(0, '#202027'); fill.addColorStop(1, '#141418'); }
+    else { fill.addColorStop(0, '#e8ebf2'); fill.addColorStop(1, '#d7dbe6'); }
+    ctx.fillStyle = fill;
+    ctx.fill();
+
+    /* superficie */
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (var k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
+    ctx.strokeStyle = C.teal;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = C.teal;
+    ctx.shadowBlur = 12;
+    ctx.stroke();
+    ctx.restore();
+
+    /* línea de altura inicial */
+    var y0 = Y(S.h0);
+    ctx.strokeStyle = C.green;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(gm.leftX, y0);
+    ctx.lineTo(gm.rightX, y0);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
+    Sim.tag(ctx, 'h₀ = ' + S.h0.toFixed(1) + ' m', gm.leftX + 62, y0 - 13, {
+      size: 9.5, bg: C.glass, color: C.green
+    });
+
+    /* estela */
+    if (S.trail.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = C.teal;
+      ctx.globalAlpha = 0.33;
+      ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (var q = 0; q < S.trail.length; q++) {
+        var tp = S.trail[q];
+        var tx = X(tp.x);
+        var ty = Y(heightAt(tp.x)) - 4;
+        if (q === 0) ctx.moveTo(tx, ty); else ctx.lineTo(tx, ty);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* punto alto */
+    if (S.peak) {
+      var pkX = X(S.peak.x);
+      var pkY = Y(S.peak.h);
+      ctx.fillStyle = C.orange;
+      ctx.beginPath();
+      ctx.arc(pkX, pkY, 4, 0, Sim.TAU);
+      ctx.fill();
+      Sim.tag(ctx, 'subió ' + S.peak.h.toFixed(2) + ' m', pkX, pkY - 18, {
+        size: 9, bg: C.card, color: C.orange
+      });
+    }
+
+    /* patinador */
+    var px = X(S.x);
+    var py = Y(heightAt(S.x));
+    drawSkater(ctx, px, py, Math.atan(slopeAt(S.x)) * -1, Math.abs(S.v));
+
+    /* barra de energía */
+    if (S.showEnergy) drawEnergyBars(ctx, w, h);
+
+    /* etiquetas */
+    Sim.tag(ctx, 'Tina de 4 m de profundidad', 76, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, 'μ = ' + S.mu.toFixed(3), w - 20, 26, {
+      size: 10, bg: C.glass, color: S.mu > 0.001 ? C.orange : C.green, align: 'right'
+    });
+
+    if (S.stopped) {
+      Sim.tag(ctx, 'La fricción disipó toda la energía', w / 2, h - 28, {
+        size: 10.5, bg: C.card, color: C.ink
+      });
+    }
+  }
+
+  function drawSkater(ctx, x, y, rot, speed) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+
+    /* sombra sobre la pista */
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, 19, 3.5, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    /* estela de rapidez */
+    if (speed > 1) {
+      ctx.strokeStyle = C.teal;
+      ctx.globalAlpha = Math.min(0.5, speed / 12);
+      ctx.lineWidth = 1.6;
+      for (var i = 0; i < 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(18 + i * 6, -2 - i * 5);
+        ctx.lineTo(30 + i * 6 + speed * 1.5, -2 - i * 5);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* patineta */
+    ctx.fillStyle = C.ink;
+    Sim.rr(ctx, -19, 1, 38, 4, 2);
+    ctx.fill();
+    ctx.fillStyle = C.orange;
+    Sim.rr(ctx, -16, 1.4, 10, 1.4, 1);
+    ctx.fill();
+    ctx.fillStyle = '#1b1b1e';
+    ctx.beginPath(); ctx.arc(-12, 7, 3.6, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(12, 7, 3.6, 0, Sim.TAU); ctx.fill();
+    ctx.fillStyle = '#8a8a93';
+    ctx.beginPath(); ctx.arc(-12, 7, 1.1, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(12, 7, 1.1, 0, Sim.TAU); ctx.fill();
+
+    /* piernas */
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 3.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-6, -2);
+    ctx.lineTo(-7, -15);
+    ctx.lineTo(-11, -15);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(6, -2);
+    ctx.lineTo(8, -15);
+    ctx.lineTo(12, -15);
+    ctx.stroke();
+
+    /* torso */
+    var body = ctx.createLinearGradient(0, -35, 0, -12);
+    body.addColorStop(0, C.purple);
+    body.addColorStop(1, C.indigo);
+    ctx.strokeStyle = body;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(0, -14);
+    ctx.lineTo(0, -31);
+    ctx.stroke();
+
+    /* brazos */
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-2, -27);
+    ctx.lineTo(-15, -22);
+    ctx.lineTo(-18, -27);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(2, -27);
+    ctx.lineTo(15, -30);
+    ctx.lineTo(19, -25);
+    ctx.stroke();
+
+    /* cabeza y casco */
+    ctx.fillStyle = '#e8b98e';
+    ctx.beginPath();
+    ctx.arc(0, -38, 6, 0, Sim.TAU);
+    ctx.fill();
+    ctx.fillStyle = C.orange;
+    ctx.beginPath();
+    ctx.arc(0, -39, 6.4, Math.PI, Sim.TAU);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(2.5, -38.5, 1.1, 0, Sim.TAU);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawEnergyBars(ctx, w, h) {
+    var e0 = Math.max(1, S.m * G * S.h0);
+    var hcur = heightAt(S.x);
+    var pe = S.m * G * hcur;
+    var ke = 0.5 * S.m * S.v * S.v;
+    var q = S.thermal;
+    var sum = Math.max(pe + ke + q, 1);
+
+    var bw = Math.min(480, w * 0.62);
+    var bx = (w - bw) / 2;
+    var by = 48;
+    var bh = 13;
+
+    ctx.save();
+    ctx.font = Sim.font(9.5, 650);
+    ctx.fillStyle = C.dim;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('Balance de energía', bx, by - 7);
+    ctx.textAlign = 'right';
+    ctx.fillText('E₀ = ' + e0.toFixed(0) + ' J', bx + bw, by - 7);
+
+    Sim.rr(ctx, bx, by, bw, bh, 7);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.1)' : 'rgba(0,0,0,.07)';
+    ctx.fill();
+
+    ctx.save();
+    Sim.rr(ctx, bx, by, bw, bh, 7);
+    ctx.clip();
+    var w1 = bw * (pe / sum);
+    var w2 = bw * (ke / sum);
+    var w3 = bw - w1 - w2;
+    var g1 = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+    g1.addColorStop(0, C.green);
+    g1.addColorStop(0.6, C.teal);
+    g1.addColorStop(1, C.blue);
+    ctx.fillStyle = g1;
+    ctx.fillRect(bx, by, w1, bh);
+    ctx.fillStyle = C.blue;
+    ctx.fillRect(bx + w1, by, w2, bh);
+    ctx.fillStyle = C.orange;
+    ctx.fillRect(bx + w1 + w2, by, Math.max(0, w3), bh);
+    ctx.restore();
+
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    Sim.rr(ctx, bx + 0.5, by + 0.5, bw - 1, bh - 1, 6.5);
+    ctx.stroke();
+
+    /* leyenda */
+    var lx = bx;
+    var ly = by + bh + 16;
+    function legend(color, label, value) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(lx + 3, ly - 3, 3, 0, Sim.TAU);
+      ctx.fill();
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9, 600);
+      ctx.textAlign = 'left';
+      var t = label + ' ' + value.toFixed(0) + ' J';
+      ctx.fillText(t, lx + 10, ly);
+      lx += 10 + ctx.measureText(t).width + 14;
+    }
+    legend(C.green, 'Ep', pe);
+    legend(C.blue, 'Ec', ke);
+    legend(C.orange, 'Q', q);
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      if (S.running) return false;
+      var gm = geom(v.w, v.h);
+      var px = gm.cX + S.x * gm.sx;
+      var py = gm.bottomY - heightAt(S.x) * gm.sy;
+      if (Math.hypot(x - px, y - py + 18) < 42) {
+        S.drag = true;
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x) {
+      if (!S.drag) return;
+      var gm = geom(v.w, v.h);
+      var worldX = Sim.clamp((x - gm.cX) / gm.sx, -L + 0.04, L - 0.04);
+      var minX = L * Math.sqrt(0.5 / HMAX);
+      if (Math.abs(worldX) < minX) worldX = (worldX < 0 ? -1 : 1) * minX;
+      S.x = worldX;
+      S.v = 0;
+      S.thermal = 0;
+      S.trail.length = 0;
+      S.peak = null;
+      S.h0 = Sim.clamp(heightAt(worldX), 0.5, 3.9);
+      S.side = worldX >= 0 ? 1 : -1;
+      hSlider.set(S.h0, true);
+      paint();
+    },
+    up: function () {
+      if (!S.drag) return;
+      S.drag = false;
+      S.running = true;
+      S.stopped = false;
+      S.rest = 0;
+      S.thermal = 0;
+      S.trail.length = 0;
+      btnRun.textContent = 'Pausa';
+      chip.className = 'status ok';
+      chip.textContent = 'Deslizando';
+      cv.style.cursor = 'grab';
+      Sim.beep(620, 0.06, 'sine', 0.04);
+    },
+    hover: function (x, y) {
+      if (S.running) { cv.style.cursor = 'default'; return; }
+      var gm = geom(v.w, v.h);
+      var px = gm.cX + S.x * gm.sx;
+      var py = gm.bottomY - heightAt(S.x) * gm.sy;
+      cv.style.cursor = Math.hypot(x - px, y - py + 18) < 42 ? 'grab' : 'default';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    if (S.running) {
+      var sub = 3;
+      var dts = dt / sub;
+      for (var i = 0; i < sub; i++) {
+        var hgt = heightAt(S.x);
+        var dh = slopeAt(S.x);
+        var den = Math.sqrt(1 + dh * dh);
+        var sinT = dh / den;
+        var cosT = 1 / den;
+        var a = -G * sinT - S.mu * G * cosT * Math.sign(S.v || 0);
+        var v0 = S.v;
+        S.v += a * dts;
+
+        /* fricción estática: se queda en el punto más bajo si la pendiente es pequeña */
+        if (Math.abs(S.v) < 0.02 && Math.abs(G * sinT) <= S.mu * G * cosT) {
+          S.v = 0;
+        }
+        if (v0 * S.v < 0 && Math.abs(v0) > 0.15) {
+          S.peak = { x: S.x, h: hgt };
+        }
+
+        S.thermal += S.mu * S.m * G * cosT * Math.abs(S.v) * dts;
+        S.x += S.v * cosT * dts;
+        if (S.x > L - 0.04) { S.x = L - 0.04; if (S.v > 0) S.v = 0; }
+        if (S.x < -L + 0.04) { S.x = -L + 0.04; if (S.v < 0) S.v = 0; }
+      }
+
+      S.t += dt;
+      if (S.trail.length === 0 || Math.hypot(S.x - S.trail[S.trail.length - 1].x, heightAt(S.x) - S.trail[S.trail.length - 1].h) > 0.04) {
+        S.trail.push({ x: S.x, h: heightAt(S.x) });
+        if (S.trail.length > 110) S.trail.shift();
+      }
+
+      if (Math.abs(S.v) < 0.03) {
+        S.rest += dt;
+        if (S.rest > 0.55) stopByFriction();
+      } else {
+        S.rest = 0;
+      }
+    }
+
+    paint();
+    v.render();
+  });
+
+  reset();
+  Sim.hint('Arrastra al patinador para cambiar la altura · pulsa Soltar');
+})();
+</script>
+</body>
+</html>

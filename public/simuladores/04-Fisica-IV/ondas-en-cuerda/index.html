@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Ondas en cuerda · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-pink">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-purple">F4</span>
+    <div class="ct"><strong>Ondas en cuerda</strong><span>Física IV · Ondas mecánicas</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var L = 2.0;              /* longitud de la cuerda en metros */
+
+  var S = {
+    mode: 'estacionaria',
+    T: 40,                  /* tensión, N */
+    mu: 1.0,                /* densidad lineal, kg/m */
+    A: 0.25,                /* amplitud, m */
+    freq: 3.2,              /* frecuencia libre, Hz */
+    n: 2,                   /* armónico */
+    t: 0,
+    paused: false,
+    showNodes: true,
+    showBeads: true,
+    probeX: 0.55 * L,
+    v: 6.32,
+    lambda: 2.0,
+    f: 3.16,
+    period: 0.316,
+    dragProbe: false
+  };
+
+  var panel = document.getElementById('panel');
+
+  /* ---------------------------------------------------------------- panel */
+  var sMode = Sim.sec(panel, 'Modo de onda');
+  var modeSeg = Sim.seg(sMode, {
+    options: [['viajera', 'Viajera'], ['estacionaria', 'Estacionaria']],
+    value: S.mode,
+    onChange: function (v) {
+      S.mode = v;
+      syncMode();
+      calc();
+      clearChart();
+      Sim.hint(v === 'viajera'
+        ? 'Onda viajera: la forma se desplaza hacia la derecha'
+        : 'Onda estacionaria: la cuerda vibra entre nodos fijos');
+    }
+  });
+  var modeNote = document.createElement('p');
+  modeNote.className = 'note';
+  sMode.appendChild(modeNote);
+
+  var sString = Sim.sec(panel, 'Cuerda');
+  var tensionSlider = Sim.slider(sString, {
+    label: 'Tensión',
+    min: 10, max: 80, step: 1, value: S.T, unit: 'N', digits: 0,
+    onInput: function (v) { S.T = v; calc(); clearChart(); }
+  });
+  var muSlider = Sim.slider(sString, {
+    label: 'Densidad lineal μ',
+    min: 0.2, max: 2.0, step: 0.05, value: S.mu, unit: 'kg/m', digits: 2,
+    onInput: function (v) { S.mu = v; calc(); clearChart(); }
+  });
+  var ampSlider = Sim.slider(sString, {
+    label: 'Amplitud',
+    min: 4, max: 40, step: 1, value: S.A * 100, unit: 'cm', digits: 0,
+    onInput: function (v) { S.A = v / 100; }
+  });
+  var stringNote = document.createElement('p');
+  stringNote.className = 'note';
+  stringNote.innerHTML = 'La rapidez de la onda depende de la cuerda: <b>v = √(T/μ)</b>. Más tensión → más rápido; más masa por metro → más lento.';
+  sString.appendChild(stringNote);
+
+  var sTravel = Sim.sec(panel, 'Onda viajera');
+  var freqSlider = Sim.slider(sTravel, {
+    label: 'Frecuencia',
+    min: 0.5, max: 5, step: 0.1, value: S.freq, unit: 'Hz', digits: 1,
+    onInput: function (v) { S.freq = v; calc(); clearChart(); }
+  });
+  var travelNote = document.createElement('p');
+  travelNote.className = 'note';
+  travelNote.innerHTML = 'Al aumentar la frecuencia, la longitud de onda <b>λ = v / f</b> se acorta.';
+  sTravel.appendChild(travelNote);
+
+  var sStand = Sim.sec(panel, 'Onda estacionaria');
+  var harmSeg = Sim.seg(sStand, {
+    options: [['1', 'n = 1'], ['2', 'n = 2'], ['3', 'n = 3'], ['4', 'n = 4'], ['5', 'n = 5']],
+    value: '2',
+    onChange: function (v) { S.n = +v; calc(); clearChart(); }
+  });
+  var standNote = document.createElement('p');
+  standNote.className = 'note';
+  standNote.innerHTML = 'En una cuerda fija por ambos extremos solo hay ondas estacionarias en los armónicos: <b>f<sub>n</sub> = n · v / (2L)</b>. Aparecen <b>n vientres</b> y <b>n + 1 nodos</b>.';
+  sStand.appendChild(standNote);
+
+  var sAnim = Sim.sec(panel, 'Animación');
+  var rowAnim = Sim.btnrow(sAnim);
+  var btnPause = Sim.button(rowAnim, 'Pausar', function () {
+    S.paused = !S.paused;
+    btnPause.textContent = S.paused ? 'Reanudar' : 'Pausar';
+    Sim.beep(S.paused ? 400 : 620, 0.05, 'sine', 0.03);
+  }, { primary: true });
+  Sim.button(rowAnim, 'Reiniciar', function () {
+    S.t = 0;
+    clearChart();
+    Sim.beep(480, 0.05, 'sine', 0.03);
+  });
+  var tgNodes = Sim.toggle(sAnim, {
+    label: 'Mostrar nodos y vientres', value: true,
+    onChange: function (v) { S.showNodes = v; }
+  });
+  var tgBeads = Sim.toggle(sAnim, {
+    label: 'Mostrar puntos de la cuerda', value: true,
+    onChange: function (v) { S.showBeads = v; }
+  });
+
+  var sLive = Sim.sec(panel, 'Sonda y medidas');
+  var probeNote = document.createElement('p');
+  probeNote.className = 'note';
+  probeNote.innerHTML = 'Toca o <b>arrastra la sonda</b> a lo largo de la cuerda. La gráfica registra su altura y(t).';
+  sLive.appendChild(probeNote);
+  var R = Sim.reads(sLive, [
+    ['y', 'Altura de la sonda'],
+    ['v', 'Rapidez de la onda'],
+    ['lam', 'Longitud de onda'],
+    ['f', 'Frecuencia'],
+    ['per', 'Periodo'],
+    ['nod', 'Nodos'],
+    ['ven', 'Vientres'],
+    ['est', 'Estado', { wide: true }]
+  ]);
+
+  var sChart = Sim.sec(panel, 'Gráfica de la sonda');
+  var chartBox = document.createElement('div');
+  chartBox.className = 'chartbox';
+  chartBox.innerHTML = '<div class="chartcap"><span>Altura · y(t)</span><span>cm</span></div><canvas id="chY"></canvas>';
+  sChart.appendChild(chartBox);
+  var chY = Sim.chart(document.getElementById('chY'), {
+    window: 6,
+    series: [{ label: 'y', color: 'orange' }],
+    yFmt: function (v) { return Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1); }
+  });
+
+  Sim.help(
+    '<p>Una onda es una perturbación que viaja y transporta energía sin transportar materia. En una cuerda:</p>' +
+    '<p style="text-align:center"><b>v = √(T / μ) &nbsp;·&nbsp; λ = v / f &nbsp;·&nbsp; T = 1 / f</b></p>' +
+    '<ul><li><b>Onda viajera:</b> la forma de la onda se desplaza. Los puntos de la cuerda solo suben y bajan; la onda avanza.</li>' +
+    '<li><b>Onda estacionaria:</b> la cuerda está fija en ambos extremos. La onda incidente y la reflejada se superponen y forman nodos (puntos que no se mueven) y vientres (puntos de máxima vibración).</li></ul>' +
+    '<p>En una cuerda de longitud L fija en sus extremos, las frecuencias resonantes son f<sub>n</sub> = n·v/(2L), con n = 1, 2, 3… Cada n produce n vientres y n + 1 nodos.</p>' +
+    '<p>Ajusta tensión, densidad, amplitud, frecuencia o armónico. Arrastra la sonda: si la colocas en un nodo, su gráfica queda plana; si la colocas en un vientre, oscila con amplitud máxima.</p>'
+  );
+
+  /* ---------------------------------------------------------------- lógica */
+  function calc() {
+    S.v = Math.sqrt(S.T / S.mu);
+    if (S.mode === 'estacionaria') {
+      S.lambda = 2 * L / S.n;
+      S.f = S.v / S.lambda;
+    } else {
+      S.f = S.freq;
+      S.lambda = S.v / S.f;
+    }
+    S.period = 1 / S.f;
+  }
+
+  function waveY(x, t) {
+    if (S.mode === 'estacionaria') {
+      return S.A * Math.sin(S.n * Math.PI * x / L) * Math.cos(Sim.TAU * S.f * t);
+    }
+    return S.A * Math.sin(Sim.TAU * (x / S.lambda - S.f * t));
+  }
+
+  function syncMode() {
+    sTravel.style.display = S.mode === 'viajera' ? '' : 'none';
+    sStand.style.display = S.mode === 'estacionaria' ? '' : 'none';
+    tgNodes.el.style.display = S.mode === 'estacionaria' ? '' : 'none';
+    modeNote.innerHTML = S.mode === 'viajera'
+      ? 'La cuerda se agita en un extremo y la onda <b>viaja</b> hacia el otro extremo.'
+      : 'La cuerda está fija en ambos extremos: solo resuenan ciertas frecuencias.';
+    if (S.mode === 'estacionaria') {
+      S.probeX = Sim.clamp(S.probeX, 0.02 * L, 0.98 * L);
+    }
+  }
+
+  function clearChart() {
+    chY.clear();
+    S.lastPush = -1;
+    lastPush = -1;
+  }
+
+  function updateReads() {
+    var y = waveY(S.probeX, S.t);
+    R.set('y', (y * 100).toFixed(1) + ' cm');
+    R.set('v', S.v.toFixed(2) + ' m/s');
+    R.set('lam', S.lambda.toFixed(2) + ' m');
+    R.set('f', S.f.toFixed(2) + ' Hz');
+    R.set('per', S.period.toFixed(2) + ' s');
+    if (S.mode === 'estacionaria') {
+      R.set('nod', (S.n + 1) + '');
+      R.set('ven', S.n + '');
+      R.set('est', 'Estacionaria · armónico n = ' + S.n, 'good');
+    } else {
+      R.set('nod', '—');
+      R.set('ven', '—');
+      R.set('est', 'Viajera · la forma avanza hacia la derecha');
+    }
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function geom(w, h) {
+    var left = Math.max(76, w * 0.10);
+    var right = w - Math.max(64, w * 0.08);
+    var cy = h * 0.52;
+    var ampPx = Math.min((h * 0.27), 105) * (S.A / 0.4);
+    return {
+      left: left, right: right, cy: cy,
+      width: right - left,
+      amp: Math.max(18, ampPx),
+      pxPerM: (right - left) / L
+    };
+  }
+
+  function X(x, g) { return g.left + (x / L) * g.width; }
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var g = geom(w, h);
+    var cY = g.cy;
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* rejilla */
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx < w; gx += 44) {
+      ctx.beginPath();
+      ctx.moveTo(gx + 0.5, 0);
+      ctx.lineTo(gx + 0.5, h);
+      ctx.stroke();
+    }
+    for (var gy = 0; gy < h; gy += 44) {
+      ctx.beginPath();
+      ctx.moveTo(0, gy + 0.5);
+      ctx.lineTo(w, gy + 0.5);
+      ctx.stroke();
+    }
+
+    /* línea central */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.11)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 7]);
+    ctx.beginPath();
+    ctx.moveTo(g.left, cY);
+    ctx.lineTo(g.right + 26, cY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* soportes */
+    if (S.mode === 'estacionaria') drawClamps(ctx, g);
+    else drawShaker(ctx, g);
+
+    /* envolvente en onda estacionaria */
+    if (S.mode === 'estacionaria') {
+      ctx.save();
+      ctx.strokeStyle = C.dark ? 'rgba(191,90,242,.42)' : 'rgba(191,90,242,.32)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 5]);
+      for (var sgn = -1; sgn <= 1; sgn += 2) {
+        ctx.beginPath();
+        for (var i = 0; i <= 100; i++) {
+          var xx = i / 100 * L;
+          var yy = sgn * S.A * Math.sin(S.n * Math.PI * xx / L);
+          var px = X(xx, g);
+          var py = cY - (yy / S.A) * g.amp;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* cuerda */
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = C.dark ? 'rgba(0,0,0,.32)' : 'rgba(0,0,0,.1)';
+    ctx.lineWidth = 6.5;
+    drawCurve(ctx, g, 2);
+    ctx.strokeStyle = C.dark ? '#e2b06a' : '#c98a3d';
+    ctx.lineWidth = 3.4;
+    drawCurve(ctx, g, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,.32)';
+    ctx.lineWidth = 1;
+    drawCurve(ctx, g, -1.2);
+    ctx.restore();
+
+    /* puntos de la cuerda */
+    if (S.showBeads) {
+      for (var b = 1; b <= 11; b++) {
+        var bx = b / 12 * L;
+        var by = waveY(bx, S.t);
+        var bpx = X(bx, g);
+        var bpy = cY - (by / S.A) * g.amp;
+        ctx.fillStyle = C.dark ? '#f5d9a8' : '#8f5e22';
+        ctx.beginPath();
+        ctx.arc(bpx, bpy, 2.1, 0, Sim.TAU);
+        ctx.fill();
+      }
+    }
+
+    /* nodos y vientres */
+    if (S.mode === 'estacionaria' && S.showNodes) {
+      for (var k = 0; k <= S.n; k++) {
+        var nx = k * L / S.n;
+        var npx = X(nx, g);
+        ctx.fillStyle = C.card;
+        ctx.strokeStyle = C.ink;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(npx, cY, 4.2, 0, Sim.TAU);
+        ctx.fill();
+        ctx.stroke();
+      }
+      for (var an = 0; an < S.n; an++) {
+        var ax = (2 * an + 1) * L / (2 * S.n);
+        var apx = X(ax, g);
+        ctx.fillStyle = C.orange;
+        ctx.beginPath();
+        ctx.arc(apx, cY, 3.4, 0, Sim.TAU);
+        ctx.fill();
+      }
+      Sim.tag(ctx, '○ nodo   ● vientre', g.right - 6, 92, {
+        size: 9, bg: C.glass, color: C.dim, align: 'right'
+      });
+    }
+
+    /* flecha de propagación */
+    if (S.mode === 'viajera') {
+      var arrowY = cY - g.amp - 40;
+      if (arrowY < 82) arrowY = 82;
+      Sim.arrow(ctx, g.left + g.width * 0.30, arrowY, g.left + g.width * 0.30 + 62, arrowY, {
+        color: C.pink, width: 2.4, head: 8
+      });
+      Sim.tag(ctx, 'v = ' + S.v.toFixed(1) + ' m/s', g.left + g.width * 0.30 + 31, arrowY - 17, {
+        size: 9.5, bg: C.card, color: C.pink
+      });
+    }
+
+    /* sonda */
+    var probePx = X(S.probeX, g);
+    var probeY = cY - (waveY(S.probeX, S.t) / S.A) * g.amp;
+    ctx.save();
+    ctx.strokeStyle = C.blue;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath();
+    ctx.moveTo(probePx, cY - g.amp - 34);
+    ctx.lineTo(probePx, cY + g.amp + 34);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = C.card;
+    ctx.strokeStyle = C.blue;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(probePx, probeY, 6.5, 0, Sim.TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = C.blue;
+    ctx.beginPath();
+    ctx.arc(probePx, probeY, 2.2, 0, Sim.TAU);
+    ctx.fill();
+    Sim.tag(ctx, (waveY(S.probeX, S.t) * 100).toFixed(1) + ' cm', probePx, cY + g.amp + 48, {
+      size: 9.5, bg: C.card, color: C.blue
+    });
+
+    /* etiquetas */
+    Sim.tag(ctx, 'Cuerda de ' + L.toFixed(1) + ' m', g.left, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'left'
+    });
+    var rightTxt = S.mode === 'estacionaria'
+      ? 'n = ' + S.n + ' · f = ' + S.f.toFixed(2) + ' Hz'
+      : 'λ = ' + S.lambda.toFixed(2) + ' m';
+    Sim.tag(ctx, rightTxt, w - 20, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'right'
+    });
+    Sim.tag(ctx, S.mode === 'estacionaria'
+      ? 'Onda estacionaria · ' + S.n + ' vientres'
+      : 'Onda viajera · f = ' + S.f.toFixed(2) + ' Hz', w / 2, w < 640 ? 54 : 26, {
+      size: 10.5, bg: C.card, color: C.pink
+    });
+
+    if (S.paused) {
+      Sim.tag(ctx, 'Pausado', w / 2, 54, { size: 10, bg: C.glass, color: C.dim });
+    }
+  }
+
+  function drawCurve(ctx, g, offset) {
+    ctx.beginPath();
+    for (var i = 0; i <= 160; i++) {
+      var x = i / 160 * L;
+      var y = waveY(x, S.t);
+      var px = X(x, g);
+      var py = g.cy - (y / S.A) * g.amp + offset;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  function drawClamps(ctx, g) {
+    var cY = g.cy;
+    [g.left, g.right].forEach(function (x, idx) {
+      ctx.fillStyle = C.dark ? '#303036' : '#c9ccd4';
+      ctx.beginPath();
+      ctx.ellipse(x, g.cy + 72, 30, 6, 0, 0, Sim.TAU);
+      ctx.fill();
+      ctx.fillStyle = C.dark ? '#3a3a41' : '#d7d9e0';
+      Sim.rr(ctx, x - 6, cY + 10, 12, 64, 4);
+      ctx.fill();
+      ctx.fillStyle = C.dark ? '#50505a' : '#aeb1bb';
+      Sim.rr(ctx, x - 17, cY - 14, 34, 28, 7);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.4)';
+      Sim.rr(ctx, x - 11, cY - 9, 8, 4, 2);
+      ctx.fill();
+    });
+  }
+
+  function drawShaker(ctx, g) {
+    var cY = g.cy;
+    var y0 = waveY(0, S.t);
+    var carriageY = cY - (y0 / S.A) * g.amp;
+
+    /* riel vertical */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.14)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(g.left - 6, cY - g.amp - 34);
+    ctx.lineTo(g.left - 6, cY + g.amp + 34);
+    ctx.stroke();
+
+    /* base */
+    ctx.fillStyle = C.dark ? '#303036' : '#c9ccd4';
+    ctx.beginPath();
+    ctx.ellipse(g.left, cY + 92, 34, 7, 0, 0, Sim.TAU);
+    ctx.fill();
+    Sim.rr(ctx, g.left - 7, cY + 34, 14, 54, 4);
+    ctx.fillStyle = C.dark ? '#3a3a41' : '#d7d9e0';
+    ctx.fill();
+
+    /* carro */
+    var cg = ctx.createLinearGradient(g.left - 18, 0, g.left + 18, 0);
+    cg.addColorStop(0, '#0a84ff');
+    cg.addColorStop(1, '#64d2ff');
+    ctx.fillStyle = cg;
+    Sim.rr(ctx, g.left - 18, carriageY - 11, 36, 22, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = Sim.font(8, 750);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('OSC', g.left + 1, carriageY + 0.5);
+
+    /* extremo libre */
+    ctx.strokeStyle = C.dark ? '#e2b06a' : '#c98a3d';
+    ctx.lineWidth = 2;
+    var endY = cY - (waveY(L, S.t) / S.A) * g.amp;
+    ctx.beginPath();
+    ctx.arc(g.right + 10, endY, 6, 0, Sim.TAU);
+    ctx.stroke();
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      var g = geom(v.w, v.h);
+      if (x > g.left - 24 && x < g.right + 36 && y > g.cy - g.amp - 60 && y < g.cy + g.amp + 70) {
+        S.dragProbe = true;
+        S.probeX = Sim.clamp(((x - g.left) / g.width) * L, 0.02 * L, 0.98 * L);
+        clearChart();
+        cv.style.cursor = 'ew-resize';
+        return true;
+      }
+      return false;
+    },
+    move: function (x) {
+      if (!S.dragProbe) return;
+      var g = geom(v.w, v.h);
+      S.probeX = Sim.clamp(((x - g.left) / g.width) * L, 0.02 * L, 0.98 * L);
+    },
+    up: function () {
+      if (!S.dragProbe) return;
+      S.dragProbe = false;
+      cv.style.cursor = 'crosshair';
+      Sim.beep(520, 0.03, 'sine', 0.02);
+    },
+    hover: function () {
+      cv.style.cursor = 'ew-resize';
+    },
+    leave: function () { cv.style.cursor = 'crosshair'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  var lastPush = -1;
+  Sim.loop(function (dt) {
+    time += dt;
+    if (!S.paused) {
+      S.t += dt;
+    }
+
+    if (!S.paused && S.t - lastPush > 0.025) {
+      lastPush = S.t;
+      chY.push(S.t, [waveY(S.probeX, S.t) * 100]);
+    }
+
+    updateReads();
+    chY.render();
+    v.render();
+  });
+
+  syncMode();
+  calc();
+  updateReads();
+  clearChart();
+  v.render();
+  Sim.hint('Elige el modo · ajusta tensión y frecuencia · arrastra la sonda');
+})();
+</script>
+</body>
+</html>

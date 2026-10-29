@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Colisiones · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-pink">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Colisiones</strong><span>Física II · Cantidad de movimiento</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var TRACK = 12;
+
+  var S = {
+    m1: 2, m2: 3,
+    v1: 5, v2: -2,
+    e: 0.7,
+    x1: 3, x2: 9,
+    running: false,
+    collided: false,
+    done: false,
+    t: 0,
+    v1f: 0, v2f: 0,
+    pre: null, post: null,
+    flash: 0,
+    banner: '',
+    drag: null
+  };
+
+  var fx = Sim.fx();
+  var hitFlash = 0;
+
+  function cartWidth(m) { return 0.82 + m * 0.24; }
+
+  var panel = document.getElementById('panel');
+
+  var sCarts = Sim.sec(panel, 'Carritos');
+  var m1Slider = Sim.slider(sCarts, {
+    label: 'Masa del carrito azul',
+    min: 0.5, max: 5, step: 0.5, value: S.m1, unit: 'kg', digits: 1,
+    onInput: function (v) { S.m1 = v; syncPre(); }
+  });
+  var m2Slider = Sim.slider(sCarts, {
+    label: 'Masa del carrito rosa',
+    min: 0.5, max: 5, step: 0.5, value: S.m2, unit: 'kg', digits: 1,
+    onInput: function (v) { S.m2 = v; syncPre(); }
+  });
+  var v1Slider = Sim.slider(sCarts, {
+    label: 'Velocidad inicial azul',
+    min: -8, max: 8, step: 0.5, value: S.v1, unit: 'm/s', digits: 1,
+    onInput: function (v) { S.v1 = v; syncPre(); }
+  });
+  var v2Slider = Sim.slider(sCarts, {
+    label: 'Velocidad inicial rosa',
+    min: -8, max: 8, step: 0.5, value: S.v2, unit: 'm/s', digits: 1,
+    onInput: function (v) { S.v2 = v; syncPre(); }
+  });
+
+  var sCrash = Sim.sec(panel, 'Choque');
+  var eSlider = Sim.slider(sCrash, {
+    label: 'Restitución (elasticidad)',
+    min: 0, max: 1, step: 0.05, value: S.e, digits: 2,
+    onInput: function (v) { S.e = v; if (!S.post) paintReads(); }
+  });
+  var typeRow = document.createElement('div');
+  typeRow.className = 'seg';
+  typeRow.style.marginTop = '4px';
+  [['0.98', 'Elástico'], ['0.6', 'Suave'], ['0', 'Pegados']].forEach(function (pair) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = pair[1];
+    b.addEventListener('click', function () {
+      S.e = +pair[0];
+      eSlider.set(S.e);
+      typeRow.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      if (!S.post) paintReads();
+      Sim.beep(500, 0.04, 'triangle', 0.025);
+    });
+    typeRow.appendChild(b);
+  });
+  sCrash.appendChild(typeRow);
+  var note = document.createElement('p');
+  note.className = 'note';
+  note.innerHTML = 'e = 1: choque elástico (se conserva la energía). e = 0: quedan pegados (pierden energía).';
+  sCrash.appendChild(note);
+
+  var sGo = Sim.sec(panel, 'Experimento');
+  var rowGo = Sim.btnrow(sGo);
+  var btnGo = Sim.button(rowGo, 'Lanzar', launch, { primary: true });
+  Sim.button(rowGo, 'Reiniciar', reset);
+  var stWrap = document.createElement('div');
+  stWrap.style.marginTop = '10px';
+  var chip = document.createElement('span');
+  chip.className = 'status';
+  chip.textContent = 'Antes de lanzar';
+  stWrap.appendChild(chip);
+  sGo.appendChild(stWrap);
+  var goNote = document.createElement('p');
+  goNote.className = 'note';
+  goNote.innerHTML = 'Puedes <b>arrastrar los carritos</b> para cambiar su posición inicial.';
+  sGo.appendChild(goNote);
+
+  var sData = Sim.sec(panel, 'Antes y después');
+  var R = Sim.reads(sData, [
+    ['p0', 'p total antes'],
+    ['pf', 'p total después'],
+    ['k0', 'Energía antes'],
+    ['kf', 'Energía después'],
+    ['lost', 'Energía perdida'],
+    ['type', 'Tipo de choque', { wide: true }],
+    ['v1f', 'v azul final'],
+    ['v2f', 'v rosa final']
+  ]);
+
+  var sResult = Sim.sec(panel, 'Lectura');
+  var explain = document.createElement('p');
+  explain.className = 'note';
+  explain.innerHTML = 'El <b>momento total</b> siempre se conserva: p = m·v. La energía cinética solo se conserva en un choque perfectamente elástico.';
+  sResult.appendChild(explain);
+
+  Sim.help(
+    '<p>Dos carritos chocan en una pista sin fricción. La cantidad de movimiento total se conserva siempre:</p>' +
+    '<p style="text-align:center"><b>m₁v₁ + m₂v₂ = m₁v₁′ + m₂v₂′</b></p>' +
+    '<p>El coeficiente de restitución <b>e</b> mide cuánto rebotan:</p>' +
+    '<ul><li><b>e = 1</b>: choque elástico, se conserva la energía cinética.</li>' +
+    '<li><b>0 &lt; e &lt; 1</b>: choque parcialmente inelástico, se pierde algo de energía.</li>' +
+    '<li><b>e = 0</b>: quedan pegados y se pierde la mayor cantidad de energía posible.</li></ul>' +
+    '<p>Arrastra los carritos, ajusta masas y velocidades y pulsa <b>Lanzar</b>. Observa las flechas de velocidad y las barras de energía.</p>'
+  );
+
+  /* ---------------------------------------------------------------- datos */
+  function momentum() { return S.m1 * S.v1 + S.m2 * S.v2; }
+  function kinetic(v1, v2) { return 0.5 * S.m1 * v1 * v1 + 0.5 * S.m2 * v2 * v2; }
+
+  function syncPre() {
+    S.pre = { p: momentum(), k: kinetic(S.v1, S.v2), v1: S.v1, v2: S.v2 };
+    S.post = null;
+    S.collided = false;
+    S.done = false;
+    paintReads();
+  }
+
+  function paintReads() {
+    var pre = S.pre || { p: momentum(), k: kinetic(S.v1, S.v2) };
+    R.set('p0', pre.p.toFixed(2) + ' kg·m/s');
+    R.set('k0', pre.k.toFixed(2) + ' J');
+    if (S.post) {
+      R.set('pf', S.post.p.toFixed(2) + ' kg·m/s', 'good');
+      R.set('kf', S.post.k.toFixed(2) + ' J');
+      var lost = pre.k - S.post.k;
+      R.set('lost', (lost <= 0.01 ? '0.00' : lost.toFixed(2)) + ' J', lost > 0.01 ? 'hot' : 'good');
+      R.set('v1f', S.post.v1.toFixed(2) + ' m/s');
+      R.set('v2f', S.post.v2.toFixed(2) + ' m/s');
+    } else {
+      R.set('pf', '—');
+      R.set('kf', '—');
+      R.set('lost', '—');
+      R.set('v1f', '—');
+      R.set('v2f', '—');
+    }
+    var e = S.post && S.post.e != null ? S.post.e : S.e;
+    R.set('type', e >= 0.95 ? 'Elástico' : (e <= 0.05 ? 'Perfectamente inelástico' : 'Parcialmente inelástico'));
+  }
+
+  function launch() {
+    if (S.done) reset();
+    if (S.running) return;
+    S.pre = { p: momentum(), k: kinetic(S.v1, S.v2), v1: S.v1, v2: S.v2 };
+    S.post = null;
+    S.collided = false;
+    S.done = false;
+    S.banner = '';
+    S.t = 0;
+    S.running = true;
+    S.flash = 0;
+    fx.clear();
+    [m1Slider, m2Slider, v1Slider, v2Slider].forEach(function (s) { s.disable(true); });
+    btnGo.textContent = 'En marcha…';
+    btnGo.disabled = true;
+    chip.className = 'status';
+    chip.textContent = 'En movimiento';
+    paintReads();
+    Sim.beep(430, 0.06, 'sine', 0.04);
+  }
+
+  function reset() {
+    S.running = false;
+    S.done = false;
+    S.collided = false;
+    S.x1 = 3;
+    S.x2 = 9;
+    S.t = 0;
+    S.banner = '';
+    S.flash = 0;
+    S.post = null;
+    S.v1 = v1Slider.get();
+    S.v2 = v2Slider.get();
+    S.m1 = m1Slider.get();
+    S.m2 = m2Slider.get();
+    [m1Slider, m2Slider, v1Slider, v2Slider].forEach(function (s) { s.disable(false); });
+    btnGo.textContent = 'Lanzar';
+    btnGo.disabled = false;
+    chip.className = 'status';
+    chip.textContent = 'Antes de lanzar';
+    fx.clear();
+    syncPre();
+    v.render();
+  }
+
+  function collide() {
+    var m1 = S.m1, m2 = S.m2, e = S.e;
+    var v1 = S.v1, v2 = S.v2;
+    var v1f = ((m1 - e * m2) * v1 + (1 + e) * m2 * v2) / (m1 + m2);
+    var v2f = ((m2 - e * m1) * v2 + (1 + e) * m1 * v1) / (m1 + m2);
+    S.v1 = v1f;
+    S.v2 = v2f;
+    S.v1f = v1f;
+    S.v2f = v2f;
+    S.collided = true;
+    S.post = { p: m1 * v1f + m2 * v2f, k: 0.5 * m1 * v1f * v1f + 0.5 * m2 * v2f * v2f, v1: v1f, v2: v2f, e: e };
+    S.flash = 0.35;
+    hitFlash = 1;
+    Sim.beep(150, 0.12, 'triangle', 0.06);
+    setTimeout(function () { Sim.beep(95, 0.15, 'sine', 0.05); }, 55);
+    if (Math.abs(v1f - v2f) < 0.02) Sim.hint('Quedaron pegados: e = 0');
+    else if (S.e >= 0.95) Sim.hint('Choque elástico: la energía cinética se conserva');
+    paintReads();
+    chip.className = 'status ok';
+    chip.textContent = '¡Choque!';
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function px(x, ppm, w) { return 50 + x * ppm; }
+  function trackY(h) { return Math.round(h * 0.505); }
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var baseY = trackY(h);
+    var ppm = (w - 100) / TRACK;
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    drawMomentum(ctx, w, h);
+    drawEnergyBars(ctx, w, h);
+
+    /* pista */
+    ctx.fillStyle = C.dark ? '#17171b' : '#eceef3';
+    Sim.rr(ctx, 32, baseY + 10, w - 64, 58, 18);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.045)' : 'rgba(0,0,0,.035)';
+    for (var i = 0; i < 34; i++) {
+      ctx.fillRect(50 + i * (w - 100) / 34, baseY + 18, 1.5, 42);
+    }
+
+    /* marcas de la pista */
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    for (var m = 0; m <= TRACK; m++) {
+      var mx = px(m, ppm, w);
+      var major = m % 2 === 0;
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.18)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(mx, baseY + 36);
+      ctx.lineTo(mx, baseY + (major ? 50 : 44));
+      ctx.stroke();
+      if (major) {
+        ctx.fillStyle = C.dim;
+        ctx.font = Sim.font(9.5, 600);
+        ctx.fillText(m + ' m', mx, baseY + 62);
+      }
+    }
+
+    /* paredes */
+    ctx.fillStyle = C.dark ? '#2e2e33' : '#c7c9d1';
+    Sim.rr(ctx, 34, baseY - 42, 9, 76, 3);
+    ctx.fill();
+    Sim.rr(ctx, w - 43, baseY - 42, 9, 76, 3);
+    ctx.fill();
+
+    /* carritos */
+    drawCart(ctx, S.x1, px(S.x1, ppm, w), baseY, S.m1, S.v1, C.blue, '1', ppm);
+    drawCart(ctx, S.x2, px(S.x2, ppm, w), baseY, S.m2, S.v2, C.pink, '2', ppm);
+
+    /* choque: destello */
+    if (S.collided && hitFlash > 0) {
+      var cx = (px(S.x1, ppm, w) + px(S.x2, ppm, w)) / 2;
+      ctx.save();
+      ctx.globalAlpha = hitFlash * 0.7;
+      ctx.strokeStyle = C.yellow;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, baseY - 26, (1 - hitFlash) * 30 + 10, 0, Sim.TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+    fx.draw(ctx);
+
+    if (S.done && S.banner) {
+      Sim.tag(ctx, S.banner, w / 2, baseY - 118, {
+        size: 12, padX: 14, bg: C.card, color: C.ink
+      });
+    }
+
+    /* etiquetas superiores */
+    Sim.tag(ctx, 'Pista sin fricción · 12 m', 76, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, 'e = ' + S.e.toFixed(2), w - 20, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'right'
+    });
+  }
+
+
+  function drawCart(ctx, xm, X, baseY, mass, vel, color, tagText, ppm) {
+    var bw = Math.max(84, cartWidth(mass) * ppm);
+    var bh = 54;
+    var y = baseY - bh + 8;
+
+    /* sombra */
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.46)' : 'rgba(0,0,0,.14)';
+    ctx.beginPath();
+    ctx.ellipse(X, baseY + 15, bw * 0.52, 6, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    /* ruedas */
+    ctx.fillStyle = '#17171a';
+    ctx.beginPath(); ctx.arc(X - bw * 0.28, baseY + 8, 8, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(X + bw * 0.28, baseY + 8, 8, 0, Sim.TAU); ctx.fill();
+    ctx.fillStyle = '#8a8a92';
+    ctx.beginPath(); ctx.arc(X - bw * 0.28, baseY + 8, 2.8, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(X + bw * 0.28, baseY + 8, 2.8, 0, Sim.TAU); ctx.fill();
+
+    /* cuerpo */
+    var g = ctx.createLinearGradient(0, y, 0, y + bh);
+    g.addColorStop(0, color);
+    g.addColorStop(1, color === C.blue ? '#075fc9' : '#b81d42');
+    ctx.fillStyle = g;
+    Sim.rr(ctx, X - bw / 2, y, bw, bh, 13);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.22)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.16)';
+    Sim.rr(ctx, X - bw / 2 + 7, y + 6, bw - 14, 5, 2.5);
+    ctx.fill();
+
+    /* identificación y masa */
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(15, 750);
+    ctx.fillText(tagText === '1' ? 'm₁' : 'm₂', X, y + bh / 2 - 10);
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.font = Sim.font(9, 600);
+    ctx.fillText(mass.toFixed(1) + ' kg', X, y + bh / 2 + 10);
+
+    /* flecha de velocidad */
+    if (Math.abs(vel) > 0.03) {
+      var len = Sim.clamp(Math.abs(vel) * 12, 22, 120);
+      var dir = Math.sign(vel);
+      var ax = X + dir * (bw / 2 + 7);
+      var ay = baseY - 78;
+      Sim.arrow(ctx, ax, ay, ax + dir * len, ay, { color: color, width: 3, head: 9 });
+      Sim.tag(ctx, 'v' + (tagText === '1' ? '₁' : '₂') + ' ' + Math.abs(vel).toFixed(1) + ' m/s',
+        ax + dir * len / 2, ay - 19, { size: 9.5, bg: C.card, color: color });
+    }
+  }
+
+
+  function signedNum(x, d) {
+    return (x < 0 ? '−' : '') + Math.abs(x).toFixed(d);
+  }
+
+  function momentumTerm(m, v, d) {
+    var p = m * v;
+    return v < 0 ? '(' + signedNum(p, d) + ')' : signedNum(p, d);
+  }
+
+  function drawMomentum(ctx, w, h) {
+    if (w < 760) return;
+    var y0 = Math.round(h * 0.095);
+    var x0 = 264;
+    var len = Math.min(440, w - x0 - 220);
+    var pre = S.pre || { p: momentum(), v1: S.v1, v2: S.v2 };
+    var post = S.post;
+    var maxP = Math.max(Math.abs(pre.p), post ? Math.abs(post.p) : 0, 0.8);
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(10, 700);
+    ctx.fillText('MOMENTO LINEAL', 92, y0);
+    var tw = ctx.measureText('MOMENTO LINEAL').width;
+    ctx.font = Sim.font(9.5, 500);
+    ctx.fillText('kg · m/s', 92 + tw + 10, y0 + 1);
+
+    var rows = [
+      {
+        label: 'Antes', y: y0 + 50, p: pre.p, color: C.blue,
+        split: momentumTerm(S.m1, pre.v1, 1) + ' + ' + momentumTerm(S.m2, pre.v2, 1), live: true
+      },
+      {
+        label: 'Después', y: y0 + 114, p: post ? post.p : 0, color: C.teal,
+        split: post ? momentumTerm(S.m1, post.v1, 1) + ' + ' + momentumTerm(S.m2, post.v2, 1) : 'esperando el choque',
+        live: !!post
+      }
+    ];
+
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      ctx.textAlign = 'right';
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(11, 650);
+      ctx.fillText(r.label, x0 - 20, r.y);
+
+      ctx.fillStyle = C.dark ? 'rgba(255,255,255,.055)' : 'rgba(15,20,40,.045)';
+      Sim.rr(ctx, x0, r.y - 12, len, 24, 12);
+      ctx.fill();
+
+      if (r.live) {
+        var frac = Sim.clamp(Math.abs(r.p) / maxP, 0, 1);
+        var fill = Math.abs(r.p) < 0.005 ? 0 : Math.max(6, frac * len);
+        if (fill > 0) {
+          ctx.fillStyle = r.color;
+          Sim.rr(ctx, x0, r.y - 12, fill, 24, 12);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,.18)';
+          Sim.rr(ctx, x0 + 4, r.y - 9, Math.max(0, fill - 8), 4, 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.strokeStyle = C.line;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 5]);
+        Sim.rr(ctx, x0 + 0.5, r.y - 11.5, len - 1, 23, 12);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = r.live ? C.ink : C.dim;
+      ctx.font = Sim.font(18, 750);
+      var val = r.live ? signedNum(r.p, 2) : '—';
+      ctx.fillText(val, x0 + len + 16, r.y);
+      var vw = ctx.measureText(val).width;
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9.5, 550);
+      ctx.fillText('kg·m/s', x0 + len + 22 + vw, r.y + 1);
+
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9.5, 500);
+      ctx.fillText(r.split, x0 + 2, r.y + 25);
+    }
+
+    if (post) {
+      var same = Math.abs(post.p - pre.p) < 0.02;
+      Sim.tag(ctx, (same ? '✓ ' : '≠ ') + 'se conserva', w - 92, y0 + 114, {
+        size: 10.5, bg: C.card, color: same ? C.green : C.orange
+      });
+    }
+
+    ctx.restore();
+  }
+
+  function drawEnergyBars(ctx, w, h) {
+    if (w < 760) return;
+    var y0 = Math.round(h * 0.685);
+    var x0 = 264;
+    var len = Math.min(440, w - x0 - 220);
+    var pre = S.pre || { k: kinetic(S.v1, S.v2) };
+    var post = S.post;
+    var maxK = Math.max(pre.k, post ? post.k : 0, 0.5);
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(10, 700);
+    ctx.fillText('ENERGÍA CINÉTICA', 92, y0);
+    var tw = ctx.measureText('ENERGÍA CINÉTICA').width;
+    ctx.font = Sim.font(9.5, 500);
+    ctx.fillText('J', 92 + tw + 10, y0 + 1);
+
+    var yb = y0 + 48;
+    var ya = y0 + 112;
+
+    /* antes */
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(11, 650);
+    ctx.fillText('Antes', x0 - 20, yb);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.055)' : 'rgba(15,20,40,.045)';
+    Sim.rr(ctx, x0, yb - 12, len, 24, 12);
+    ctx.fill();
+    ctx.fillStyle = C.blue;
+    Sim.rr(ctx, x0, yb - 12, len, 24, 12);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.2)';
+    Sim.rr(ctx, x0 + 4, yb - 9, len - 8, 4, 2);
+    ctx.fill();
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = C.ink;
+    ctx.font = Sim.font(18, 750);
+    var kb = pre.k.toFixed(1);
+    ctx.fillText(kb, x0 + len + 16, yb);
+    var kw = ctx.measureText(kb).width;
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(9.5, 550);
+    ctx.fillText('J', x0 + len + 22 + kw, yb + 1);
+
+    /* después */
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(11, 650);
+    ctx.fillText('Después', x0 - 20, ya);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.055)' : 'rgba(15,20,40,.045)';
+    Sim.rr(ctx, x0, ya - 12, len, 24, 12);
+    ctx.fill();
+
+    if (post) {
+      var afterLen = Math.max(4, Sim.clamp(post.k / maxK, 0, 1) * len);
+      ctx.fillStyle = C.teal;
+      Sim.rr(ctx, x0, ya - 12, afterLen, 24, 12);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.2)';
+      Sim.rr(ctx, x0 + 4, ya - 9, Math.max(0, afterLen - 8), 4, 2);
+      ctx.fill();
+
+      var lost = pre.k - post.k;
+      var lostLen = Math.max(0, len - afterLen);
+      if (lost > 0.01 && lostLen > 4) {
+        ctx.save();
+        Sim.rr(ctx, x0 + afterLen, ya - 12, lostLen, 24, 12);
+        ctx.clip();
+        ctx.fillStyle = C.dark ? 'rgba(255,149,0,.14)' : 'rgba(240,130,0,.12)';
+        ctx.fillRect(x0 + afterLen, ya - 12, lostLen, 24);
+        ctx.strokeStyle = C.dark ? 'rgba(255,149,0,.36)' : 'rgba(230,120,0,.3)';
+        ctx.lineWidth = 1;
+        for (var hx = -26; hx < lostLen + 26; hx += 9) {
+          ctx.beginPath();
+          ctx.moveTo(x0 + afterLen + hx, ya + 12);
+          ctx.lineTo(x0 + afterLen + hx + 24, ya - 12);
+          ctx.stroke();
+        }
+        ctx.restore();
+        if (lostLen > 62) {
+          ctx.textAlign = 'center';
+          ctx.fillStyle = C.orange;
+          ctx.font = Sim.font(9.5, 650);
+          ctx.fillText('−' + lost.toFixed(1) + ' J', x0 + afterLen + lostLen / 2, ya);
+        }
+      }
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = C.ink;
+      ctx.font = Sim.font(18, 750);
+      var ka = post.k.toFixed(1);
+      ctx.fillText(ka, x0 + len + 16, ya);
+      var kaw = ctx.measureText(ka).width;
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9.5, 550);
+      ctx.fillText('J', x0 + len + 22 + kaw, ya + 1);
+    } else {
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 5]);
+      Sim.rr(ctx, x0 + 0.5, ya - 11.5, len - 1, 23, 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(18, 750);
+      ctx.fillText('—', x0 + len + 16, ya);
+    }
+
+    ctx.restore();
+  }
+
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      if (S.running) return false;
+      var ppm = (v.w - 100) / TRACK;
+      var px1 = px(S.x1, ppm, v.w), px2 = px(S.x2, ppm, v.w);
+      var w1 = Math.max(84, cartWidth(S.m1) * ppm);
+      var w2 = Math.max(84, cartWidth(S.m2) * ppm);
+      var baseY = trackY(v.h);
+      if (Math.abs(x - px1) < w1 / 2 + 10 && Math.abs(y - (baseY - 22)) < 52) {
+        S.drag = { id: '1', off: x - px1 };
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      if (Math.abs(x - px2) < w2 / 2 + 10 && Math.abs(y - (baseY - 22)) < 52) {
+        S.drag = { id: '2', off: x - px2 };
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x, y) {
+      if (!S.drag) return;
+      var ppm = (v.w - 100) / TRACK;
+      var otherX = S.drag.id === '1' ? S.x2 : S.x1;
+      var otherM = S.drag.id === '1' ? S.m2 : S.m1;
+      var myM = S.drag.id === '1' ? S.m1 : S.m2;
+      var minGap = (cartWidth(otherM) + cartWidth(myM)) / 2 + 0.12;
+      var val = (x - 50) / ppm;
+      if (S.drag.id === '1') {
+        S.x1 = Sim.clamp(val, 0.55, otherX - minGap);
+      } else {
+        S.x2 = Sim.clamp(val, otherX + minGap, TRACK - 0.55);
+      }
+      S.pre = { p: momentum(), k: kinetic(S.v1, S.v2), v1: S.v1, v2: S.v2 };
+      paintReads();
+    },
+    up: function () {
+      S.drag = null;
+      cv.style.cursor = 'grab';
+    },
+    hover: function (x, y) {
+      if (S.running) { cv.style.cursor = 'default'; return; }
+      cv.style.cursor = 'grab';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    if (S.running && !S.done) {
+      S.t += dt;
+      var ppm = (v.w - 100) / TRACK;
+      var gap = S.x2 - S.x1;
+      var minGap = (cartWidth(S.m1) + cartWidth(S.m2)) / 2;
+
+      if (!S.collided && gap <= minGap && S.v1 > S.v2) {
+        /* separa un poco para evitar solapamiento */
+        var overlap = minGap - gap;
+        S.x1 -= overlap / 2;
+        S.x2 += overlap / 2;
+        collide();
+      }
+
+      S.x1 += S.v1 * dt;
+      S.x2 += S.v2 * dt;
+
+      if (S.collided) {
+        S.flash = Math.max(0, S.flash - dt);
+        hitFlash = Math.max(0, hitFlash - dt * 2.4);
+      }
+
+      /* paredes */
+      var hw1 = cartWidth(S.m1) / 2;
+      var hw2 = cartWidth(S.m2) / 2;
+      var wall = null;
+      if (S.x1 - hw1 < 0.25) wall = 'Los carritos llegaron al extremo izquierdo';
+      if (S.x1 + hw1 > TRACK - 0.25) wall = 'Los carritos llegaron al extremo derecho';
+      if (S.x2 - hw2 < 0.25) wall = 'Los carritos llegaron al extremo izquierdo';
+      if (S.x2 + hw2 > TRACK - 0.25) wall = 'Los carritos llegaron al extremo derecho';
+      if (wall) {
+        S.x1 = Sim.clamp(S.x1, hw1 + 0.26, TRACK - hw1 - 0.26);
+        S.x2 = Sim.clamp(S.x2, hw2 + 0.26, TRACK - hw2 - 0.26);
+        S.v1 = 0;
+        S.v2 = 0;
+        S.running = false;
+        S.done = true;
+        S.banner = wall;
+        chip.className = 'status';
+        chip.textContent = 'Fin del recorrido';
+        btnGo.textContent = 'Otra vez';
+        btnGo.disabled = false;
+        [m1Slider, m2Slider, v1Slider, v2Slider].forEach(function (s) { s.disable(false); });
+        Sim.beep(240, 0.12, 'triangle', 0.04);
+      }
+    }
+
+    fx.update(dt);
+    v.render();
+  });
+
+  syncPre();
+  v.render();
+  Sim.hint('Arrastra los carritos si quieres · ajusta el choque y pulsa Lanzar');
+})();
+</script>
+</body>
+</html>

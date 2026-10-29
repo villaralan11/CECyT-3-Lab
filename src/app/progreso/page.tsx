@@ -15,9 +15,9 @@ const LEVELS = [
 ];
 
 const TOPICS = [
-  { n: "01", name: "MRU", subject: "Física", href: "/fisica/mru", color: "emerald" },
-  { n: "02", name: "MRUV", subject: "Física", href: "/fisica/mruv", color: "emerald" },
-  { n: "03", name: "Los 3 tiros", subject: "Física", href: "/fisica/tiros", color: "emerald" },
+  { n: "01", name: "Física I · Cinemática", subject: "Física", href: "/fisica#fisica-i", color: "emerald" },
+  { n: "02", name: "Física II · Fuerzas y energía", subject: "Física", href: "/fisica#fisica-ii", color: "emerald" },
+  { n: "03", name: "Física III–IV · Electricidad y ondas", subject: "Física", href: "/fisica#fisica-iii", color: "emerald" },
   { n: "04", name: "Nomenclatura IUPAC", subject: "Química", href: "/quimica/iupac", color: "fuchsia" },
   { n: "05", name: "Balanceo de ecuaciones", subject: "Química", href: "/quimica/balanceo", color: "fuchsia" },
   { n: "06", name: "Estequiometría", subject: "Química", href: "/quimica/estequiometria", color: "fuchsia" },
@@ -97,7 +97,7 @@ export default function ProgresoPage() {
                 <Link href="/retos" className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:shadow-md transition-shadow">
                   <Trophy className="h-3.5 w-3.5" /> Probar un reto
                 </Link>
-                <Link href="/fisica/mru" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold hover:bg-secondary/40 transition-colors">
+                <Link href="/fisica" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-4 py-2 text-xs font-semibold hover:bg-secondary/40 transition-colors">
                   Abrir un simulador <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>

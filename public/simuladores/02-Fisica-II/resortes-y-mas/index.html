@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Resortes y MAS · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-purple">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Resortes y MAS</strong><span>Física II · Movimiento armónico</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var G = 9.81;
+
+  var S = {
+    m: 1,
+    k: 20,
+    b: 0.2,
+    A: 0.2,
+    x: 0.2,
+    v: 0,
+    a: 0,
+    t: 0,
+    running: false,
+    quiet: 0,
+    prevCross: null,
+    measuredT: 0,
+    showVec: true,
+    drag: false
+  };
+
+  var panel = document.getElementById('panel');
+
+  var sSys = Sim.sec(panel, 'Sistema masa-resorte');
+  var mSlider = Sim.slider(sSys, {
+    label: 'Masa',
+    min: 0.5, max: 5, step: 0.1, value: S.m, unit: 'kg', digits: 1,
+    onInput: function (v) { S.m = v; resetFromA(); }
+  });
+  var kSlider = Sim.slider(sSys, {
+    label: 'Constante del resorte k',
+    min: 5, max: 100, step: 1, value: S.k, unit: 'N/m', digits: 0,
+    onInput: function (v) { S.k = v; resetFromA(); }
+  });
+  var bSlider = Sim.slider(sSys, {
+    label: 'Amortiguamiento b',
+    min: 0, max: 12, step: 0.1, value: S.b, unit: 'N·s/m', digits: 1,
+    onInput: function (v) { S.b = v; if (!S.running) resetFromA(); }
+  });
+  var tgVec = Sim.toggle(sSys, {
+    label: 'Mostrar vectores', value: true,
+    onChange: function (v) { S.showVec = v; }
+  });
+
+  var sGo = Sim.sec(panel, 'Liberación');
+  var aSlider = Sim.slider(sGo, {
+    label: 'Amplitud inicial',
+    min: 0.05, max: 0.4, step: 0.01, value: S.A, unit: 'm', digits: 2,
+    onInput: function (v) { S.A = v; resetFromA(); }
+  });
+  var rowGo = Sim.btnrow(sGo);
+  var btnRun = Sim.button(rowGo, 'Soltar', toggleRun, { primary: true });
+  Sim.button(rowGo, 'Reiniciar', function () { resetFromA(); });
+  var stWrap = document.createElement('div');
+  stWrap.style.marginTop = '10px';
+  var chip = document.createElement('span');
+  chip.className = 'status';
+  chip.textContent = 'En reposo';
+  stWrap.appendChild(chip);
+  sGo.appendChild(stWrap);
+  var dragNote = document.createElement('p');
+  dragNote.className = 'note';
+  dragNote.innerHTML = 'También puedes <b>arrastrar la masa</b> hacia arriba o abajo y soltarla.';
+  sGo.appendChild(dragNote);
+
+  var sData = Sim.sec(panel, 'Lecturas');
+  var R = Sim.reads(sData, [
+    ['T', 'Periodo teórico'],
+    ['Tm', 'Periodo medido'],
+    ['f', 'Frecuencia'],
+    ['zeta', 'Amortiguamiento'],
+    ['x', 'Posición x'],
+    ['v', 'Velocidad'],
+    ['a', 'Aceleración'],
+    ['E', 'Energía'],
+    ['reg', 'Régimen', { wide: true }]
+  ]);
+
+  var sCh = Sim.sec(panel, 'Gráficas');
+  var boxX = document.createElement('div');
+  boxX.className = 'chartbox';
+  boxX.innerHTML = '<div class="chartcap"><span>Posición · x(t)</span><span>m</span></div><canvas id="chX"></canvas>';
+  sCh.appendChild(boxX);
+  var boxV = document.createElement('div');
+  boxV.className = 'chartbox';
+  boxV.innerHTML = '<div class="chartcap"><span>Velocidad · v(t)</span><span>m/s</span></div><canvas id="chV"></canvas>';
+  sCh.appendChild(boxV);
+
+  var chX = Sim.chart(document.getElementById('chX'), {
+    window: 10,
+    series: [{ label: 'x', color: 'purple' }],
+    yFmt: function (v) { return Math.abs(v) >= 1 ? v.toFixed(1) : v.toFixed(2); }
+  });
+  var chV = Sim.chart(document.getElementById('chV'), {
+    window: 10,
+    series: [{ label: 'v', color: 'green' }],
+    yFmt: function (v) { return Math.abs(v) >= 1 ? v.toFixed(1) : v.toFixed(2); }
+  });
+
+  Sim.help(
+    '<p>Una masa cuelga de un resorte. Si la separas de su punto de equilibrio y la sueltas, oscila con movimiento armónico simple:</p>' +
+    '<p style="text-align:center"><b>T = 2π · √(m / k)</b></p>' +
+    '<p>Más masa → periodo más largo. Más rigidez (k) → periodo más corto. El amortiguamiento <b>b</b> frena la oscilación y convierte la energía en calor.</p>' +
+    '<ul><li>ζ &lt; 1: subamortiguado (oscila y decae).</li><li>ζ = 1: crítico (regresa rápido sin oscilar).</li><li>ζ &gt; 1: sobreamortiguado (regresa lento).</li></ul>' +
+    '<p>Arrastra la masa, ajusta m, k y b, y pulsa <b>Soltar</b>. Compara el periodo teórico con el medido.</p>'
+  );
+
+  /* ---------------------------------------------------------------- estado */
+  function calc() {
+    var omega = Math.sqrt(S.k / S.m);
+    S.T = 2 * Math.PI / omega;
+    S.freq = 1 / S.T;
+    S.zeta = S.b / (2 * Math.sqrt(S.m * S.k));
+    S.a = (-S.k * S.x - S.b * S.v) / S.m;
+    S.E = 0.5 * S.k * S.x * S.x + 0.5 * S.m * S.v * S.v;
+  }
+
+  function resetFromA() {
+    S.x = S.A;
+    S.v = 0;
+    S.t = 0;
+    S.running = false;
+    S.quiet = 0;
+    S.prevCross = null;
+    S.measuredT = 0;
+    chX.clear();
+    chV.clear();
+    btnRun.textContent = 'Soltar';
+    chip.className = 'status';
+    chip.textContent = 'En reposo';
+    calc();
+    paint();
+    if (typeof v !== 'undefined') v.render();
+  }
+
+  function toggleRun() {
+    if (S.running) {
+      S.running = false;
+      btnRun.textContent = 'Continuar';
+      chip.className = 'status';
+      chip.textContent = 'En pausa';
+      return;
+    }
+    S.running = true;
+    S.t = 0;
+    S.quiet = 0;
+    S.prevCross = null;
+    S.measuredT = 0;
+    chX.clear();
+    chV.clear();
+    btnRun.textContent = 'Pausa';
+    chip.className = 'status';
+    chip.textContent = 'Oscilando';
+    Sim.beep(580, 0.06, 'sine', 0.04);
+  }
+
+  function paint() {
+    calc();
+    R.set('T', S.T.toFixed(2) + ' s');
+    R.set('Tm', S.measuredT > 0 ? S.measuredT.toFixed(2) + ' s' : '—');
+    R.set('f', S.freq.toFixed(2) + ' Hz');
+    R.set('zeta', 'ζ = ' + S.zeta.toFixed(2));
+    R.set('x', (S.x >= 0 ? '' : '−') + Math.abs(S.x).toFixed(3) + ' m');
+    R.set('v', (S.v >= 0 ? '' : '−') + Math.abs(S.v).toFixed(2) + ' m/s');
+    R.set('a', (S.a >= 0 ? '' : '−') + Math.abs(S.a).toFixed(2) + ' m/s²');
+    R.set('E', S.E.toFixed(3) + ' J');
+    var reg = S.zeta < 0.98 ? 'Subamortiguado' : (S.zeta <= 1.02 ? 'Amortiguamiento crítico' : 'Sobreamortiguado');
+    R.set('reg', reg + ' · ζ = ' + S.zeta.toFixed(2), S.zeta > 1 ? 'hot' : '');
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function layout(w, h) {
+    var ceilY = 64;
+    var eqY = h * 0.54;
+    var pxm = Math.min(260, (eqY - ceilY - 70) / Math.max(0.05, S.A), (h - eqY - 66) / Math.max(0.05, S.A));
+    pxm = Math.max(pxm, 40);
+    return { ceilY: ceilY, eqY: eqY, pxm: pxm, cx: w / 2 };
+  }
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var L = layout(w, h);
+    var ceilY = L.ceilY;
+    var eqY = L.eqY;
+    var pxm = L.pxm;
+    var cx = L.cx;
+    var massY = eqY + S.x * pxm;
+    var massH = 52, massW = 54;
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* rejilla sutil */
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    for (var gy = ceilY + 40; gy < h; gy += 48) {
+      ctx.beginPath();
+      ctx.moveTo(24, gy + 0.5);
+      ctx.lineTo(w - 24, gy + 0.5);
+      ctx.stroke();
+    }
+
+    /* techo */
+    var beam = ctx.createLinearGradient(0, ceilY - 16, 0, ceilY + 8);
+    beam.addColorStop(0, C.dark ? '#38383e' : '#d6d7de');
+    beam.addColorStop(1, C.dark ? '#202025' : '#b8bac4');
+    ctx.fillStyle = beam;
+    Sim.rr(ctx, w * 0.22, ceilY - 16, w * 0.56, 24, 8);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.16)';
+    for (var hx = w * 0.24; hx < w * 0.76; hx += 22) {
+      ctx.beginPath();
+      ctx.moveTo(hx, ceilY - 12);
+      ctx.lineTo(hx + 8, ceilY + 4);
+      ctx.stroke();
+    }
+
+    /* línea de equilibrio */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.18)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 6]);
+    ctx.beginPath();
+    ctx.moveTo(50, eqY);
+    ctx.lineTo(w - 50, eqY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    Sim.tag(ctx, 'equilibrio', w - 63, eqY, { size: 9, bg: C.glass, color: C.dim, align: 'right' });
+
+    /* límites de amplitud */
+    var yUp = eqY - S.A * pxm;
+    var yDn = eqY + S.A * pxm;
+    ctx.strokeStyle = C.purple;
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath();
+    ctx.moveTo(cx - 80, yUp); ctx.lineTo(cx + 80, yUp);
+    ctx.moveTo(cx - 80, yDn); ctx.lineTo(cx + 80, yDn);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.setLineDash([]);
+    Sim.tag(ctx, '+A', cx + 94, yDn, { size: 9, bg: C.glass, color: C.purple });
+    Sim.tag(ctx, '−A', cx + 94, yUp, { size: 9, bg: C.glass, color: C.purple });
+
+    /* resorte */
+    var springTop = ceilY + 8;
+    var springBot = massY - massH / 2 - 8;
+    drawSpring(ctx, cx, springTop, springBot);
+
+    /* masa */
+    ctx.save();
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.45)' : 'rgba(0,0,0,.12)';
+    ctx.beginPath();
+    ctx.ellipse(cx, yDn + massH / 2 + 6, 34, 4.5, 0, 0, Sim.TAU);
+    ctx.fill();
+    var mg = ctx.createLinearGradient(0, massY - massH / 2, 0, massY + massH / 2);
+    mg.addColorStop(0, C.purple);
+    mg.addColorStop(1, '#7a3ad6');
+    ctx.fillStyle = mg;
+    Sim.rr(ctx, cx - massW / 2, massY - massH / 2, massW, massH, 13);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    Sim.rr(ctx, cx - massW / 2 + 7, massY - massH / 2 + 6, massW - 14, 6, 3);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(13, 700);
+    ctx.fillText('m', cx, massY);
+    /* gancho */
+    ctx.strokeStyle = C.faint;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, massY - massH / 2 - 4, 4, 0, Sim.TAU);
+    ctx.stroke();
+
+    /* desplazamiento */
+    if (Math.abs(S.x) > 0.004) {
+      var xTop = Math.min(eqY, massY);
+      var xBot = Math.max(eqY, massY);
+      ctx.strokeStyle = C.blue;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - massW / 2 - 18, xTop);
+      ctx.lineTo(cx - massW / 2 - 18, xBot);
+      ctx.stroke();
+      Sim.arrow(ctx, cx - massW / 2 - 18, (xTop + xBot) / 2 + (massY > eqY ? 8 : -8), cx - massW / 2 - 18, massY, {
+        color: C.blue, width: 2, head: 7
+      });
+      Sim.tag(ctx, 'x', cx - massW / 2 - 34, (xTop + xBot) / 2, { size: 9.5, bg: C.card, color: C.blue });
+    }
+
+    /* vectores */
+    if (S.showVec) {
+      var fScale = 40 / Math.max(S.k * S.A, 0.001);
+      var fLen = Sim.clamp(Math.abs(S.k * S.x) * fScale, 0, 52);
+      if (fLen > 3) {
+        var fdir = -Math.sign(S.x);
+        Sim.arrow(ctx, cx + massW / 2 + 16, massY + 6, cx + massW / 2 + 16, massY + 6 + fdir * fLen, {
+          color: C.orange, width: 2.6, head: 8
+        });
+        Sim.tag(ctx, 'F', cx + massW / 2 + 32, massY + 6 + fdir * fLen / 2, { size: 9, bg: C.card, color: C.orange });
+      }
+      var vmax = Math.sqrt(S.k / S.m) * S.A;
+      var vLen = Sim.clamp(Math.abs(S.v) / Math.max(vmax, 0.001) * 46, 0, 46);
+      if (vLen > 3) {
+        var vdir = Math.sign(S.v);
+        Sim.arrow(ctx, cx - massW / 2 - 16, massY - 8, cx - massW / 2 - 16, massY - 8 + vdir * vLen, {
+          color: C.green, width: 2.6, head: 8
+        });
+        Sim.tag(ctx, 'v', cx - massW / 2 - 32, massY - 8 + vdir * vLen / 2, { size: 9, bg: C.card, color: C.green });
+      }
+    }
+
+    /* etiquetas */
+    Sim.tag(ctx, 'T = 2π√(m/k)', 78, 26, { size: 10, bg: C.glass, color: C.ink, align: 'left' });
+    Sim.tag(ctx, 'k = ' + S.k.toFixed(0) + ' N/m · b = ' + S.b.toFixed(1), w - 20, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'right'
+    });
+
+    if (!S.running && !S.drag && S.v === 0) {
+      Sim.tag(ctx, 'Pulsa Soltar o arrastra la masa', w / 2, h - 28, {
+        size: 10, bg: C.card, color: C.dim
+      });
+    }
+  }
+
+  function drawSpring(ctx, cx, top, bottom) {
+    var len = bottom - top;
+    if (len < 12) return;
+    var coils = 11;
+    var amp = Math.min(20, 12 + len * 0.03);
+    ctx.save();
+    ctx.strokeStyle = C.teal;
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = C.teal;
+    ctx.shadowBlur = 7;
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.lineTo(cx, top + 8);
+    var innerTop = top + 8;
+    var innerBot = bottom - 8;
+    var n = coils;
+    for (var i = 0; i <= n; i++) {
+      var yy = innerTop + (innerBot - innerTop) * i / n;
+      var xx = cx + (i === 0 || i === n ? 0 : (i % 2 === 0 ? 1 : -1) * amp);
+      ctx.lineTo(xx, yy);
+    }
+    ctx.lineTo(cx, bottom);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      var L = layout(v.w, v.h);
+      var massY = L.eqY + S.x * L.pxm;
+      if (Math.abs(x - L.cx) < 42 && Math.abs(y - massY) < 42) {
+        S.drag = true;
+        S.running = false;
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x, y) {
+      if (!S.drag) return;
+      var L = layout(v.w, v.h);
+      var dx = Sim.clamp((y - L.eqY) / L.pxm, -0.4, 0.4);
+      if (Math.abs(dx) < 0.05) dx = (dx < 0 ? -1 : 1) * 0.05;
+      S.A = Math.abs(dx);
+      S.x = dx;
+      S.v = 0;
+      S.t = 0;
+      S.prevCross = null;
+      S.measuredT = 0;
+      aSlider.set(S.A, true);
+      calc();
+      paint();
+    },
+    up: function () {
+      if (!S.drag) return;
+      S.drag = false;
+      S.running = true;
+      S.t = 0;
+      S.quiet = 0;
+      S.prevCross = null;
+      S.measuredT = 0;
+      chX.clear();
+      chV.clear();
+      btnRun.textContent = 'Pausa';
+      chip.className = 'status ok';
+      chip.textContent = 'Oscilando';
+      cv.style.cursor = 'grab';
+      Sim.beep(620, 0.06, 'sine', 0.04);
+    },
+    hover: function (x, y) {
+      var L = layout(v.w, v.h);
+      var massY = L.eqY + S.x * L.pxm;
+      cv.style.cursor = Math.abs(x - L.cx) < 42 && Math.abs(y - massY) < 42 ? 'grab' : 'default';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    if (S.running) {
+      var xBefore = S.x;
+      var steps = 5;
+      var dts = dt / steps;
+      for (var i = 0; i < steps; i++) {
+        S.a = (-S.k * S.x - S.b * S.v) / S.m;
+        S.v += S.a * dts;
+        S.x += S.v * dts;
+      }
+      S.t += dt;
+
+      if (xBefore < 0 && S.x >= 0 && S.v > 0) {
+        if (S.prevCross != null) {
+          S.measuredT = S.t - S.prevCross;
+        }
+        S.prevCross = S.t;
+      }
+
+      if (S.b > 0 && Math.abs(S.x) < 0.0025 && Math.abs(S.v) < 0.0025) {
+        S.quiet += dt;
+        if (S.quiet > 0.7) {
+          S.running = false;
+          S.x = 0;
+          S.v = 0;
+          btnRun.textContent = 'Otra vez';
+          chip.className = 'status';
+          chip.textContent = 'Se detuvo por el amortiguamiento';
+          Sim.beep(300, 0.14, 'triangle', 0.04);
+        }
+      } else {
+        S.quiet = 0;
+      }
+
+      if (S.t - (S.lastChart || 0) > 0.016) {
+        S.lastChart = S.t;
+        chX.push(S.t, [S.x]);
+        chV.push(S.t, [S.v]);
+      }
+    } else {
+      calc();
+    }
+
+    paint();
+    chX.render();
+    chV.render();
+    v.render();
+  });
+
+  resetFromA();
+  v.render();
+  Sim.hint('Ajusta masa y resorte · pulsa Soltar o arrastra la masa');
+})();
+</script>
+</body>
+</html>

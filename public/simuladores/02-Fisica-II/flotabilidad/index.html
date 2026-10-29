@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Flotabilidad · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-teal">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Flotabilidad</strong><span>Física II · Hidrostática</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var G = 9.81;
+  var SIDE = 1;              /* lado del cubo, 1 m */
+  var VOL = SIDE * SIDE * SIDE;
+  var AREA = SIDE * SIDE;
+
+  var MATERIALS = {
+    corcho:   { name: 'Corcho',   rho: 240,  color: '#d9a15b' },
+    madera:   { name: 'Madera',   rho: 600,  color: '#b97a3c' },
+    hielo:    { name: 'Hielo',    rho: 917,  color: '#8fd9ee' },
+    aluminio: { name: 'Aluminio', rho: 2700, color: '#aeb4bd' }
+  };
+  var LIQUIDS = {
+    alcohol: { name: 'Alcohol', rho: 789,  color: '#a78bfa', tint: '#c4b5fd' },
+    aceite:  { name: 'Aceite',  rho: 910,  color: '#e0b341', tint: '#f4d27a' },
+    agua:    { name: 'Agua',    rho: 1000, color: '#2f8fe0', tint: '#8ecdf7' },
+    miel:    { name: 'Miel',    rho: 1420, color: '#c47b18', tint: '#f0bd63' }
+  };
+
+  var S = {
+    material: 'madera',
+    liquid: 'agua',
+    rhoObj: 600,
+    rhoLiq: 1000,
+    y: 0,                  /* centro del cubo, metros sobre el fondo del líquido */
+    vy: 0,
+    onFloor: false,
+    t: 0,
+    showForces: true,
+    showGrid: true,
+    drag: false,
+    dragOff: 0
+  };
+
+  var panel = document.getElementById('panel');
+
+  /* ---------------------------------------------------------------- panel */
+  var sObj = Sim.sec(panel, 'Objeto');
+  var matSeg = Sim.seg(sObj, {
+    options: [['corcho', 'Corcho'], ['madera', 'Madera'], ['hielo', 'Hielo'], ['aluminio', 'Aluminio']],
+    value: 'madera',
+    onChange: function (v) {
+      S.material = v;
+      S.rhoObj = MATERIALS[v].rho;
+      rhoObjSlider.set(S.rhoObj, true);
+      settle(true);
+    }
+  });
+  var rhoObjSlider = Sim.slider(sObj, {
+    label: 'Densidad del objeto',
+    min: 100, max: 3000, step: 10, value: S.rhoObj, unit: 'kg/m³', digits: 0,
+    onInput: function (v) {
+      S.rhoObj = v;
+      S.material = null;
+      matSeg.set('');
+      settle(true);
+    }
+  });
+
+  var sLiq = Sim.sec(panel, 'Líquido');
+  var liqSeg = Sim.seg(sLiq, {
+    options: [['alcohol', 'Alcohol'], ['aceite', 'Aceite'], ['agua', 'Agua'], ['miel', 'Miel']],
+    value: 'agua',
+    onChange: function (v) {
+      S.liquid = v;
+      S.rhoLiq = LIQUIDS[v].rho;
+      rhoLiqSlider.set(S.rhoLiq, true);
+      settle(true);
+    }
+  });
+  var rhoLiqSlider = Sim.slider(sLiq, {
+    label: 'Densidad del líquido',
+    min: 700, max: 1600, step: 10, value: S.rhoLiq, unit: 'kg/m³', digits: 0,
+    onInput: function (v) {
+      S.rhoLiq = v;
+      S.liquid = null;
+      liqSeg.set('');
+      settle(true);
+    }
+  });
+
+  var sGo = Sim.sec(panel, 'Experimento');
+  var tgF = Sim.toggle(sGo, {
+    label: 'Mostrar fuerzas', value: true,
+    onChange: function (v) { S.showForces = v; }
+  });
+  var tgG = Sim.toggle(sGo, {
+    label: 'Mostrar escala', value: true,
+    onChange: function (v) { S.showGrid = v; }
+  });
+  var rowA = Sim.btnrow(sGo);
+  Sim.button(rowA, 'Soltar', function () { dropFromAbove(); }, { primary: true });
+  Sim.button(rowA, 'Sumergir', pushUnder);
+  var rowB = Sim.btnrow(sGo);
+  Sim.button(rowB, 'Reiniciar', function () { settle(true); });
+
+  var sData = Sim.sec(panel, 'Medidas');
+  var R = Sim.reads(sData, [
+    ['wo', 'Peso del objeto'],
+    ['fb', 'Empuje'],
+    ['sub', 'Volumen sumergido'],
+    ['eq', 'Fracción de equilibrio'],
+    ['net', 'Fuerza neta'],
+    ['ro', 'Densidad objeto'],
+    ['rl', 'Densidad líquido'],
+    ['st', 'Estado', { wide: true }]
+  ]);
+
+  Sim.help(
+    '<p>Todo cuerpo sumergido recibe un empuje hacia arriba igual al peso del líquido que desaloja:</p>' +
+    '<p style="text-align:center"><b>E = ρ<sub>líquido</sub> · g · V<sub>sumergido</sub></b></p>' +
+    '<p>El objeto flota si su densidad es <b>menor</b> que la del líquido. En equilibrio, la fracción sumergida es exactamente ρ<sub>objeto</sub> / ρ<sub>líquido</sub>.</p>' +
+    '<ul><li>Madera en agua: flota con cerca de 60 % bajo el agua.</li>' +
+    '<li>Hielo en alcohol: se hunde, porque el alcohol es menos denso que el hielo.</li>' +
+    '<li>Aluminio en cualquier líquido de esta lista: se va al fondo.</li></ul>' +
+    '<p>Arrastra el cubo, elige materiales o cambia las densidades. Pulsa <b>Soltar</b> para dejarlo caer y <b>Sumergir</b> para empujarlo bajo el líquido.</p>'
+  );
+
+  /* ---------------------------------------------------------------- física */
+  function floorY() { return 0; } /* fondo del líquido en coordenadas físicas */
+
+  function equilibriumCenter() {
+    var frac = Sim.clamp(S.rhoObj / S.rhoLiq, 0, 1.4);
+    if (frac >= 1) return SIDE / 2; /* apoyado en el fondo */
+    /* centro tal que la parte sumergida sea frac*SIDE */
+    return SURFACE + SIDE / 2 - frac * SIDE;
+  }
+
+  function settle(randomize) {
+    S.vy = 0;
+    S.onFloor = false;
+    S.y = equilibriumCenter();
+    if (randomize && S.rhoObj < S.rhoLiq) {
+      S.y = Math.min(3.95, S.y + SIDE * 0.9);
+    }
+  }
+
+  function dropFromAbove() {
+    S.y = 4.0;
+    S.vy = 0;
+    S.onFloor = false;
+    Sim.beep(380, 0.06, 'sine', 0.04);
+  }
+
+  function pushUnder() {
+    S.y = SIDE * 1.45;
+    S.vy = 0;
+    S.onFloor = false;
+    Sim.beep(300, 0.08, 'triangle', 0.045);
+    Sim.hint('Suelta el cubo bajo el líquido y observa cómo sube');
+  }
+
+  function submergedDepth(yCenter) {
+    /* superficie del líquido en y = 2.9 m (coordenada física) */
+    var surface = 2.9;
+    var bottom = yCenter - SIDE / 2;
+    var top = yCenter + SIDE / 2;
+    if (bottom >= surface) return 0;
+    if (top <= surface) return SIDE;
+    return surface - bottom;
+  }
+
+  var SURFACE = 2.9;
+
+  function physics(dt) {
+    var sub = Sim.clamp(submergedDepth(S.y), 0, SIDE);
+    var mass = S.rhoObj * VOL;
+    var weight = mass * G;
+    var buoy = S.rhoLiq * G * AREA * sub;
+    var net = buoy - weight;
+
+    /* apoyo en el fondo */
+    var floorCenter = SIDE / 2;
+    if (S.y <= floorCenter && net < 0) {
+      S.y = floorCenter;
+      S.vy = 0;
+      S.onFloor = true;
+      return;
+    }
+    S.onFloor = false;
+
+    /* amortiguamiento para que se asiente rápido */
+    var damp = -5.2 * mass * S.vy;
+    var acc = (net + damp) / mass;
+    S.vy += acc * dt;
+    S.vy = Sim.clamp(S.vy, -2.4, 2.4);
+    S.y += S.vy * dt;
+
+    if (S.y < floorCenter) {
+      S.y = floorCenter;
+      if (S.vy < 0) S.vy = 0;
+    }
+    if (S.y > 4.05) { S.y = 4.05; if (S.vy > 0) S.vy = 0; }
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+  var bubbles = [];
+  for (var bi = 0; bi < 26; bi++) {
+    bubbles.push({ x: Math.random(), y: Math.random(), r: 1.2 + Math.random() * 2.6, sp: 0.15 + Math.random() * 0.35 });
+  }
+
+  function geom(w, h) {
+    var innerW = Math.min(w * 0.60, 560);
+    var tankW = innerW + 26;
+    var tankX = (w - tankW) / 2;
+    var tankTop = Math.max(76, h * 0.13);
+    var tankBottom = h - 62;
+    var surface = tankTop + (tankBottom - tankTop) * 0.38;
+    return {
+      x: tankX, w: tankW, innerW: innerW, top: tankTop, bottom: tankBottom,
+      surface: surface,
+      pxm: innerW / 2.2,             /* 2.2 m de ancho físico */
+      cx: w / 2,
+      scale: (tankBottom - surface) / SURFACE
+    };
+  }
+
+  function metToPxY(m, g) { return g.surface + (SURFACE - m) * g.scale; }
+
+  function draw(ctx, w, h) {
+    if (!v) return;
+    C = Sim.C;
+    var g = geom(w, h);
+    var liq = LIQUIDS[S.liquid] || { name: 'Líquido', color: '#2f8fe0', tint: '#8ecdf7' };
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#0f1013'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* rejilla de fondo */
+    if (S.showGrid) {
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 1;
+      for (var gx = 0; gx < w; gx += 46) {
+        ctx.beginPath();
+        ctx.moveTo(gx + 0.5, 0);
+        ctx.lineTo(gx + 0.5, h);
+        ctx.stroke();
+      }
+      for (var gy = 0; gy < h; gy += 46) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy + 0.5);
+        ctx.lineTo(w, gy + 0.5);
+        ctx.stroke();
+      }
+    }
+
+    /* paredes del tanque */
+    ctx.save();
+    Sim.rr(ctx, g.x, g.top, g.w, g.bottom - g.top, 18);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.035)' : 'rgba(0,0,0,.025)';
+    ctx.fill();
+    ctx.clip();
+
+    /* líquido */
+    var lg = ctx.createLinearGradient(0, g.surface, 0, g.bottom);
+    if (S.liquid === 'agua' || S.liquid == null) {
+      lg.addColorStop(0, C.dark ? 'rgba(52,144,220,.72)' : 'rgba(90,180,245,.68)');
+      lg.addColorStop(1, C.dark ? 'rgba(14,58,110,.9)' : 'rgba(26,110,190,.76)');
+    } else {
+      lg.addColorStop(0, hexA(liq.tint, C.dark ? 0.62 : 0.6));
+      lg.addColorStop(1, hexA(liq.color, C.dark ? 0.88 : 0.78));
+    }
+    ctx.fillStyle = lg;
+    /* una sola capa: el oleaje ya cubre desde la superficie hasta el fondo */
+
+    /* oleaje */
+    var waveAmp = 3.2;
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.surface);
+    for (var wx = 0; wx <= g.w; wx += 6) {
+      var wy = g.surface + Math.sin(wx * 0.035 + time * 1.6) * waveAmp + Math.sin(wx * 0.013 - time * 0.9) * 1.6;
+      ctx.lineTo(g.x + wx, wy);
+    }
+    ctx.lineTo(g.x + g.w, g.bottom);
+    ctx.lineTo(g.x, g.bottom);
+    ctx.closePath();
+    ctx.fillStyle = lg;
+    ctx.fill();
+
+    /* brillo superior del líquido */
+    ctx.strokeStyle = 'rgba(255,255,255,.55)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (var sx = 0; sx <= g.w; sx += 6) {
+      var sy = g.surface + Math.sin(sx * 0.035 + time * 1.6) * waveAmp + Math.sin(sx * 0.013 - time * 0.9) * 1.6;
+      if (sx === 0) ctx.moveTo(g.x, sy); else ctx.lineTo(g.x + sx, sy);
+    }
+    ctx.stroke();
+
+    /* burbujas */
+    ctx.fillStyle = 'rgba(255,255,255,.34)';
+    for (var i = 0; i < bubbles.length; i++) {
+      var b = bubbles[i];
+      var bx = g.x + 14 + b.x * (g.w - 28);
+      var by = g.bottom - ((b.y + time * b.sp * 0.08) % 1) * (g.bottom - g.surface);
+      ctx.beginPath();
+      ctx.arc(bx, by, b.r, 0, Sim.TAU);
+      ctx.fill();
+    }
+
+    /* marcas de profundidad */
+    if (S.showGrid) {
+      var rulerW = 56;
+      ctx.fillStyle = 'rgba(6,38,76,.20)';
+      Sim.rr(ctx, g.x + 6, g.surface - 10, rulerW, g.bottom - g.surface + 10, 10);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(g.x + 6 + rulerW, g.surface);
+      ctx.lineTo(g.x + 6 + rulerW, g.bottom);
+      ctx.stroke();
+
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      for (var dm = 0; dm <= SURFACE; dm += 0.5) {
+        var yy = metToPxY(dm, g);
+        var major = dm % 1 === 0;
+        ctx.strokeStyle = major ? 'rgba(255,255,255,.72)' : 'rgba(255,255,255,.34)';
+        ctx.lineWidth = major ? 1.4 : 1;
+        ctx.beginPath();
+        ctx.moveTo(g.x + 12, yy);
+        ctx.lineTo(g.x + (major ? 24 : 19), yy);
+        ctx.stroke();
+        if (major) {
+          ctx.fillStyle = 'rgba(255,255,255,.94)';
+          ctx.font = Sim.font(9.5, 700);
+          ctx.fillText(dm + ' m', g.x + 29, yy);
+        }
+      }
+    }
+
+    /* cubo */
+    var cw = SIDE * g.scale;
+    var cxp = g.cx;
+    var cyp = metToPxY(S.y, g);
+    drawCube(ctx, cxp, cyp, cw, S.rhoObj);
+
+    /* flechas */
+    if (S.showForces) {
+      var sub = Sim.clamp(submergedDepth(S.y), 0, SIDE);
+      var weight = S.rhoObj * VOL * G;
+      var buoy = S.rhoLiq * G * AREA * sub;
+      var maxF = Math.max(weight, buoy, 1);
+      var wl = 26 + 110 * weight / maxF;
+      var bl = buoy > 0.5 ? 26 + 110 * buoy / maxF : 0;
+
+      /* peso: se desplaza para que la punta no se salga del tanque */
+      var wx = cxp + cw / 2 + 26;
+      var wy2 = Math.min(cyp + wl / 2, g.bottom - 14);
+      var wy1 = wy2 - wl;
+      Sim.arrow(ctx, wx, wy1, wx, wy2, { color: C.red, width: 3, head: 9 });
+      forceTag(ctx, 'mg ' + fmtForce(weight), wx + 12, (wy1 + wy2) / 2, C.red, 'left');
+
+      /* empuje */
+      if (bl > 0) {
+        var ex = cxp - cw / 2 - 26;
+        Sim.arrow(ctx, ex, cyp, ex, cyp - bl, { color: C.blue, width: 3, head: 9 });
+        forceTag(ctx, 'E ' + fmtForce(buoy), ex - 12, cyp - bl / 2, C.blue, 'right');
+      }
+
+      /* normal del fondo */
+      if (S.onFloor) {
+        var normal = weight - buoy;
+        if (normal > 0.5) {
+          var nl = 18 + 52 * normal / maxF;
+          var ny1 = cyp + cw / 2;
+          Sim.arrow(ctx, cxp + cw * 0.2, ny1, cxp + cw * 0.2, ny1 - nl, {
+            color: C.green, width: 2.6, head: 8
+          });
+          forceTag(ctx, 'N ' + fmtForce(normal), cxp + cw * 0.2 + 10, ny1 - nl / 2, C.green, 'left');
+        }
+      }
+    }
+
+    /* indicador de nivel */
+    ctx.strokeStyle = 'rgba(255,255,255,.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(g.x + g.w - 1, g.surface);
+    ctx.lineTo(g.x + g.w + 12, g.surface);
+    ctx.stroke();
+
+    ctx.restore();
+
+    Sim.tag(ctx, 'superficie', g.x + g.w + 18, g.surface, {
+      size: 9, bg: C.glass, color: C.dim, align: 'left', stroke: false, padX: 6
+    });
+
+    /* vidrio */
+    Sim.rr(ctx, g.x + 0.5, g.top + 0.5, g.w - 1, g.bottom - g.top - 1, 18);
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.14)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.14)';
+    Sim.rr(ctx, g.x + 9, g.top + 14, 7, g.bottom - g.top - 28, 4);
+    ctx.fill();
+
+    /* base del tanque */
+    ctx.fillStyle = C.dark ? '#242429' : '#c9ccd4';
+    Sim.rr(ctx, g.x - 10, g.bottom - 3, g.w + 20, 12, 6);
+    ctx.fill();
+
+    /* etiquetas */
+    Sim.tag(ctx, liq.name + ' · ' + S.rhoLiq + ' kg/m³', g.cx, g.top - 22, {
+      size: 10.5, bg: C.glass, color: C.ink
+    });
+    Sim.tag(ctx, 'Cubo de 1 m × 1 m × 1 m', 88, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, 'ρ = ' + S.rhoObj + ' kg/m³', w - 20, 26, {
+      size: 10, bg: C.glass, color: MAT_COLOR(S.rhoObj), align: 'right'
+    });
+
+    var st = statusText();
+    if (st) {
+      Sim.tag(ctx, st.text, g.cx, g.top - 54, {
+        size: 11, padX: 13, bg: st.good ? C.green : C.card,
+        color: st.good ? '#fff' : C.ink, stroke: !st.good
+      });
+    }
+  }
+
+  function MAT_COLOR(rho) {
+    if (rho < 400) return MATERIALS.corcho.color;
+    if (rho < 800) return MATERIALS.madera.color;
+    if (rho < 1400) return MATERIALS.hielo.color;
+    return MATERIALS.aluminio.color;
+  }
+
+  function drawCube(ctx, cx, cy, size, rho) {
+    var half = size / 2;
+    var base = MAT_COLOR(rho);
+
+    /* sombra */
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath();
+    ctx.ellipse(cx + 3, cy + half - 2, half * 0.9, 5, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    /* cuerpo */
+    var grd = ctx.createLinearGradient(cx - half, cy - half, cx + half, cy + half);
+    grd.addColorStop(0, base);
+    grd.addColorStop(1, shade(base, -28));
+    ctx.fillStyle = grd;
+    Sim.rr(ctx, cx - half, cy - half, size, size, size * 0.11);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.34)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    /* bisel */
+    ctx.fillStyle = 'rgba(255,255,255,.2)';
+    Sim.rr(ctx, cx - half + 6, cy - half + 6, size - 12, size * 0.07, 3);
+    ctx.fill();
+
+    /* textura según material */
+    ctx.save();
+    Sim.rr(ctx, cx - half, cy - half, size, size, size * 0.11);
+    ctx.clip();
+    if (rho < 400) {
+      ctx.fillStyle = 'rgba(120,70,20,.22)';
+      for (var i = 0; i < 26; i++) {
+        var px = cx - half + ((i * 37) % 100) / 100 * size;
+        var py = cy - half + ((i * 61) % 100) / 100 * size;
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2 + (i % 3) * 0.7, 0, Sim.TAU);
+        ctx.fill();
+      }
+    } else if (rho < 800) {
+      ctx.strokeStyle = 'rgba(90,50,15,.28)';
+      ctx.lineWidth = 1.2;
+      for (var j = 0; j < 6; j++) {
+        var yy = cy - half + size * (0.15 + j * 0.13);
+        ctx.beginPath();
+        ctx.moveTo(cx - half, yy);
+        ctx.bezierCurveTo(cx - half * 0.3, yy + 5, cx + half * 0.2, yy - 5, cx + half, yy + 2);
+        ctx.stroke();
+      }
+    } else if (rho < 1400) {
+      ctx.strokeStyle = 'rgba(255,255,255,.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx - half * 0.4, cy - half);
+      ctx.lineTo(cx + half * 0.2, cy + half);
+      ctx.moveTo(cx + half * 0.25, cy - half);
+      ctx.lineTo(cx - half * 0.15, cy + half);
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.14)';
+      for (var k = 0; k < 8; k++) {
+        ctx.fillRect(cx - half + 6 + (k % 4) * (size / 4), cy - half + 8 + Math.floor(k / 4) * (size / 2), size / 4 - 4, 3);
+      }
+    }
+    ctx.restore();
+
+    /* etiqueta m */
+    ctx.fillStyle = 'rgba(0,0,0,.55)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(Math.max(10, size * 0.07), 700);
+    ctx.fillText(Math.round(rho) + '', cx, cy + 1);
+    ctx.font = Sim.font(Math.max(8, size * 0.05), 600);
+    ctx.fillText('kg/m³', cx, cy + size * 0.1);
+  }
+
+  function shade(hex, amt) {
+    var n = parseInt(hex.slice(1), 16);
+    var r = Sim.clamp(((n >> 16) & 255) + amt, 0, 255);
+    var g = Sim.clamp(((n >> 8) & 255) + amt, 0, 255);
+    var b = Sim.clamp((n & 255) + amt, 0, 255);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+  function hexA(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+
+  function forceTag(ctx, text, x, y, color, align) {
+    var h = v.h;
+    Sim.tag(ctx, text, x, Sim.clamp(y, 18, h - 16), {
+      size: 9.5, bg: C.card, color: color, padX: 5.5, align: align || 'center'
+    });
+  }
+
+  function fmtForce(f) {
+    if (f >= 1000) return (f / 1000).toFixed(1) + ' kN';
+    return f.toFixed(0) + ' N';
+  }
+
+  function statusText() {
+    var diff = S.rhoObj - S.rhoLiq;
+    if (Math.abs(diff) < 8) {
+      return {
+        text: 'Equilibrio neutro · puede quedar a cualquier profundidad',
+        short: 'Equilibrio neutro',
+        good: false
+      };
+    }
+    if (diff < 0) {
+      var frac = S.rhoObj / S.rhoLiq * 100;
+      return {
+        text: 'Flota · ' + frac.toFixed(0) + ' % del volumen bajo el líquido',
+        short: 'Flota · ' + frac.toFixed(0) + ' % sumergido',
+        good: true
+      };
+    }
+    return {
+      text: 'Se hunde · el objeto es más denso que el líquido',
+      short: 'Se hunde · va al fondo',
+      good: false
+    };
+  }
+
+  /* ---------------------------------------------------------------- lecturas */
+  function updateReads() {
+    var sub = Sim.clamp(submergedDepth(S.y), 0, SIDE);
+    var weight = S.rhoObj * VOL * G;
+    var buoy = S.rhoLiq * G * AREA * sub;
+    var mass = S.rhoObj * VOL;
+    var net = buoy - weight;
+    if (S.onFloor) net += (weight - buoy);
+    R.set('wo', fmtForce(weight));
+    R.set('fb', fmtForce(buoy), 'good');
+    R.set('sub', (sub / SIDE * 100).toFixed(0) + ' %');
+    R.set('eq', (Sim.clamp(S.rhoObj / S.rhoLiq, 0, 1) * 100).toFixed(0) + ' %');
+    var netF = buoy - weight + (S.onFloor ? weight - buoy : 0);
+    R.set('net', Math.abs(netF) < 0.5 ? '0 N (equilibrio)' : fmtForce(Math.abs(netF)) + (netF > 0 ? ' ↑' : ' ↓'));
+    R.set('ro', S.rhoObj + ' kg/m³');
+    R.set('rl', S.rhoLiq + ' kg/m³');
+    var st = statusText();
+    R.set('st', st.short, st.good ? 'good' : (Math.abs(S.rhoObj - S.rhoLiq) < 8 ? '' : 'hot'));
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      var g = geom(v.w, v.h);
+      var cw = SIDE * g.scale;
+      var cyp = metToPxY(S.y, g);
+      if (Math.abs(x - g.cx) < cw / 2 + 12 && Math.abs(y - cyp) < cw / 2 + 12) {
+        S.drag = true;
+        S.dragOff = y - cyp;
+        S.vy = 0;
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x, y) {
+      if (!S.drag) return;
+      var g = geom(v.w, v.h);
+      var targetPx = y - S.dragOff;
+      var m = SURFACE - (targetPx - g.surface) / g.scale;
+      S.y = Sim.clamp(m, SIDE / 2, 4.05);
+      S.vy = 0;
+      S.onFloor = false;
+      updateReads();
+    },
+    up: function () {
+      if (!S.drag) return;
+      S.drag = false;
+      S.vy = 0;
+      cv.style.cursor = 'grab';
+      Sim.beep(420, 0.05, 'sine', 0.03);
+    },
+    hover: function (x, y) {
+      var g = geom(v.w, v.h);
+      var cw = SIDE * g.scale;
+      var cyp = metToPxY(S.y, g);
+      cv.style.cursor = Math.abs(x - g.cx) < cw / 2 + 12 && Math.abs(y - cyp) < cw / 2 + 12 ? 'grab' : 'default';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+    S.t += dt;
+
+    if (!S.drag) {
+      var steps = 5;
+      for (var i = 0; i < steps; i++) physics(dt / steps);
+    }
+
+    updateReads();
+    v.render();
+  });
+
+  settle(false);
+  updateReads();
+  v.render();
+  Sim.hint('Arrastra el cubo o cambia el material · observa el empuje y el peso');
+})();
+</script>
+</body>
+</html>

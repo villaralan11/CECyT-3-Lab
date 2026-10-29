@@ -29,7 +29,7 @@ const SUBJECTS = [
     id: "fisica",
     name: "Física",
     icon: Atom,
-    desc: "Cinemática con integración Euler-Cromer: MRU, MRUV y los 3 tiros (vertical, horizontal y parabólico).",
+    desc: "Cinemática, fuerzas, energía, fluidos, electricidad y ondas: 11 simuladores de Física I a IV con gráficas en vivo.",
     bg: "from-emerald-400 via-teal-400 to-cyan-400",
     bgSoft: "bg-emerald-50",
     text: "text-emerald-700",
@@ -38,8 +38,8 @@ const SUBJECTS = [
     chip: "bg-emerald-50 text-emerald-700 border-emerald-100",
     hoverBorder: "hover:border-emerald-200",
     glow: "shadow-emerald-500/25",
-    chips: ["MRU", "MRUV", "Los 3 tiros"],
-    count: "3 simuladores",
+    chips: ["Cinemática", "Fuerzas y energía", "Ondas"],
+    count: "11 simuladores",
     href: "/fisica",
   },
   {
@@ -81,15 +81,15 @@ const SUBJECTS = [
 const STATS = [
   { value: "3", label: "Materias", sub: "Física · Química · Inglés", icon: Layers, tint: "text-emerald-300", aura: "bg-emerald-400/10" },
   { value: "10", label: "Temas", sub: "Cada uno con falla + sim + ejemplo", icon: BookOpen, tint: "text-fuchsia-300", aura: "bg-fuchsia-400/10" },
-  { value: "10", label: "Simuladores", sub: "Euler-Cromer · IUPAC real · Moles", icon: Microscope, tint: "text-amber-300", aura: "bg-amber-400/10" },
+  { value: "18", label: "Simuladores", sub: "11 Física · 3 Química · 4 Inglés", icon: Microscope, tint: "text-amber-300", aura: "bg-amber-400/10" },
   { value: "82", label: "Ejercicios", sub: "Bancos + reacciones + transformaciones", icon: Target, tint: "text-rose-300", aura: "bg-rose-400/10" },
 ];
 
 const TOPICS = [
-  { n: "01", subject: "fisica", name: "Cinemática · MRU", desc: "Movimiento Rectilíneo Uniforme", href: "/fisica/mru" },
-  { n: "02", subject: "fisica", name: "Cinemática · MRUV", desc: "Aceleración Constante", href: "/fisica/mruv" },
-  { n: "03", subject: "fisica", name: "Los 3 tiros", desc: "Vertical, Horizontal y Parabólico", href: "/fisica/tiros" },
-  { n: "04", subject: "quimica", name: "Nomenclatura IUPAC", desc: "Orgánica e Inorgánica · 24 compuestos", href: "/quimica/iupac" },
+  { n: "01", subject: "fisica", name: "Física I · Cinemática", desc: "MRU, MRUV y tiro parabólico", href: "/fisica#fisica-i" },
+  { n: "02", subject: "fisica", name: "Física II · Fuerzas y energía", desc: "Dinámica, colisiones, fluidos y gases", href: "/fisica#fisica-ii" },
+  { n: "03", subject: "fisica", name: "Física III–IV · Electricidad y ondas", desc: "Cargas, circuitos y ondas en cuerda", href: "/fisica#fisica-iii" },
+  { n: "04", subject: "quimica", name: "Nomenclatura IUPAC", desc: "Orgánica e Inorgánica · 25 compuestos", href: "/quimica/iupac" },
   { n: "05", subject: "quimica", name: "Balanceo de ecuaciones", desc: "Steppers + tabla de átomos en vivo", href: "/quimica/balanceo" },
   { n: "06", subject: "quimica", name: "Estequiometría", desc: "Reactivo limitante y rendimiento", href: "/quimica/estequiometria" },
   { n: "07", subject: "ingles", name: "Verb Tenses", desc: "12 ejercicios con marcadores temporales", href: "/ingles/verb-tenses" },
@@ -506,7 +506,7 @@ export default function Home() {
                         </div>
                         <div>
                           <div className="text-[10px] font-semibold uppercase tracking-wider opacity-85">Física</div>
-                          <div className="text-sm font-bold">Cinemática · 5 modos</div>
+                          <div className="text-sm font-bold">11 simuladores · 4 unidades</div>
                         </div>
                       </div>
                       <ChevronRight className="h-4 w-4 opacity-70" />
@@ -612,9 +612,9 @@ export default function Home() {
               Física, Química e Inglés del plan DEMS, cada tema con su secuencia
               completa: <strong className="text-foreground">falla productiva</strong>,{" "}
               <strong className="text-foreground">simulador</strong>,{" "}
-              <strong className="text-foreground">ejemplo resuelto</strong>. Del MRU al
-              tiro parabólico, del nombre IUPAC al reactivo limitante, del presente simple
-              al reported speech.
+              <strong className="text-foreground">ejemplo resuelto</strong>. De la
+              cinemática a las ondas, de las fuerzas a los fluidos, del nombre IUPAC al
+              reactivo limitante, del presente simple al reported speech.
             </p>
           </div>
 

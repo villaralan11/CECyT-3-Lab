@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Ley de Ohm · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-blue">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-purple">F3</span>
+    <div class="ct"><strong>Ley de Ohm</strong><span>Física III · Circuitos eléctricos</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+
+  var S = {
+    mode: 'serie',
+    V: 12,
+    R1: 10,
+    R2: 15,
+    showFlow: true,
+    showValues: true,
+    dash: 0,
+    time: 0,
+    Req: 0,
+    I: 0,
+    I1: 0,
+    I2: 0,
+    V1: 0,
+    V2: 0,
+    P: 0,
+    P1: 0,
+    P2: 0
+  };
+
+  var panel = document.getElementById('panel');
+
+  /* ---------------------------------------------------------------- panel */
+  var sMode = Sim.sec(panel, 'Circuito');
+  Sim.seg(sMode, {
+    options: [['serie', 'Serie'], ['paralelo', 'Paralelo']],
+    value: 'serie',
+    onChange: function (v) {
+      S.mode = v;
+      calc();
+      Sim.hint(v === 'serie'
+        ? 'Serie: la misma corriente pasa por las dos resistencias'
+        : 'Paralelo: el mismo voltaje cae en las dos resistencias');
+    }
+  });
+  var modeNote = document.createElement('p');
+  modeNote.className = 'note';
+  sMode.appendChild(modeNote);
+
+  var sBattery = Sim.sec(panel, 'Batería');
+  var vSlider = Sim.slider(sBattery, {
+    label: 'Voltaje de la batería',
+    min: 1.5, max: 24, step: 0.5, value: S.V, unit: 'V', digits: 1,
+    onInput: function (v) { S.V = v; calc(); }
+  });
+
+  var sRes = Sim.sec(panel, 'Resistencias');
+  var r1Slider = Sim.slider(sRes, {
+    label: 'Resistencia R1',
+    min: 1, max: 40, step: 1, value: S.R1, unit: 'Ω', digits: 0,
+    onInput: function (v) { S.R1 = v; calc(); }
+  });
+  var r2Slider = Sim.slider(sRes, {
+    label: 'Resistencia R2',
+    min: 1, max: 40, step: 1, value: S.R2, unit: 'Ω', digits: 0,
+    onInput: function (v) { S.R2 = v; calc(); }
+  });
+  var rowGo = Sim.btnrow(sRes);
+  Sim.button(rowGo, 'R1 = R2', function () {
+    S.R2 = S.R1;
+    r2Slider.set(S.R2, true);
+    calc();
+    Sim.beep(520, 0.05, 'sine', 0.03);
+  });
+  Sim.button(rowGo, 'Reiniciar', function () {
+    S.V = 12; S.R1 = 10; S.R2 = 15;
+    vSlider.set(S.V, true);
+    r1Slider.set(S.R1, true);
+    r2Slider.set(S.R2, true);
+    calc();
+    Sim.beep(460, 0.06, 'sine', 0.03);
+  });
+
+  var sView = Sim.sec(panel, 'Vista');
+  Sim.toggle(sView, {
+    label: 'Mostrar corriente animada', value: true,
+    onChange: function (v) { S.showFlow = v; }
+  });
+  Sim.toggle(sView, {
+    label: 'Mostrar valores en el circuito', value: true,
+    onChange: function (v) { S.showValues = v; }
+  });
+
+  var sData = Sim.sec(panel, 'Medidas');
+  var R = Sim.reads(sData, [
+    ['req', 'Resistencia equivalente'],
+    ['it', 'Corriente total'],
+    ['i1', 'Corriente en R1'],
+    ['i2', 'Corriente en R2'],
+    ['v1', 'Voltaje en R1'],
+    ['v2', 'Voltaje en R2'],
+    ['pt', 'Potencia total', { wide: true }],
+    ['cmp', 'Lo que ocurre', { wide: true }]
+  ]);
+
+  var sFormula = Sim.sec(panel, 'Fórmulas');
+  var fnote = document.createElement('p');
+  fnote.className = 'note';
+  fnote.innerHTML = '<b>V = I · R</b> &nbsp;·&nbsp; <b>P = V · I = I² · R</b><br>' +
+    'Serie: R<sub>eq</sub> = R1 + R2, misma I.<br>' +
+    'Paralelo: 1/R<sub>eq</sub> = 1/R1 + 1/R2, mismo V.';
+  sFormula.appendChild(fnote);
+
+  Sim.help(
+    '<p>La ley de Ohm relaciona voltaje, corriente y resistencia:</p>' +
+    '<p style="text-align:center"><b>V = I · R</b></p>' +
+    '<p>La batería entrega un voltaje <b>V</b>. La corriente <b>I</b> es la cantidad de carga que pasa por segundo (amperes) y la resistencia <b>R</b> se opone a ese paso (ohms).</p>' +
+    '<ul><li><b>En serie</b>, la corriente es la misma en todo el circuito y los voltajes se reparten: V = V1 + V2. La resistencia equivalente es R1 + R2.</li>' +
+    '<li><b>En paralelo</b>, el voltaje es el mismo en ambas ramas y la corriente se reparte: I = I1 + I2. La resistencia equivalente es menor que la más pequeña.</li></ul>' +
+    '<p>La potencia disipada se convierte en calor: por eso las resistencias se calientan más cuando pasa más corriente. Observa el brillo naranja.</p>' +
+    '<p>Cambia el voltaje, las resistencias y el tipo de conexión. Compara cómo se reparten la corriente y el voltaje.</p>'
+  );
+
+  /* ---------------------------------------------------------------- cálculo */
+  function calc() {
+    if (S.mode === 'serie') {
+      S.Req = S.R1 + S.R2;
+      S.I = S.V / S.Req;
+      S.I1 = S.I;
+      S.I2 = S.I;
+      S.V1 = S.I * S.R1;
+      S.V2 = S.I * S.R2;
+    } else {
+      S.Req = (S.R1 * S.R2) / (S.R1 + S.R2);
+      S.I = S.V / S.Req;
+      S.I1 = S.V / S.R1;
+      S.I2 = S.V / S.R2;
+      S.V1 = S.V;
+      S.V2 = S.V;
+    }
+    S.P1 = S.I1 * S.I1 * S.R1;
+    S.P2 = S.I2 * S.I2 * S.R2;
+    S.P = S.P1 + S.P2;
+    modeNote.innerHTML = S.mode === 'serie'
+      ? 'En serie, la <b>corriente</b> es igual en R1 y R2. Los voltajes se suman.'
+      : 'En paralelo, el <b>voltaje</b> es igual en R1 y R2. Las corrientes se suman.';
+  }
+
+  function fmtI(v) {
+    if (v >= 10) return v.toFixed(1) + ' A';
+    return v.toFixed(2) + ' A';
+  }
+  function fmtV(v) {
+    return v.toFixed(v >= 10 ? 1 : 2) + ' V';
+  }
+  function updateReads() {
+    R.set('req', S.Req.toFixed(2) + ' Ω');
+    R.set('it', fmtI(S.I));
+    R.set('i1', fmtI(S.I1));
+    R.set('i2', fmtI(S.I2));
+    R.set('v1', fmtV(S.V1));
+    R.set('v2', fmtV(S.V2));
+    R.set('pt', S.P.toFixed(1) + ' W · ' + (S.mode === 'serie' ? 'se reparte como I²R' : 'cada rama disipa V²/R'), 'hot');
+    var cmp;
+    if (S.mode === 'serie') {
+      cmp = S.V1 > S.V2 ? 'R1 recibe más voltaje porque es mayor' : (S.V2 > S.V1 ? 'R2 recibe más voltaje porque es mayor' : 'Ambas resistencias reciben el mismo voltaje');
+    } else {
+      cmp = S.I1 > S.I2 ? 'Por R1 pasa más corriente porque es menor' : (S.I2 > S.I1 ? 'Por R2 pasa más corriente porque es menor' : 'Ambas ramas llevan la misma corriente');
+    }
+    R.set('cmp', cmp);
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function layout(w, h) {
+    var narrow = w < 560;
+    var left = narrow ? 72 : 100;
+    var right = w - (narrow ? 62 : 96);
+    var top = Math.max(112, h * 0.18);
+    var bottom = h - 84;
+    var cy = (top + bottom) / 2;
+    return { left: left, right: right, top: top, bottom: bottom, cy: cy, narrow: narrow };
+  }
+
+  function draw(ctx, w, h) {
+    if (!v) return;
+    C = Sim.C;
+    var L = layout(w, h);
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* mesa / rejilla */
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx < w; gx += 42) {
+      ctx.beginPath();
+      ctx.moveTo(gx + 0.5, 0);
+      ctx.lineTo(gx + 0.5, h);
+      ctx.stroke();
+    }
+    for (var gy = 0; gy < h; gy += 42) {
+      ctx.beginPath();
+      ctx.moveTo(0, gy + 0.5);
+      ctx.lineTo(w, gy + 0.5);
+      ctx.stroke();
+    }
+
+    var paths = buildPaths(L, w, h);
+
+    /* cables */
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (var i = 0; i < paths.length; i++) {
+      strokePath(ctx, paths[i].pts, C.dark ? 'rgba(230,230,238,.72)' : 'rgba(52,52,60,.72)', 5);
+    }
+    ctx.restore();
+
+    /* corriente animada */
+    if (S.showFlow) {
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      var speed = 26 + Math.min(190, S.I * 8);
+      for (var p = 0; p < paths.length; p++) {
+        var path = paths[p];
+        ctx.beginPath();
+        for (var q = 0; q < path.pts.length; q++) {
+          if (q === 0) ctx.moveTo(path.pts[q].x, path.pts[q].y);
+          else ctx.lineTo(path.pts[q].x, path.pts[q].y);
+        }
+        ctx.setLineDash([7, 17]);
+        ctx.lineDashOffset = path.phase - S.dash * (0.6 + speed / 120);
+        ctx.strokeStyle = colorA(C.orange, 0.9);
+        ctx.lineWidth = 3.6;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    }
+
+    if (S.mode === 'serie') {
+      drawResistor(ctx, w * 0.42, L.top, S.R1, S.V1, S.P1, C.indigo, 'R1');
+      drawResistor(ctx, w * 0.63, L.top, S.R2, S.V2, S.P2, C.teal, 'R2');
+    } else {
+      drawResistor(ctx, (w * 0.40 + L.right) / 2, L.top, S.R1, S.V1, S.P1, C.indigo, 'R1');
+      drawResistor(ctx, (w * 0.40 + L.right) / 2, L.cy, S.R2, S.V2, S.P2, C.teal, 'R2');
+      /* nodos de la bifurcación */
+      drawNode(ctx, w * 0.40, L.top);
+      drawNode(ctx, L.right, L.cy);
+      Sim.tag(ctx, 'se divide', w * 0.40, L.top - 24, { size: 9, bg: C.glass, color: C.dim });
+      Sim.tag(ctx, 'se une', L.right - 34, L.cy + 26, { size: 9, bg: C.glass, color: C.dim });
+    }
+
+    /* batería */
+    drawBattery(ctx, L.left, L.cy, S.V);
+    /* flechas de sentido de la corriente */
+    Sim.arrow(ctx, L.left + 18, L.top, L.left + 46, L.top, { color: C.orange, width: 2, head: 7 });
+    Sim.arrow(ctx, L.right - 18, L.bottom, L.right - 46, L.bottom, { color: C.orange, width: 2, head: 7 });
+    Sim.tag(ctx, 'I', L.left + 34, L.top - 15, { size: 9, bg: C.card, color: C.orange });
+    Sim.tag(ctx, 'I', L.right - 34, L.bottom - 15, { size: 9, bg: C.card, color: C.orange });
+
+    /* etiquetas de la escena */
+    Sim.tag(ctx, (S.mode === 'serie' ? 'Circuito en serie' : 'Circuito en paralelo'), w / 2, 26, {
+      size: 11, bg: C.glass, color: C.ink
+    });
+    if (S.showValues) {
+      Sim.tag(ctx, 'I = ' + fmtI(S.I) + '  ·  R_eq = ' + S.Req.toFixed(1) + ' Ω', w / 2, 52, {
+        size: 10, bg: C.card, color: C.blue
+      });
+    }
+
+    /* potencia: aviso de calor */
+    if (S.P > 80) {
+      Sim.tag(ctx, 'Las resistencias se están calentando', w / 2, h - 30, {
+        size: 9.5, bg: C.card, color: C.orange
+      });
+    } else {
+      Sim.tag(ctx, 'P = ' + S.P.toFixed(1) + ' W disipados como calor', w / 2, h - 30, {
+        size: 9.5, bg: C.glass, color: C.dim
+      });
+    }
+  }
+
+  function buildPaths(L, w, h) {
+    var paths = [];
+    var splitX = w * 0.40;
+    if (S.mode === 'serie') {
+      paths.push({
+        pts: [
+          { x: L.left, y: L.cy - 38 },
+          { x: L.left, y: L.top },
+          { x: L.right, y: L.top },
+          { x: L.right, y: L.bottom },
+          { x: L.left, y: L.bottom },
+          { x: L.left, y: L.cy + 38 }
+        ],
+        phase: 0
+      });
+    } else {
+      paths.push({
+        pts: [
+          { x: L.left, y: L.cy - 38 },
+          { x: L.left, y: L.top },
+          { x: splitX, y: L.top }
+        ],
+        phase: 0
+      });
+      paths.push({
+        pts: [
+          { x: splitX, y: L.top },
+          { x: L.right, y: L.top },
+          { x: L.right, y: L.cy }
+        ],
+        phase: 38
+      });
+      paths.push({
+        pts: [
+          { x: splitX, y: L.top },
+          { x: splitX, y: L.cy },
+          { x: L.right, y: L.cy }
+        ],
+        phase: 11
+      });
+      paths.push({
+        pts: [
+          { x: L.right, y: L.cy },
+          { x: L.right, y: L.bottom },
+          { x: L.left, y: L.bottom },
+          { x: L.left, y: L.cy + 38 }
+        ],
+        phase: 24
+      });
+    }
+    return paths;
+  }
+
+  function strokePath(ctx, pts, color, width) {
+    ctx.beginPath();
+    for (var i = 0; i < pts.length; i++) {
+      if (i === 0) ctx.moveTo(pts[i].x, pts[i].y);
+      else ctx.lineTo(pts[i].x, pts[i].y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  function drawNode(ctx, x, y) {
+    ctx.fillStyle = C.dark ? '#1c1c1e' : '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, 6.5, 0, Sim.TAU);
+    ctx.fill();
+    ctx.strokeStyle = C.ink;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  function drawBattery(ctx, x, cy, volts) {
+    /* terminales */
+    ctx.strokeStyle = C.dark ? 'rgba(230,230,238,.72)' : 'rgba(52,52,60,.72)';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, cy - 56);
+    ctx.lineTo(x, cy - 38);
+    ctx.moveTo(x, cy + 38);
+    ctx.lineTo(x, cy + 56);
+    ctx.stroke();
+
+    /* cuerpo */
+    var g = ctx.createLinearGradient(x - 24, 0, x + 24, 0);
+    g.addColorStop(0, '#0a5bd6');
+    g.addColorStop(0.55, C.blue);
+    g.addColorStop(1, '#64d2ff');
+    ctx.fillStyle = g;
+    Sim.rr(ctx, x - 26, cy - 42, 52, 84, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.28)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* brillo */
+    ctx.fillStyle = 'rgba(255,255,255,.22)';
+    Sim.rr(ctx, x - 20, cy - 35, 7, 70, 3.5);
+    ctx.fill();
+
+    /* terminal + arriba */
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = Sim.font(19, 700);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('+', x, cy - 22);
+    ctx.fillRect(x - 8, cy + 16, 16, 3);
+    ctx.font = Sim.font(10, 700);
+    ctx.fillText('−', x, cy + 25);
+
+    /* voltaje */
+    Sim.tag(ctx, volts.toFixed(1) + ' V', x, cy + 66, {
+      size: 10.5, bg: C.card, color: C.blue
+    });
+  }
+
+  function drawResistor(ctx, x, y, ohms, volts, power, baseColor, name) {
+    var compact = v.w < 560;
+    var bw = compact ? 62 : 84, bh = compact ? 28 : 32;
+    var heat = Sim.clamp(Math.log(1 + power) / Math.log(1 + 260), 0, 1);
+    var hot = mix(baseColor, '#ff5b1a', heat * 0.92);
+
+    /* halo de calor */
+    if (heat > 0.08) {
+      var gl = ctx.createRadialGradient(x, y, 8, x, y, 62);
+      gl.addColorStop(0, colorA('#ff6b22', heat * (C.dark ? 0.42 : 0.24)));
+      gl.addColorStop(1, colorA('#ff6b22', 0));
+      ctx.fillStyle = gl;
+      ctx.beginPath();
+      ctx.arc(x, y, 62, 0, Sim.TAU);
+      ctx.fill();
+    }
+
+    /* ondas de calor */
+    if (heat > 0.32 && y > 148) {
+      ctx.save();
+      ctx.strokeStyle = colorA('#ff8a2a', 0.55);
+      ctx.lineWidth = 1.4;
+      for (var i = 0; i < 3; i++) {
+        var ox = x - 19 + i * 19;
+        ctx.beginPath();
+        for (var t = 0; t <= 8; t++) {
+          var yy = y - bw / 2 - 8 - t * 2.4;
+          var xx = ox + Math.sin(t * 0.9 + S.time * 3 + i) * 3;
+          if (t === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* cuerpo */
+    var g = ctx.createLinearGradient(0, y - bh / 2, 0, y + bh / 2);
+    g.addColorStop(0, mix(hot, '#ffffff', 0.28));
+    g.addColorStop(0.5, hot);
+    g.addColorStop(1, mix(hot, '#000000', 0.26));
+    ctx.fillStyle = g;
+    Sim.rr(ctx, x - bw / 2, y - bh / 2, bw, bh, 9);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.34)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    /* franjas */
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    ctx.fillRect(x - 22, y - bh / 2 + 7, 4, bh - 14);
+    ctx.fillRect(x - 7, y - bh / 2 + 7, 3, bh - 14);
+    ctx.fillRect(x + 9, y - bh / 2 + 7, 5, bh - 14);
+
+    /* texto */
+    ctx.fillStyle = 'rgba(255,255,255,.96)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(compact ? 9 : 10.5, 750);
+    ctx.fillText(name + ' · ' + ohms.toFixed(0) + ' Ω', x, y + 0.5);
+
+    /* etiqueta de voltaje */
+    if (S.showValues) {
+      Sim.tag(ctx, compact ? fmtV(volts) : (fmtV(volts) + '  ·  ' + power.toFixed(1) + ' W'), x, y + bh / 2 + 22, {
+        size: 9.5, bg: C.card, color: power > 40 ? C.orange : C.ink
+      });
+    }
+
+    /* terminales */
+    ctx.strokeStyle = C.dark ? 'rgba(230,230,238,.72)' : 'rgba(52,52,60,.72)';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - bw / 2 - 10, y);
+    ctx.lineTo(x - bw / 2, y);
+    ctx.moveTo(x + bw / 2, y);
+    ctx.lineTo(x + bw / 2 + 10, y);
+    ctx.stroke();
+  }
+
+  function colorA(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  function mix(a, b, t) {
+    var na = parseInt(a.slice(1), 16), nb = parseInt(b.slice(1), 16);
+    var r = Math.round(((na >> 16) & 255) * (1 - t) + ((nb >> 16) & 255) * t);
+    var g = Math.round(((na >> 8) & 255) * (1 - t) + ((nb >> 8) & 255) * t);
+    var bl = Math.round((na & 255) * (1 - t) + (nb & 255) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+    S.time = time;
+    S.dash += dt * 60;
+
+    updateReads();
+    v.render();
+  });
+
+  calc();
+  updateReads();
+  v.render();
+  Sim.hint('Cambia voltaje y resistencias · compara serie y paralelo');
+})();
+</script>
+</body>
+</html>

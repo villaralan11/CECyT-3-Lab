@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>MRU y MRUV · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-blue">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-blue">F1</span>
+    <div class="ct"><strong>MRU y MRUV</strong><span>Física I · Cinemática</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+
+  var S = {
+    mode: 'mruv',
+    v0: 8,
+    a: 2,
+    t: 0,
+    x: 0,
+    v: 8,
+    running: false,
+    finished: false,
+    tMeta: 0,
+    cam: 0,
+    best: null
+  };
+
+  var fx = Sim.fx();
+  var confettiDone = false;
+
+  /* ---------------------------------------------------------------- panel */
+  var panel = document.getElementById('panel');
+
+  var sMove = Sim.sec(panel, 'Movimiento');
+  var modeSeg = Sim.seg(sMove, {
+    options: [['mru', 'MRU'], ['mruv', 'MRUV']],
+    value: 'mruv',
+    onChange: function (v) {
+      S.mode = v;
+      aSlider.disable(v === 'mru');
+      reset();
+    }
+  });
+  var v0Slider = Sim.slider(sMove, {
+    label: 'Velocidad inicial',
+    min: 0, max: 30, step: 1, value: S.v0, unit: 'm/s', digits: 0,
+    onInput: function (v) { S.v0 = v; reset(); }
+  });
+  var aSlider = Sim.slider(sMove, {
+    label: 'Aceleración',
+    min: -6, max: 6, step: 0.5, value: S.a, unit: 'm/s²', digits: 1,
+    onInput: function (v) { S.a = v; reset(); }
+  });
+  var note = document.createElement('p');
+  note.className = 'note';
+  note.innerHTML = 'MRU: velocidad constante. MRUV: la velocidad cambia con la aceleración.';
+  sMove.appendChild(note);
+
+  var sRun = Sim.sec(panel, 'Carrera');
+  var row = Sim.btnrow(sRun);
+  var btnStart = Sim.button(row, 'Iniciar', toggleRun, { primary: true });
+  Sim.button(row, 'Reiniciar', reset);
+  var statusWrap = document.createElement('div');
+  statusWrap.style.marginTop = '10px';
+  var statusChip = document.createElement('span');
+  statusChip.className = 'status';
+  statusChip.textContent = 'Listo';
+  statusWrap.appendChild(statusChip);
+  sRun.appendChild(statusWrap);
+
+  var sLive = Sim.sec(panel, 'En vivo');
+  var R = Sim.reads(sLive, [
+    ['t', 'Tiempo'],
+    ['x', 'Posición'],
+    ['v', 'Velocidad'],
+    ['a', 'Aceleración'],
+    ['meta', 'Meta · 100 m', { wide: true }]
+  ]);
+
+  var sCharts = Sim.sec(panel, 'Gráficas');
+  var box1 = document.createElement('div');
+  box1.className = 'chartbox';
+  box1.innerHTML = '<div class="chartcap"><span>Posición · x(t)</span><span>m</span></div><canvas id="chX"></canvas>';
+  sCharts.appendChild(box1);
+  var box2 = document.createElement('div');
+  box2.className = 'chartbox';
+  box2.innerHTML = '<div class="chartcap"><span>Velocidad · v(t)</span><span>m/s</span></div><canvas id="chV"></canvas>';
+  sCharts.appendChild(box2);
+
+  var chX = Sim.chart(document.getElementById('chX'), {
+    window: 10,
+    series: [{ label: 'x', color: 'blue' }],
+    yFmt: function (v) { return Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1); }
+  });
+  var chV = Sim.chart(document.getElementById('chV'), {
+    window: 10,
+    series: [{ label: 'v', color: 'green' }],
+    yFmt: function (v) { return Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1); }
+  });
+  var lastSampleT = -1;
+
+  Sim.help(
+    '<p><b>MRU</b> (movimiento rectilíneo uniforme): la velocidad no cambia y la posición avanza en línea recta.</p>' +
+    '<p><b>MRUV</b> (uniformemente acelerado): la aceleración es constante; la velocidad cambia y la gráfica x(t) se curva.</p>' +
+    '<ul><li>Ajusta la velocidad inicial y la aceleración.</li><li>Pulsa <b>Iniciar</b> y observa las gráficas.</li>' +
+    '<li>Reto: llega a la meta de <b>100 m</b> en el menor tiempo posible.</li></ul>'
+  );
+
+  /* ---------------------------------------------------------------- lógica */
+  function reset() {
+    S.t = 0;
+    S.x = 0;
+    S.v = S.v0;
+    S.running = false;
+    S.finished = false;
+    S.tMeta = 0;
+    S.cam = 0;
+    S.best = null;
+    lastSampleT = -1;
+    chX.clear();
+    chV.clear();
+    fx.clear();
+    confettiDone = false;
+    paint();
+  }
+
+  function toggleRun() {
+    if (S.finished) { reset(); }
+    S.running = !S.running;
+    if (S.running) {
+      Sim.beep(520, 0.08, 'sine', 0.05);
+      btnStart.textContent = 'Pausa';
+    } else {
+      btnStart.textContent = 'Continuar';
+    }
+  }
+
+  function finish() {
+    S.finished = true;
+    S.running = false;
+    S.tMeta = S.t;
+    btnStart.textContent = 'Otra vez';
+    if (S.best == null || S.tMeta < S.best) S.best = S.tMeta;
+    Sim.chord([659.25, 783.99, 1046.5], 0.2, 100);
+  }
+
+  function paint() {
+    if (!S.running && !S.finished) btnStart.textContent = S.t > 0 ? 'Continuar' : 'Iniciar';
+    statusChip.className = 'status ' + (S.finished ? 'ok' : (S.running ? '' : 'warn'));
+    statusChip.textContent = S.finished ? '¡Meta alcanzada!' : (S.running ? 'En movimiento' : 'En pausa');
+    R.set('t', S.t.toFixed(2) + ' s');
+    R.set('x', S.x.toFixed(1) + ' m');
+    R.set('v', S.v.toFixed(1) + ' m/s');
+    R.set('a', (S.mode === 'mru' ? 0 : S.a).toFixed(1) + ' m/s²');
+    if (S.finished) {
+      R.set('meta', '¡Llegaste en ' + S.tMeta.toFixed(2) + ' s!', 'good');
+    } else if (S.best != null) {
+      R.set('meta', 'Mejor tiempo: ' + S.best.toFixed(2) + ' s', 'good');
+    } else {
+      R.set('meta', S.x >= 100 ? 'Meta alcanzada' : Math.max(0, 100 - S.x).toFixed(1) + ' m restantes');
+    }
+  }
+
+  /* ---------------------------------------------------------------- dibujo */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var groundY = Math.round(h * 0.7);
+    var progressTop = Math.max(0, h - groundY);
+
+    /* fondo */
+    var g = ctx.createLinearGradient(0, 0, 0, groundY);
+    if (C.dark) {
+      g.addColorStop(0, '#101014');
+      g.addColorStop(1, '#0b0b0d');
+    } else {
+      g.addColorStop(0, '#fbfbfe');
+      g.addColorStop(1, '#ffffff');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = C.dark ? '#151519' : '#f1f1f5';
+    ctx.fillRect(0, groundY, w, h - groundY);
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.13)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + 0.5);
+    ctx.lineTo(w, groundY + 0.5);
+    ctx.stroke();
+
+    var ppm = Math.max(3.6, Math.min(11, (w - 80) / 135));
+    var x0 = 64;
+    function px(met) { return x0 + (met - S.cam) * ppm; }
+
+    /* carretera */
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, groundY, w, h - groundY);
+    ctx.clip();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.10)' : 'rgba(0,0,0,.08)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([14, 16]);
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + 34);
+    ctx.lineTo(w, groundY + 34);
+    ctx.stroke();
+    ctx.restore();
+
+    /* marcas de distancia */
+    var startM = Math.floor(S.cam / 10) * 10;
+    var endM = S.cam + (w - x0) / ppm + 20;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    for (var m = startM; m <= endM; m += 10) {
+      if (m < 0) continue;
+      var X = px(m);
+      if (X < 10 || X > w - 10) continue;
+      var major = m % 20 === 0;
+      ctx.strokeStyle = major ? (C.dark ? 'rgba(255,255,255,.45)' : 'rgba(0,0,0,.35)') : (C.dark ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.16)');
+      ctx.lineWidth = major ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(X, groundY - (major ? 11 : 6));
+      ctx.lineTo(X, groundY);
+      ctx.stroke();
+      if (major) {
+        ctx.fillStyle = C.dim;
+        ctx.font = Sim.font(10, 600);
+        ctx.fillText(m + ' m', X, groundY - 17);
+      }
+    }
+
+    /* meta */
+    var metaX = px(100);
+    if (metaX > -40 && metaX < w + 40) {
+      ctx.strokeStyle = C.dark ? '#f5f5f7' : '#1d1d1f';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(metaX, groundY);
+      ctx.lineTo(metaX, groundY - 78);
+      ctx.stroke();
+      var flagW = 30, flagH = 22;
+      for (var fy = 0; fy < 3; fy++) {
+        for (var fx2 = 0; fx2 < 4; fx2++) {
+          ctx.fillStyle = (fy + fx2) % 2 === 0 ? (C.dark ? '#f5f5f7' : '#1d1d1f') : (C.dark ? '#0b0b0d' : '#ffffff');
+          ctx.fillRect(metaX + 2 + fx2 * (flagW / 4), groundY - 78 + 2 + fy * (flagH / 3), flagW / 4 + 0.5, flagH / 3 + 0.5);
+        }
+      }
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(metaX + 2, groundY - 76, flagW, flagH);
+      Sim.tag(ctx, 'META', metaX + 18, groundY - 92, { size: 9.5, bg: C.card, color: C.ink });
+    }
+
+    /* progreso */
+    var pw = Math.min(360, w * 0.46);
+    var pbx = (w - pw) / 2;
+    var pby = 24;
+    Sim.rr(ctx, pbx, pby, pw, 7, 4);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.13)' : 'rgba(0,0,0,.09)';
+    ctx.fill();
+    var prog = Sim.clamp(S.x / 100, 0, 1);
+    Sim.rr(ctx, pbx, pby, Math.max(7, pw * prog), 7, 4);
+    ctx.fillStyle = prog >= 1 ? C.green : C.blue;
+    ctx.fill();
+    ctx.font = Sim.font(9.5, 600);
+    ctx.fillStyle = C.dim;
+    ctx.textAlign = 'left';
+    ctx.fillText('0', pbx, pby + 22);
+    ctx.textAlign = 'right';
+    ctx.fillText('100 m', pbx + pw, pby + 22);
+
+    /* cronómetro */
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = C.ink;
+    ctx.font = Sim.font(30, 700);
+    ctx.fillText(S.t.toFixed(2), 24, 50);
+    ctx.font = Sim.font(11, 600);
+    ctx.fillStyle = C.dim;
+    ctx.fillText('segundos', 24, 66);
+
+    /* velocímetro */
+    drawGauge(ctx, w, groundY);
+
+    /* coche */
+    var carX = px(S.x);
+    var dir = S.v < -0.05 ? -1 : 1;
+    drawCar(ctx, carX, groundY, dir, Math.abs(S.v), S.finished, time);
+
+    /* confeti */
+    if (S.finished && !confettiDone) {
+      confettiDone = true;
+      fx.burst(Sim.clamp(carX, 40, w - 40), groundY - 50, { n: 60, speed: 340, colors: [C.blue, C.green, C.yellow, C.pink, C.purple] });
+    }
+    fx.draw(ctx);
+
+    /* etiqueta distancia */
+    if (!S.finished) {
+      Sim.tag(ctx, S.x.toFixed(1) + ' m', Sim.clamp(carX, 46, w - 46), groundY - 82, {
+        size: 10.5, bg: C.card, color: C.ink
+      });
+    }
+
+    if (S.finished) {
+      var msg = '¡Meta!  ' + S.tMeta.toFixed(2) + ' s';
+      Sim.tag(ctx, msg, w / 2, 84, {
+        size: 13, bg: C.green, color: '#fff', stroke: false, padX: 14
+      });
+    }
+  }
+
+  function drawGauge(ctx, w, groundY) {
+    var cx = w / 2;
+    var cy = groundY - 230;
+    var r = Math.min(145, (groundY - 170) * 0.62);
+    if (r < 72 || w < 560 || groundY < 470) return;
+
+    var maxV = 40;
+    var a0 = Math.PI * 0.88;
+    var a1 = Math.PI * 2.12;
+    var frac = Sim.clamp(Math.abs(S.v) / maxV, 0, 1);
+
+    ctx.save();
+    ctx.lineCap = 'round';
+
+    /* pista del velocímetro */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.09)' : 'rgba(0,0,0,.07)';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, a0, a1);
+    ctx.stroke();
+
+    /* arco de velocidad */
+    if (frac > 0.001) {
+      var ag = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+      ag.addColorStop(0, C.blue);
+      ag.addColorStop(0.62, C.blue);
+      ag.addColorStop(1, C.teal);
+      ctx.strokeStyle = ag;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, a0, a0 + (a1 - a0) * frac);
+      ctx.stroke();
+    }
+
+    /* marcas */
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(9.5, 600);
+    for (var s = 0; s <= maxV; s += 5) {
+      var aa = a0 + (a1 - a0) * (s / maxV);
+      var ca = Math.cos(aa), sa = Math.sin(aa);
+      var major = s % 10 === 0;
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.30)' : 'rgba(0,0,0,.22)';
+      ctx.lineWidth = major ? 1.6 : 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + ca * (r - 9), cy + sa * (r - 9));
+      ctx.lineTo(cx + ca * (r - (major ? 2 : 5)), cy + sa * (r - (major ? 2 : 5)));
+      ctx.stroke();
+      if (major) {
+        ctx.fillStyle = C.dim;
+        ctx.fillText(s, cx + ca * (r - 28), cy + sa * (r - 28));
+      }
+    }
+
+    /* aguja */
+    var an = a0 + (a1 - a0) * frac;
+    ctx.strokeStyle = frac >= 0.995 ? C.green : C.ink;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(an) * 14, cy + Math.sin(an) * 14);
+    ctx.lineTo(cx + Math.cos(an) * (r - 30), cy + Math.sin(an) * (r - 30));
+    ctx.stroke();
+    ctx.fillStyle = C.ink;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 5.5, 0, Sim.TAU);
+    ctx.fill();
+    ctx.fillStyle = C.card;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.2, 0, Sim.TAU);
+    ctx.fill();
+
+    /* valor */
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.ink;
+    ctx.font = Sim.font(38, 750);
+    ctx.fillText(Math.abs(S.v).toFixed(1), cx, cy + 76);
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(10.5, 650);
+    ctx.fillText('m/s', cx, cy + 99);
+    ctx.restore();
+  }
+
+  function drawCar(ctx, x, groundY, dir, speed, finished, t) {
+    var W = 78, H = 28;
+    ctx.save();
+    ctx.translate(x, groundY);
+    if (dir < 0) ctx.scale(-1, 1);
+
+    /* sombra */
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.5)' : 'rgba(0,0,0,.14)';
+    ctx.beginPath();
+    ctx.ellipse(4, -2, 42, 6, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    /* líneas de velocidad */
+    if (speed > 3) {
+      ctx.strokeStyle = C.blue;
+      ctx.globalAlpha = Math.min(0.5, speed / 45);
+      ctx.lineWidth = 2;
+      for (var i = 0; i < 3; i++) {
+        var len = 12 + speed * 1.2 + i * 5;
+        ctx.beginPath();
+        ctx.moveTo(-W / 2 - 8, -14 - i * 6);
+        ctx.lineTo(-W / 2 - 8 - len, -14 - i * 6);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* ruedas */
+    ctx.fillStyle = '#151517';
+    ctx.beginPath(); ctx.arc(-23, -7, 9, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(23, -7, 9, 0, Sim.TAU); ctx.fill();
+    ctx.fillStyle = '#55555c';
+    ctx.beginPath(); ctx.arc(-23, -7, 3.4, 0, Sim.TAU); ctx.fill();
+    ctx.beginPath(); ctx.arc(23, -7, 3.4, 0, Sim.TAU); ctx.fill();
+
+    /* carrocería */
+    var bg = ctx.createLinearGradient(0, -H - 10, 0, -4);
+    bg.addColorStop(0, C.blue);
+    bg.addColorStop(1, '#0a5bd6');
+    ctx.fillStyle = bg;
+    Sim.rr(ctx, -W / 2, -H - 8, W, H, 8);
+    ctx.fill();
+
+    /* cabina */
+    ctx.fillStyle = C.dark ? '#28282d' : '#e9f2ff';
+    Sim.rr(ctx, -24, -H - 22, 38, 17, 7);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* vidrios */
+    ctx.fillStyle = C.dark ? 'rgba(100,210,255,.55)' : 'rgba(60,130,220,.55)';
+    Sim.rr(ctx, -20, -H - 18, 14, 10, 2.5);
+    ctx.fill();
+    Sim.rr(ctx, -3, -H - 18, 13, 10, 2.5);
+    ctx.fill();
+
+    /* faro */
+    ctx.fillStyle = finished ? '#ffd60a' : 'rgba(255,255,255,.85)';
+    ctx.beginPath();
+    ctx.arc(W / 2 - 7, -H - 1, 2.6, 0, Sim.TAU);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    if (S.running && !S.finished) {
+      S.t += dt;
+      var a = S.mode === 'mru' ? 0 : S.a;
+      S.x += S.v * dt + 0.5 * a * dt * dt;
+      S.v += a * dt;
+      if (S.x < 0) { S.x = 0; S.v = Math.max(0, S.v); }
+      if (S.x >= 100) {
+        S.x = Math.min(S.x, 104);
+        finish();
+      }
+    }
+
+    var camTarget = Math.max(0, S.x - 95);
+    S.cam += (camTarget - S.cam) * (1 - Math.exp(-4.5 * dt));
+
+    if (S.running && S.t !== lastSampleT) {
+      lastSampleT = S.t;
+      chX.push(S.t, [S.x]);
+      chV.push(S.t, [S.v]);
+    }
+
+    fx.update(dt);
+    chX.render();
+    chV.render();
+
+    var aNow = S.mode === 'mru' ? 0 : S.a;
+    R.set('t', S.t.toFixed(2) + ' s');
+    R.set('x', S.x.toFixed(1) + ' m');
+    R.set('v', S.v.toFixed(1) + ' m/s');
+    R.set('a', aNow.toFixed(1) + ' m/s²');
+    if (S.finished) {
+      R.set('meta', '¡Llegaste en ' + S.tMeta.toFixed(2) + ' s!', 'good');
+    } else {
+      R.set('meta', S.x >= 100 ? 'Meta alcanzada' : Math.max(0, 100 - S.x).toFixed(1) + ' m restantes');
+    }
+
+    statusChip.className = 'status ' + (S.finished ? 'ok' : (S.running ? '' : 'warn'));
+    statusChip.textContent = S.finished ? '¡Meta alcanzada!' : (S.running ? 'En movimiento' : 'En pausa');
+    if (!S.running && !S.finished) btnStart.textContent = S.t > 0 ? 'Continuar' : 'Iniciar';
+
+    v.render();
+  });
+
+  reset();
+  Sim.hint('Ajusta los controles y pulsa Iniciar · llega a la meta de 100 m');
+})();
+</script>
+</body>
+</html>

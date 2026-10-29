@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Fuerzas y movimiento · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-green">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Fuerzas y movimiento</strong><span>Física II · Leyes de Newton</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var G = 9.81;
+
+  var S = {
+    mode: 'horizontal',
+    m: 5,
+    F: 20,
+    mu: 0.25,
+    angle: 28,
+    running: false,
+    x: 0,
+    s: 9,
+    v: 0,
+    a: 0,
+    t: 0,
+    N: 0,
+    W: 0,
+    fric: 0,
+    net: 0,
+    drive: 0,
+    maxFric: 0,
+    cam: 0,
+    banner: '',
+    showForces: true,
+    showComponents: true
+  };
+
+  var panel = document.getElementById('panel');
+
+  var sMode = Sim.sec(panel, 'Situación');
+  var modeSeg = Sim.seg(sMode, {
+    options: [['horizontal', 'Horizontal'], ['incline', 'Plano inclinado']],
+    value: 'horizontal',
+    onChange: function (v) {
+      S.mode = v;
+      angleSlider.row.style.display = v === 'incline' ? '' : 'none';
+      updateNote();
+      reset();
+    }
+  });
+
+  var mSlider = Sim.slider(sMode, {
+    label: 'Masa del bloque',
+    min: 1, max: 20, step: 0.5, value: S.m, unit: 'kg', digits: 1,
+    onInput: function (v) { S.m = v; computeForces(); }
+  });
+  var fSlider = Sim.slider(sMode, {
+    label: 'Fuerza aplicada',
+    min: -40, max: 100, step: 1, value: S.F, unit: 'N', digits: 0,
+    onInput: function (v) { S.F = v; computeForces(); }
+  });
+  var muSlider = Sim.slider(sMode, {
+    label: 'Coeficiente de fricción μ',
+    min: 0, max: 0.8, step: 0.01, value: S.mu, digits: 2,
+    onInput: function (v) { S.mu = v; computeForces(); }
+  });
+  var angleSlider = Sim.slider(sMode, {
+    label: 'Ángulo de la rampa',
+    min: 5, max: 40, step: 1, value: S.angle, unit: '°', digits: 0,
+    onInput: function (v) { S.angle = v; reset(); }
+  });
+  angleSlider.row.style.display = 'none';
+
+  var note = document.createElement('p');
+  note.className = 'note';
+  sMode.appendChild(note);
+  function updateNote() {
+    note.innerHTML = S.mode === 'horizontal'
+      ? 'La fuerza empuja el bloque sobre una superficie plana. La fricción se opone al movimiento.'
+      : 'La gravedad tira del bloque rampa abajo. La fuerza aplicada actúa a lo largo de la rampa.';
+  }
+  updateNote();
+
+  var sCtrl = Sim.sec(panel, 'Experimento');
+  var tgForces = Sim.toggle(sCtrl, {
+    label: 'Mostrar fuerzas', value: true,
+    onChange: function (v) { S.showForces = v; }
+  });
+  var tgComp = Sim.toggle(sCtrl, {
+    label: 'Descomponer el peso', value: true,
+    onChange: function (v) { S.showComponents = v; }
+  });
+  var rowBtn = Sim.btnrow(sCtrl);
+  var btnRun = Sim.button(rowBtn, 'Iniciar', toggleRun, { primary: true });
+  Sim.button(rowBtn, 'Reiniciar', reset);
+  var statusWrap = document.createElement('div');
+  statusWrap.style.marginTop = '10px';
+  var chip = document.createElement('span');
+  chip.className = 'status';
+  chip.textContent = 'Listo';
+  statusWrap.appendChild(chip);
+  sCtrl.appendChild(statusWrap);
+
+  var sLive = Sim.sec(panel, 'En vivo');
+  var R = Sim.reads(sLive, [
+    ['N', 'Normal'],
+    ['fric', 'Fricción'],
+    ['net', 'Fuerza neta'],
+    ['a', 'Aceleración'],
+    ['v', 'Velocidad'],
+    ['pos', 'Posición']
+  ]);
+
+  var sChart = Sim.sec(panel, 'Velocidad · v(t)');
+  var chartBox = document.createElement('div');
+  chartBox.className = 'chartbox';
+  chartBox.innerHTML = '<div class="chartcap"><span>Velocidad</span><span>m/s</span></div><canvas id="chV"></canvas>';
+  sChart.appendChild(chartBox);
+  var chV = Sim.chart(document.getElementById('chV'), {
+    window: 8,
+    series: [{ label: 'v', color: 'green' }],
+    yFmt: function (v) { return Math.abs(v) >= 10 ? v.toFixed(0) : v.toFixed(1); }
+  });
+
+  Sim.help(
+    '<p>Las tres leyes de Newton en una escena:</p>' +
+    '<ul><li>Sin fuerza neta, el bloque no cambia su velocidad.</li>' +
+    '<li>La aceleración es <b>a = Fneta / m</b>.</li>' +
+    '<li>La fricción se opone al movimiento y vale <b>μ·N</b>.</li></ul>' +
+    '<p>En el plano inclinado, el peso se reparte: una parte tira rampa abajo (<b>mg·sen θ</b>) y otra presiona la superficie (<b>mg·cos θ</b>). Si <b>tan θ &gt; μ</b>, el bloque resbala solo.</p>' +
+    '<p>Cambia masa, fuerza, fricción y ángulo para comparar. Pulsa <b>Iniciar</b> para soltar el bloque.</p>'
+  );
+
+  /* ---------------------------------------------------------------- física */
+  function computeForces() {
+    var th = S.angle * Math.PI / 180;
+    S.W = S.m * G;
+    S.N = S.mode === 'incline' ? S.W * Math.cos(th) : S.W;
+    var drive = S.mode === 'incline' ? S.F - S.W * Math.sin(th) : S.F;
+    S.drive = drive;
+    var maxF = S.mu * S.N;
+    S.maxFric = maxF;
+    var fr, a;
+    if (Math.abs(S.v) < 0.015) {
+      if (Math.abs(drive) <= maxF) {
+        fr = -drive;
+        a = 0;
+        S.v = 0;
+      } else {
+        fr = -Math.sign(drive) * maxF;
+        a = (drive + fr) / S.m;
+      }
+    } else {
+      fr = -Math.sign(S.v) * maxF;
+      a = (drive + fr) / S.m;
+    }
+    if (Math.abs(drive) < 0.001 && Math.abs(S.v) < 0.015) {
+      fr = 0; a = 0;
+    }
+    S.fric = fr;
+    S.net = drive + fr;
+    S.a = a;
+  }
+
+  function stepPhysics(dt) {
+    var th = S.angle * Math.PI / 180;
+    computeForces();
+    var v0 = S.v;
+    var a = S.a;
+    if (S.mode === 'horizontal') {
+      S.x += S.v * dt + 0.5 * a * dt * dt;
+    } else {
+      S.s += S.v * dt + 0.5 * a * dt * dt;
+    }
+    S.v += a * dt;
+
+    if (v0 !== 0 && v0 * S.v < 0 && Math.abs(S.drive) <= S.maxFric) {
+      S.v = 0;
+    }
+
+    if (S.mode === 'incline') {
+      if (S.s >= 9.85) {
+        S.s = 9.85;
+        if (S.v > 0) { S.v = 0; stopAtEnd('El bloque llegó a la parte alta de la rampa.'); }
+      } else if (S.s <= 0.15) {
+        S.s = 0.15;
+        if (S.v < 0) { S.v = 0; stopAtEnd('El bloque llegó al final de la rampa.'); }
+      }
+    }
+  }
+
+  function stopAtEnd(msg) {
+    S.running = false;
+    S.banner = msg;
+    btnRun.textContent = 'Continuar';
+    Sim.beep(320, 0.12, 'triangle', 0.04);
+  }
+
+  function toggleRun() {
+    if (!S.running) {
+      S.banner = '';
+      S.running = true;
+      btnRun.textContent = 'Pausa';
+      Sim.beep(540, 0.06, 'sine', 0.04);
+    } else {
+      S.running = false;
+      btnRun.textContent = 'Continuar';
+    }
+  }
+
+  function reset() {
+    S.x = 0;
+    S.s = 6;
+    S.v = 0;
+    S.a = 0;
+    S.t = 0;
+    S.cam = 0;
+    S.banner = '';
+    S.running = false;
+    lastSample = -1;
+    chV.clear();
+    computeForces();
+    btnRun.textContent = 'Iniciar';
+    updateReads();
+    v.render();
+  }
+
+  var lastSample = -1;
+
+  function updateReads() {
+    R.set('N', S.N.toFixed(1) + ' N');
+    R.set('fric', Math.abs(S.fric).toFixed(1) + ' N');
+    R.set('net', (S.net >= 0 ? '' : '−') + Math.abs(S.net).toFixed(1) + ' N');
+    R.set('a', (S.a >= 0 ? '' : '−') + Math.abs(S.a).toFixed(2) + ' m/s²');
+    R.set('v', (S.v >= 0 ? '' : '−') + Math.abs(S.v).toFixed(2) + ' m/s');
+    R.set('pos', (S.mode === 'incline' ? S.s.toFixed(2) + ' m' : (S.x >= 0 ? '' : '−') + Math.abs(S.x).toFixed(2) + ' m'));
+  }
+
+  function statusText() {
+    if (S.banner) return S.banner;
+    if (!S.running) {
+      if (Math.abs(S.drive) > S.maxFric + 0.001) return 'Listo · la fricción no alcanza a detenerlo';
+      return 'En pausa';
+    }
+    if (Math.abs(S.v) < 0.02) {
+      return Math.abs(S.drive) <= S.maxFric ? 'En equilibrio · fricción estática' : 'Arrancando';
+    }
+    if (S.v * S.a < 0) return 'Frenando por la fricción';
+    return 'Acelerando';
+  }
+
+  function paintChip() {
+    var txt = statusText();
+    chip.textContent = txt;
+    var cls = 'status';
+    if (S.banner) cls += ' warn';
+    else if (S.running && Math.abs(S.v) >= 0.02 && S.v * S.a >= 0) cls += ' ok';
+    chip.className = cls;
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    if (S.mode === 'incline') drawIncline(ctx, w, h);
+    else drawHorizontal(ctx, w, h);
+
+    drawNewtonHUD(ctx, w, h);
+
+    if (S.banner) {
+      Sim.tag(ctx, S.banner, w / 2, 40, {
+        size: 12, padX: 14, bg: C.orange, color: '#fff', stroke: false
+      });
+    }
+
+    /* etiquetas de contexto */
+    Sim.tag(ctx, S.mode === 'horizontal' ? 'Superficie horizontal' : 'Rampa · ' + S.angle + '°', 78, 26, {
+      size: 10.5, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, 'μ = ' + S.mu.toFixed(2) + '  ·  m = ' + S.m.toFixed(1) + ' kg', w - 20, 26, {
+      size: 10.5, bg: C.glass, color: C.ink, align: 'right'
+    });
+  }
+
+  function drawNewtonHUD(ctx, w, h) {
+    if (w < 640 || h < 520) return;
+
+    var cx = Math.round(w / 2);
+    var y0 = 76;
+    var cw = 152, ch = 68, gap = 38;
+    var total = cw * 3 + gap * 2;
+    var left = Math.round(cx - total / 2);
+    var net = S.net;
+    var netColor = Math.abs(net) < 0.05 ? C.dim : (net > 0 ? C.green : C.orange);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    var items = [
+      ['Fuerza neta', (net < 0 ? '−' : '') + Math.abs(net).toFixed(1) + ' N', netColor],
+      ['Masa', S.m.toFixed(1) + ' kg', C.ink],
+      ['Aceleración', (S.a < 0 ? '−' : '') + Math.abs(S.a).toFixed(2) + ' m/s²', C.blue]
+    ];
+    var ops = ['=', '·'];
+
+    for (var i = 0; i < items.length; i++) {
+      var x = left + i * (cw + gap);
+      ctx.save();
+      ctx.shadowColor = C.dark ? 'rgba(0,0,0,.45)' : 'rgba(24,32,54,.07)';
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 3;
+      ctx.fillStyle = C.dark ? '#17181c' : '#ffffff';
+      Sim.rr(ctx, x, y0, cw, ch, 16);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1;
+      Sim.rr(ctx, x + 0.5, y0 + 0.5, cw - 1, ch - 1, 16);
+      ctx.stroke();
+
+      ctx.fillStyle = C.dim;
+      ctx.font = Sim.font(9.5, 650);
+      ctx.fillText(items[i][0], x + cw / 2, y0 + 20);
+
+      ctx.fillStyle = items[i][2];
+      ctx.font = Sim.font(21, 750);
+      ctx.fillText(items[i][1], x + cw / 2, y0 + 45);
+
+      if (i < 2) {
+        var ox = x + cw + gap / 2;
+        ctx.fillStyle = C.dim;
+        ctx.font = Sim.font(19, 500);
+        ctx.fillText(ops[i], ox, y0 + ch / 2 - 1);
+      }
+    }
+
+    /* la cuenta que explica el resultado */
+    var caption;
+    if (S.mode === 'incline') {
+      caption = 'ΣF = F aplicada − mg·sen θ − fricción';
+    } else {
+      caption = 'ΣF = ' + S.F.toFixed(1) + ' N ' + (S.fric >= 0 ? '+ ' : '− ') +
+        Math.abs(S.fric).toFixed(1) + ' N';
+    }
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(11, 550);
+    ctx.fillText(caption, cx, y0 + ch + 24);
+
+    ctx.restore();
+  }
+
+  function backdrop(ctx, w, h, groundY) {
+    var g = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) {
+      g.addColorStop(0, '#101014');
+      g.addColorStop(1, '#0b0b0d');
+    } else {
+      g.addColorStop(0, '#fbfbfe');
+      g.addColorStop(1, '#ffffff');
+    }
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    /* el suelo: una franja con sombra suave, no un bloque gris */
+    var gh = Math.min(74, h - groundY);
+    var fg = ctx.createLinearGradient(0, groundY, 0, groundY + gh);
+    fg.addColorStop(0, C.dark ? 'rgba(255,255,255,.07)' : 'rgba(24,32,54,.055)');
+    fg.addColorStop(1, C.dark ? 'rgba(255,255,255,0)' : 'rgba(24,32,54,0)');
+    ctx.fillStyle = fg;
+    ctx.fillRect(0, groundY, w, gh);
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.12)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY + 0.5);
+    ctx.lineTo(w, groundY + 0.5);
+    ctx.stroke();
+  }
+
+  function drawHorizontal(ctx, w, h) {
+    var groundY = Math.round(h * 0.64);
+    backdrop(ctx, w, h, groundY);
+
+    var ppm = Sim.clamp((w - 80) / 24, 22, 40);
+    var viewW = (w - 80) / ppm;
+    var x0 = 80;
+    function px(x) { return x0 + (x - S.cam) * ppm; }
+
+    /* marcas */
+    var startM = Math.floor(S.cam / 5) * 5;
+    var endM = S.cam + viewW + 5;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    for (var m = startM; m <= endM; m += 5) {
+      var X = px(m);
+      if (X < 14 || X > w - 14) continue;
+      var major = m % 10 === 0;
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,' + (major ? '.45' : '.18') + ')' : 'rgba(0,0,0,' + (major ? '.35' : '.14') + ')';
+      ctx.lineWidth = major ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(X, groundY + 5);
+      ctx.lineTo(X, groundY + (major ? 14 : 9));
+      ctx.stroke();
+      if (major) {
+        ctx.fillStyle = C.dim;
+        ctx.font = Sim.font(9.5, 600);
+        ctx.fillText(m + ' m', X, groundY + 42);
+      }
+    }
+
+    /* suelo con textura */
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.035)';
+    for (var gx = -((S.cam * ppm) % 40); gx < w; gx += 40) {
+      ctx.fillRect(gx, groundY + 34, 18, 1.5);
+      ctx.fillRect(gx + 22, groundY + 48, 10, 1.5);
+    }
+
+    /* bloque */
+    var bw = Math.min(180, 110 + S.m * 4);
+    var bh = 100;
+    var bx = px(S.x);
+    var by = groundY - bh;
+    var centerX = bx + bw / 2;
+    var centerY = by + bh / 2;
+
+    /* estela */
+    if (S.running && Math.abs(S.v) > 0.4) {
+      ctx.strokeStyle = C.green;
+      ctx.globalAlpha = Math.min(0.35, Math.abs(S.v) / 18);
+      ctx.lineWidth = 2;
+      var dir = S.v > 0 ? -1 : 1;
+      for (var i = 0; i < 3; i++) {
+        var ly = groundY - 10 - i * 12;
+        ctx.beginPath();
+        ctx.moveTo(dir > 0 ? bx + bw + 6 : bx - 6, ly);
+        ctx.lineTo(dir > 0 ? bx + bw + 24 + Math.abs(S.v) * 1.8 : bx - 24 - Math.abs(S.v) * 1.8, ly);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* sombra */
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.45)' : 'rgba(0,0,0,.12)';
+    ctx.beginPath();
+    ctx.ellipse(centerX, groundY + 3, bw * 0.54, 4.5, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    var grad = ctx.createLinearGradient(0, by, 0, groundY);
+    grad.addColorStop(0, C.green);
+    grad.addColorStop(1, '#1a9e4b');
+    ctx.fillStyle = grad;
+    Sim.rr(ctx, bx, by, bw, bh, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.24)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    Sim.rr(ctx, bx + 6, by + 5, bw - 12, 5, 2.5);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(17, 700);
+    ctx.fillText('m', centerX, centerY + 1);
+
+    /* flechas de fuerza */
+    if (S.showForces) {
+      var maxF = Math.max(S.N, Math.abs(S.W), Math.abs(S.F), Math.abs(S.fric), 1);
+      var vmax = Sim.clamp(h * 0.245, 90, 202);
+      var len = function (val) { return Math.max(16, vmax * Math.abs(val) / maxF); };
+      var dW = len(S.W), dN = len(S.N), dF = len(S.F), dFr = len(S.fric);
+
+      if (S.F !== 0) {
+        var fx1 = S.F > 0 ? centerX + bw / 2 - 4 : centerX - bw / 2 + 4;
+        var fx2 = fx1 + Math.sign(S.F) * dF;
+        Sim.arrow(ctx, fx1, centerY - 6, fx2, centerY - 6, { color: C.orange, width: 3.6, head: 11 });
+        forceLabel(ctx, 'F ' + Math.abs(S.F).toFixed(0) + ' N', fx2 + Math.sign(S.F) * 8, centerY - 26, C.orange);
+      }
+      if (Math.abs(S.fric) > 0.05) {
+        var fr1 = centerX + Math.sign(S.fric) * (bw / 2 - 4);
+        var fr2 = fr1 + Math.sign(S.fric) * dFr;
+        Sim.arrow(ctx, fr1, groundY - 9, fr2, groundY - 9, { color: C.pink, width: 3.6, head: 11 });
+        forceLabel(ctx, 'f ' + Math.abs(S.fric).toFixed(1) + ' N', fr2 + Math.sign(S.fric) * 8, groundY + 17, C.pink);
+      }
+      Sim.arrow(ctx, centerX, centerY - 8, centerX, centerY - 8 - dN, { color: C.blue, width: 3.6, head: 11 });
+      forceLabel(ctx, 'N ' + S.N.toFixed(0) + ' N', centerX, centerY - 24 - dN, C.blue);
+      Sim.arrow(ctx, centerX, centerY + 8, centerX, centerY + 8 + dW, { color: C.red, width: 3.6, head: 11 });
+      forceLabel(ctx, 'mg ' + S.W.toFixed(0) + ' N', centerX, centerY + 28 + dW, C.red);
+
+
+    }
+
+    /* fin de la escena */
+  }
+
+  function forceLabel(ctx, text, x, y, color, small) {
+    var w = cv.clientWidth, h = cv.clientHeight;
+    Sim.tag(ctx, text, Sim.clamp(x, 42, w - 42), Sim.clamp(y, 16, h - 14), {
+      size: small ? 9 : 9.5, bg: C.card, color: color, padX: 5.5
+    });
+  }
+
+  function drawIncline(ctx, w, h) {
+    var groundY = h - 78;
+    backdrop(ctx, w, h, groundY);
+    var th = S.angle * Math.PI / 180;
+    var tan = Math.tan(th);
+    var basePx = Math.min(w * 0.78, (h - 190) / Math.max(0.09, tan));
+    basePx = Math.max(basePx, 130);
+    var rightX = w * 0.86;
+    var leftX = rightX - basePx;
+    var topY = groundY - basePx * tan;
+    if (topY < 92) {
+      topY = 92;
+      leftX = rightX - (groundY - topY) / tan;
+    }
+
+    /* relleno de la rampa */
+    var rg = ctx.createLinearGradient(leftX, topY, rightX, groundY);
+    if (C.dark) {
+      rg.addColorStop(0, '#232328');
+      rg.addColorStop(1, '#17171b');
+    } else {
+      rg.addColorStop(0, '#e6e7ec');
+      rg.addColorStop(1, '#d4d6de');
+    }
+    ctx.fillStyle = rg;
+    ctx.beginPath();
+    ctx.moveTo(leftX, groundY);
+    ctx.lineTo(rightX, groundY);
+    ctx.lineTo(leftX, topY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.12)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    /* superficie */
+    var sg = ctx.createLinearGradient(leftX, topY, rightX, groundY);
+    sg.addColorStop(0, C.green);
+    sg.addColorStop(1, '#1d9e50');
+    ctx.strokeStyle = sg;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(leftX, topY);
+    ctx.lineTo(rightX, groundY);
+    ctx.stroke();
+
+    /* base y altura */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.14)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 5]);
+    ctx.beginPath();
+    ctx.moveTo(leftX, topY);
+    ctx.lineTo(leftX, groundY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    Sim.tag(ctx, 'h = ' + (10 * Math.sin(th)).toFixed(1) + ' m', leftX - 54, (topY + groundY) / 2, {
+      size: 9.5, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, '10 m de rampa', (leftX + rightX) / 2 - 20, groundY + 22, {
+      size: 9.5, bg: C.glass, color: C.ink
+    });
+
+    /* ángulo */
+    ctx.strokeStyle = C.orange;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(rightX, groundY, 40, Math.PI, Math.PI + th, false);
+    ctx.stroke();
+    Sim.tag(ctx, S.angle + '°', rightX - 58, groundY - 20, {
+      size: 9.5, bg: C.card, color: C.orange
+    });
+
+    /* bloque */
+    var frac = S.s / 10;
+    var sx = rightX - (rightX - leftX) * frac;
+    var sy = groundY - (groundY - topY) * frac;
+    var bw = 76 + S.m * 2.2;
+    var bh = 60;
+    var nx = Math.sin(th), ny = -Math.cos(th);
+    var cx = sx + nx * bh / 2;
+    var cy = sy + ny * bh / 2;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(th);
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.42)' : 'rgba(0,0,0,.13)';
+    ctx.beginPath();
+    ctx.ellipse(0, 2, bw * 0.54, 4, 0, 0, Sim.TAU);
+    ctx.fill();
+    var bg2 = ctx.createLinearGradient(0, -bh, 0, 0);
+    bg2.addColorStop(0, C.green);
+    bg2.addColorStop(1, '#1a9e4b');
+    ctx.fillStyle = bg2;
+    Sim.rr(ctx, -bw / 2, -bh, bw, bh, 9);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.24)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.18)';
+    Sim.rr(ctx, -bw / 2 + 6, -bh + 5, bw - 12, 4, 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = Sim.font(14, 700);
+    ctx.fillText('m', 0, -bh / 2);
+    ctx.restore();
+
+    /* flechas */
+    if (S.showForces) {
+      var maxF = Math.max(S.N, S.W, Math.abs(S.F), Math.abs(S.fric), 1);
+      var len = function (val) { return Math.max(12, 96 * Math.abs(val) / maxF); };
+      var upx = -Math.cos(th), upy = -Math.sin(th);
+      var downx = Math.cos(th), downy = Math.sin(th);
+
+      /* peso */
+      var wl = len(S.W);
+      Sim.arrow(ctx, cx, cy, cx, cy + wl, { color: C.red, width: 3.4, head: 10 });
+      forceLabel(ctx, 'mg ' + S.W.toFixed(0) + ' N', cx, cy + wl + 14, C.red);
+
+      /* normal */
+      var nl = len(S.N);
+      Sim.arrow(ctx, cx, cy, cx + nx * nl, cy + ny * nl, { color: C.blue, width: 3.4, head: 10 });
+      forceLabel(ctx, 'N ' + S.N.toFixed(0) + ' N', cx + nx * nl + nx * 22, cy + ny * nl + ny * 22, C.blue);
+
+      /* aplicada */
+      if (Math.abs(S.F) > 0.05) {
+        var fl = len(S.F);
+        var fdx = Math.sign(S.F) > 0 ? upx : downx;
+        var fdy = Math.sign(S.F) > 0 ? upy : downy;
+        var fs = bw / 2 - 5;
+        Sim.arrow(ctx, cx + fdx * fs, cy + fdy * fs, cx + fdx * (fs + fl), cy + fdy * (fs + fl), {
+          color: C.orange, width: 3.4, head: 10
+        });
+        forceLabel(ctx, 'F ' + Math.abs(S.F).toFixed(0) + ' N',
+          cx + fdx * (fs + fl + 20) + nx * 15, cy + fdy * (fs + fl + 20) + ny * 15, C.orange);
+      }
+
+      /* fricción */
+      if (Math.abs(S.fric) > 0.05) {
+        var frl = len(S.fric);
+        var frdx = Math.sign(S.fric) > 0 ? upx : downx;
+        var frdy = Math.sign(S.fric) > 0 ? upy : downy;
+        var frs = bw / 2 - 5;
+        Sim.arrow(ctx, cx + frdx * frs, cy + frdy * frs, cx + frdx * (frs + frl), cy + frdy * (frs + frl), {
+          color: C.pink, width: 3.4, head: 10
+        });
+        var fdist = frs + Math.max(frl, 30);
+        forceLabel(ctx, 'f ' + Math.abs(S.fric).toFixed(1) + ' N',
+          cx + frdx * fdist - nx * 27, cy + frdy * fdist - ny * 27, C.pink);
+      }
+
+      /* componentes del peso */
+      if (S.showComponents) {
+        ctx.save();
+        ctx.setLineDash([3, 4]);
+        ctx.strokeStyle = C.dim;
+        ctx.lineWidth = 1.3;
+        var wpar = S.W * Math.sin(th);
+        var wper = S.W * Math.cos(th);
+        var lp = len(wpar), lper = len(wper);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + downx * lp, cy + downy * lp);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx - nx * lper, cy - ny * lper);
+        ctx.stroke();
+        ctx.restore();
+        forceLabel(ctx, 'mg·senθ', cx + downx * (lp + 46) + nx * 22, cy + downy * (lp + 46) + ny * 22, C.dim, true);
+        forceLabel(ctx, 'mg·cosθ', cx - nx * (lper + 18) - downx * 10, cy - ny * (lper + 18) - downy * 10, C.dim, true);
+      }
+    }
+
+  }
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+    if (S.running) {
+      S.t += dt;
+      var steps = 2;
+      for (var i = 0; i < steps && S.running; i++) stepPhysics(dt / steps);
+      if (S.running && S.t - lastSample > 0.02) {
+        lastSample = S.t;
+        chV.push(S.t, [S.v]);
+      }
+    } else {
+      computeForces();
+    }
+
+    if (S.mode === 'horizontal') {
+      var ppm = Sim.clamp((v.w - 80) / 24, 22, 40);
+      var viewW = (v.w - 80) / ppm;
+      var camGoal = S.x - viewW * 0.36;
+      if (!isFinite(S.cam)) S.cam = camGoal;
+      S.cam += (camGoal - S.cam) * (1 - Math.exp(-5 * dt));
+    }
+
+    updateReads();
+    paintChip();
+    chV.render();
+    v.render();
+  });
+
+  computeForces();
+  updateReads();
+  v.render();
+  Sim.hint('Ajusta la fuerza y la fricción · pulsa Iniciar para mover el bloque');
+})();
+</script>
+</body>
+</html>

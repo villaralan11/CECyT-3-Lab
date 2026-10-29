@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Tiro parabólico · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-orange">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-blue">F1</span>
+    <div class="ct"><strong>Tiro parabólico</strong><span>Física I · Cinemática en 2D</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+
+  var PLANETS = {
+    tierra: { name: 'Tierra', g: 9.81 },
+    luna: { name: 'Luna', g: 1.62 },
+    marte: { name: 'Marte', g: 3.71 }
+  };
+
+  var S = {
+    planet: 'tierra',
+    g: 9.81,
+    v0: 26,
+    angle: 48,
+    target: 48,
+    flying: false,
+    done: false,
+    hit: false,
+    t: 0,
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    hmax: 0,
+    trail: [],
+    scale: 0,
+    result: null,
+    best: null,
+    showTrace: true,
+    showVec: true,
+    drag: null,
+    confetti: false
+  };
+
+  var stars = [];
+  for (var i = 0; i < 90; i++) {
+    stars.push({ x: Math.random(), y: Math.random(), r: 0.4 + Math.random() * 1.4, a: 0.25 + Math.random() * 0.6 });
+  }
+
+  var fx = Sim.fx();
+
+  /* ---------------------------------------------------------------- panel */
+  var panel = document.getElementById('panel');
+  var sShot = Sim.sec(panel, 'Cañón');
+
+  var v0Slider = Sim.slider(sShot, {
+    label: 'Velocidad inicial',
+    min: 5, max: 45, step: 1, value: S.v0, unit: 'm/s', digits: 0,
+    onInput: function (v) { S.v0 = v; paramChanged(); }
+  });
+  var angSlider = Sim.slider(sShot, {
+    label: 'Ángulo de disparo',
+    min: 5, max: 85, step: 1, value: S.angle, unit: '°', digits: 0,
+    onInput: function (v) { S.angle = v; paramChanged(); }
+  });
+  var planetSeg = Sim.seg(sShot, {
+    options: [['tierra', 'Tierra'], ['luna', 'Luna'], ['marte', 'Marte']],
+    value: 'tierra',
+    onChange: function (v) {
+      S.planet = v;
+      S.g = PLANETS[v].g;
+      abortFlight();
+      clearShot();
+      S.scale = 0;
+      Sim.hint('Gravedad: ' + PLANETS[v].g + ' m/s² · ' + PLANETS[v].name);
+    }
+  });
+
+  var sTarget = Sim.sec(panel, 'Blanco');
+  var targetSlider = Sim.slider(sTarget, {
+    label: 'Distancia del blanco',
+    min: 10, max: 90, step: 1, value: S.target, unit: 'm', digits: 0,
+    onInput: function (v) { S.target = v; if (!S.flying) { clearShot(); } }
+  });
+  var tn = document.createElement('p');
+  tn.className = 'note';
+  tn.innerHTML = 'Arrastra el blanco en la escena o usa el control. Acierta con menos de <b>1.5 m</b> de error.';
+  sTarget.appendChild(tn);
+
+  var sGo = Sim.sec(panel, 'Disparo');
+  var tg1 = Sim.toggle(sGo, { label: 'Mostrar trayectoria', value: true, onChange: function (v) { S.showTrace = v; } });
+  var tg2 = Sim.toggle(sGo, { label: 'Mostrar vectores', value: true, onChange: function (v) { S.showVec = v; } });
+  var rowGo = Sim.btnrow(sGo);
+  var btnFire = Sim.button(rowGo, '¡Disparar!', fire, { primary: true });
+  Sim.button(rowGo, 'Limpiar', function () { abortFlight(); clearShot(); Sim.hint('Listo para otro disparo'); });
+
+  var sRes = Sim.sec(panel, 'Resultados');
+  var R = Sim.reads(sRes, [
+    ['range', 'Alcance'],
+    ['hmax', 'Altura máxima'],
+    ['time', 'Tiempo de vuelo'],
+    ['error', 'Error del tiro'],
+    ['estado', 'Estado', { wide: true }],
+    ['mejor', 'Mejor tiro', { wide: true }]
+  ]);
+
+  Sim.help(
+    '<p>Un proyectil lanzado con velocidad <b>v₀</b> y ángulo <b>θ</b> describe una parábola:</p>' +
+    '<ul><li>x(t) = v₀·cos θ · t</li><li>y(t) = v₀·sen θ · t − ½·g·t²</li></ul>' +
+    '<p>La gravedad cambia según el planeta. En la Luna caes más lento y llegas más lejos; en Marte, algo intermedio.</p>' +
+    '<p><b>Reto:</b> arrastra el blanco, ajusta el ángulo y la velocidad, y acierta con menos de 1.5 m de error. También puedes arrastrar desde el cañón para apuntar y soltar para disparar.</p>'
+  );
+
+  /* ---------------------------------------------------------------- estado */
+  function predict(v0, ang, g) {
+    var rad = ang * Math.PI / 180;
+    var vx = v0 * Math.cos(rad);
+    var vy = v0 * Math.sin(rad);
+    var tf = 2 * vy / g;
+    return { vx: vx, vy: vy, tf: tf, range: vx * tf, hmax: vy * vy / (2 * g), rad: rad };
+  }
+
+  function paramChanged() {
+    if (!S.flying) clearShot();
+  }
+
+  function abortFlight() {
+    S.flying = false;
+    S.done = false;
+    S.t = 0;
+    S.trail.length = 0;
+  }
+
+  function clearShot() {
+    S.flying = false;
+    S.done = false;
+    S.hit = false;
+    S.confetti = false;
+    S.t = 0;
+    S.x = 0; S.y = 0;
+    S.hmax = 0;
+    S.trail.length = 0;
+    S.result = null;
+    fx.clear();
+    btnFire.disabled = false;
+    btnFire.textContent = '¡Disparar!';
+    paintReads();
+  }
+
+  function fire() {
+    if (S.flying) return;
+    if (S.scale <= 0) S.scale = goalScale();
+    var p = predict(S.v0, S.angle, S.g);
+    S.vx = p.vx;
+    S.vy = p.vy;
+    S.t = 0;
+    S.x = 0;
+    S.y = 0;
+    S.hmax = 0;
+    S.trail.length = 0;
+    S.flying = true;
+    S.done = false;
+    S.hit = false;
+    S.result = null;
+    fx.clear();
+    btnFire.disabled = true;
+    btnFire.textContent = 'En vuelo…';
+    Sim.beep(170, 0.13, 'sawtooth', 0.05);
+    setTimeout(function () { Sim.beep(95, 0.16, 'triangle', 0.05); }, 45);
+    Sim.hint('En vuelo · observa la parábola y los vectores');
+  }
+
+  function land() {
+    var p = predict(S.v0, S.angle, S.g);
+    S.t = p.tf;
+    S.x = p.range;
+    S.y = 0;
+    S.flying = false;
+    S.done = true;
+    var err = S.x - S.target;
+    var hit = Math.abs(err) <= 1.5;
+    S.hit = hit;
+    S.confetti = hit;
+    S.result = { range: S.x, hmax: S.hmax, time: p.tf, error: err, hit: hit, target: S.target };
+    if (hit) {
+      if (S.best == null || Math.abs(err) < S.best) S.best = Math.abs(err);
+      Sim.chord([783.99, 1046.5, 1318.5], 0.22, 95);
+    } else {
+      Sim.beep(180, 0.18, 'triangle', 0.05);
+    }
+    btnFire.disabled = false;
+    btnFire.textContent = '¡Disparar!';
+    paintReads();
+  }
+
+  function paintReads() {
+    if (!S.result) {
+      R.set('range', '—');
+      R.set('hmax', '—');
+      R.set('time', '—');
+      R.set('error', '—');
+      R.set('estado', S.flying ? 'En vuelo…' : 'Ajusta y dispara');
+      R.set('mejor', S.best == null ? 'Sin aciertos todavía' : S.best.toFixed(2) + ' m de error', S.best == null ? '' : 'good');
+      return;
+    }
+    var r = S.result;
+    R.set('range', r.range.toFixed(1) + ' m');
+    R.set('hmax', r.hmax.toFixed(1) + ' m');
+    R.set('time', r.time.toFixed(2) + ' s');
+    R.set('error', (r.error >= 0 ? '+' : '') + r.error.toFixed(2) + ' m', r.hit ? 'good' : 'hot');
+    if (r.hit) {
+      R.set('estado', '¡Diana! Error de ' + Math.abs(r.error).toFixed(2) + ' m', 'good');
+      R.set('mejor', S.best == null ? '—' : S.best.toFixed(2) + ' m de error', 'good');
+    } else {
+      R.set('estado', 'Fallaste por ' + Math.abs(r.error).toFixed(2) + ' m');
+      R.set('mejor', S.best == null ? 'Sin aciertos todavía' : S.best.toFixed(2) + ' m de error', S.best == null ? '' : 'good');
+    }
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function goalScale() {
+    var p = predict(S.v0, S.angle, S.g);
+    var range = Math.max(p.range, S.target + 10, 16);
+    var height = Math.max(p.hmax, 6);
+    return Math.max(0.4, Math.min((v.w - 150) / range, (v.h - 150) / height, 13));
+  }
+
+  function ux(x) { return 64 + x * S.scale; }
+  function uy(y) { return (v.h - 64) - y * S.scale; }
+
+  function draw(ctx, w, h) {
+    if (!v) return;
+    C = Sim.C;
+    var groundY = h - 64;
+    var isMoon = S.planet === 'luna';
+    var isMars = S.planet === 'marte';
+
+    /* cielo */
+    var sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    if (isMoon) {
+      sky.addColorStop(0, '#05060d');
+      sky.addColorStop(0.7, '#10172c');
+      sky.addColorStop(1, '#1d2942');
+    } else if (isMars) {
+      sky.addColorStop(0, '#24100c');
+      sky.addColorStop(1, '#6b3320');
+    } else if (C.dark) {
+      sky.addColorStop(0, '#061324');
+      sky.addColorStop(1, '#0d2338');
+    } else {
+      sky.addColorStop(0, '#e9f5ff');
+      sky.addColorStop(1, '#fbfdff');
+    }
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+
+    /* estrellas */
+    if (isMoon || (C.dark && S.planet === 'tierra')) {
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        if (st.y * groundY > groundY - 20) continue;
+        ctx.globalAlpha = st.a;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(st.x * w, st.y * groundY, st.r, 0, Sim.TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* suelo */
+    var gg = ctx.createLinearGradient(0, groundY, 0, h);
+    if (isMoon) {
+      gg.addColorStop(0, '#8c8c98');
+      gg.addColorStop(1, '#5e5e6a');
+    } else if (isMars) {
+      gg.addColorStop(0, '#b65c35');
+      gg.addColorStop(1, '#71341e');
+    } else if (C.dark) {
+      gg.addColorStop(0, '#174322');
+      gg.addColorStop(1, '#0a2411');
+    } else {
+      gg.addColorStop(0, '#7bd66b');
+      gg.addColorStop(1, '#48a63f');
+    }
+    ctx.fillStyle = gg;
+    ctx.fillRect(0, groundY, w, h - groundY);
+
+    /* horizonte suave */
+    ctx.fillStyle = C.dark ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.07)';
+    ctx.beginPath();
+    ctx.moveTo(0, groundY);
+    for (var hx = 0; hx <= w + 40; hx += 40) {
+      var hh = 7 + Math.sin(hx * 0.014 + 1.2) * 5 + Math.sin(hx * 0.033) * 3;
+      ctx.lineTo(hx, groundY - Math.max(0, hh));
+    }
+    ctx.lineTo(w, groundY);
+    ctx.closePath();
+    ctx.fill();
+
+    /* marcas del suelo */
+    var step = S.scale >= 5 ? 10 : (S.scale >= 2.5 ? 20 : 50);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    for (var m = 0; m <= 400; m += step) {
+      var mx = ux(m);
+      if (mx < 20 || mx > w - 15) continue;
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.24)' : 'rgba(0,0,0,.22)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(mx, groundY + 4);
+      ctx.lineTo(mx, groundY + 10);
+      ctx.stroke();
+      ctx.fillStyle = C.dark ? 'rgba(255,255,255,.62)' : 'rgba(0,0,0,.5)';
+      ctx.font = Sim.font(9.5, 600);
+      ctx.fillText(m + (m === 0 ? ' m' : ''), mx, groundY + 25);
+    }
+
+    /* blanco */
+    drawTarget(ctx, ux(S.target), groundY);
+
+    /* trayectoria prevista */
+    if (!S.flying && !S.done && S.showTrace) {
+      var p = predict(S.v0, S.angle, S.g);
+      ctx.save();
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.38)' : 'rgba(0,0,0,.28)';
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath();
+      var steps = 50;
+      for (var k = 0; k <= steps; k++) {
+        var tt = p.tf * k / steps;
+        var px = ux(p.vx * tt);
+        var py = uy(p.vy * tt - 0.5 * S.g * tt * tt);
+        if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* trayectoria recorrida */
+    if (S.trail.length > 1) {
+      ctx.save();
+      ctx.strokeStyle = S.hit ? C.green : C.blue;
+      ctx.lineWidth = 2.6;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.shadowColor = S.hit ? C.green : C.blue;
+      ctx.shadowBlur = 9;
+      ctx.beginPath();
+      for (var q = 0; q < S.trail.length; q++) {
+        var pt = S.trail[q];
+        var sx = ux(pt.x), sy = uy(pt.y);
+        if (q === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* cañón */
+    drawCannon(ctx, 64, groundY);
+
+    /* vértice */
+    if ((S.flying || S.done) && S.hmax > 0) {
+      var apexY = uy(S.hmax);
+      if (apexY > 12) {
+        ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.14)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 5]);
+        ctx.beginPath();
+        ctx.moveTo(20, apexY);
+        ctx.lineTo(w - 20, apexY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        var apexT = S.vy / S.g;
+        var apexX = ux(S.vx * apexT);
+        Sim.tag(ctx, 'h máx ' + S.hmax.toFixed(1) + ' m', Math.min(w - 55, Math.max(60, apexX)), apexY - 15, {
+          size: 9.5, bg: C.card, color: C.orange
+        });
+      }
+    }
+
+    /* proyectil */
+    if (S.flying || S.done) {
+      var bx = ux(S.x), by = uy(S.y);
+      if (S.done && S.result) {
+        /* marca de impacto */
+        ctx.strokeStyle = S.hit ? C.green : C.pink;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(bx, groundY, 14, 4.5, 0, 0, Sim.TAU);
+        ctx.stroke();
+        Sim.tag(ctx, 'x = ' + S.x.toFixed(1) + ' m', bx, groundY + 45, {
+          size: 10, bg: C.card, color: S.hit ? C.green : C.ink
+        });
+      } else {
+        ctx.save();
+        ctx.shadowColor = C.blue;
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = C.blue;
+        ctx.beginPath();
+        ctx.arc(bx, by, 5.2, 0, Sim.TAU);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(bx - 1.2, by - 1.2, 2, 0, Sim.TAU);
+        ctx.fill();
+        ctx.restore();
+
+        if (S.showVec) {
+          var sc = 2.1;
+          var arrowOrigin = { x: bx + 10, y: by - 4 };
+          Sim.arrow(ctx, arrowOrigin.x, arrowOrigin.y, arrowOrigin.x + S.vx * sc, arrowOrigin.y, {
+            color: C.teal, width: 2.2, head: 7
+          });
+          Sim.arrow(ctx, arrowOrigin.x, arrowOrigin.y, arrowOrigin.x, arrowOrigin.y - S.vy * sc, {
+            color: C.purple, width: 2.2, head: 7
+          });
+          Sim.arrow(ctx, arrowOrigin.x, arrowOrigin.y, arrowOrigin.x + S.vx * sc, arrowOrigin.y - S.vy * sc, {
+            color: C.ink, width: 2.4, head: 8
+          });
+        }
+      }
+    }
+
+    /* etiquetas superiores */
+    Sim.tag(ctx, 'θ ' + S.angle + '°  ·  v₀ ' + S.v0 + ' m/s', 78, 26, {
+      size: 10.5, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, PLANETS[S.planet].name + ' · g = ' + S.g.toFixed(2) + ' m/s²', w - 20, 26, {
+      size: 10.5, bg: C.glass, color: C.ink, align: 'right'
+    });
+
+    if (S.done && S.result) {
+      var text = S.result.hit
+        ? '¡Diana!  error ' + Math.abs(S.result.error).toFixed(2) + ' m'
+        : 'Fallaste por ' + Math.abs(S.result.error).toFixed(2) + ' m';
+      Sim.tag(ctx, text, w / 2, 78, {
+        size: 13, padX: 15, bg: S.result.hit ? C.green : C.card,
+        color: S.result.hit ? '#fff' : C.ink, stroke: !S.result.hit
+      });
+      if (S.result.hit && S.confetti) {
+        S.confetti = false;
+        fx.burst(ux(S.x), groundY - 10, { n: 62, speed: 360, up: 160, colors: [C.green, C.teal, C.yellow, C.blue, C.pink] });
+      }
+    }
+
+    /* confeti y ayuda de arrastre */
+    fx.draw(ctx);
+    if (Math.hypot(hoverX - ux(S.target), hoverY - groundY) < 34) {
+      ctx.strokeStyle = C.orange;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.ellipse(ux(S.target), groundY, 20, 7, 0, 0, Sim.TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
+  function drawTarget(ctx, tx, groundY) {
+    if (tx < -30 || tx > v.w + 80) return;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY);
+    ctx.lineTo(tx, groundY - 46);
+    ctx.stroke();
+    /* banderín */
+    var fg = ctx.createLinearGradient(tx, groundY - 46, tx + 26, groundY - 28);
+    fg.addColorStop(0, C.orange);
+    fg.addColorStop(1, C.pink);
+    ctx.fillStyle = fg;
+    ctx.beginPath();
+    ctx.moveTo(tx + 1, groundY - 46);
+    ctx.lineTo(tx + 27, groundY - 40);
+    ctx.lineTo(tx + 1, groundY - 31);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = C.card;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* diana en el suelo */
+    var rings = [[17, C.card], [13, C.pink], [9, C.card], [5.5, C.red], [2, C.yellow]];
+    for (var i = 0; i < rings.length; i++) {
+      ctx.fillStyle = rings[i][1];
+      ctx.beginPath();
+      ctx.ellipse(tx, groundY + 2, rings[i][0], rings[i][0] * 0.33, 0, 0, Sim.TAU);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(0,0,0,.18)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(tx, groundY + 2, 18, 6, 0, 0, Sim.TAU);
+    ctx.stroke();
+
+    Sim.tag(ctx, S.target + ' m', tx, groundY + 33, {
+      size: 10, bg: C.glass, color: C.ink
+    });
+    ctx.restore();
+  }
+
+  function drawCannon(ctx, x, groundY) {
+    ctx.save();
+    ctx.translate(x, groundY);
+    /* sombra */
+    ctx.fillStyle = 'rgba(0,0,0,.18)';
+    ctx.beginPath();
+    ctx.ellipse(4, 1, 30, 6, 0, 0, Sim.TAU);
+    ctx.fill();
+
+    /* base */
+    var base = ctx.createLinearGradient(0, -34, 0, 2);
+    base.addColorStop(0, C.dark ? '#4a4a50' : '#6e6e76');
+    base.addColorStop(1, C.dark ? '#26262a' : '#3a3a40');
+    ctx.fillStyle = base;
+    Sim.rr(ctx, -25, -30, 50, 27, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* rueda */
+    ctx.fillStyle = '#1b1b1f';
+    ctx.beginPath();
+    ctx.arc(0, -4, 13, 0, Sim.TAU);
+    ctx.fill();
+    ctx.fillStyle = '#6b6b74';
+    ctx.beginPath();
+    ctx.arc(0, -4, 5, 0, Sim.TAU);
+    ctx.fill();
+
+    /* cañón */
+    ctx.save();
+    ctx.translate(0, -28);
+    ctx.rotate(-S.angle * Math.PI / 180);
+    var barrel = ctx.createLinearGradient(0, -8, 0, 8);
+    barrel.addColorStop(0, C.dark ? '#5c5c64' : '#8a8a93');
+    barrel.addColorStop(1, C.dark ? '#2a2a2e' : '#45454c');
+    ctx.fillStyle = barrel;
+    Sim.rr(ctx, -4, -8, 50, 16, 7);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.14)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = C.dark ? '#1d1d20' : '#2c2c31';
+    ctx.beginPath();
+    ctx.ellipse(46, 0, 3, 7, 0, 0, Sim.TAU);
+    ctx.fill();
+    /* brillo */
+    ctx.fillStyle = 'rgba(255,255,255,.22)';
+    Sim.rr(ctx, 4, -6, 34, 3, 1.5);
+    ctx.fill();
+    ctx.restore();
+
+    /* ángulo */
+    ctx.strokeStyle = C.orange;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, -28, 34, -S.angle * Math.PI / 180, 0);
+    ctx.stroke();
+    Sim.tag(ctx, S.angle + '°', 34, -52, { size: 9.5, bg: C.card, color: C.orange });
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  var hoverX = -999, hoverY = -999;
+
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      if (Math.hypot(x - ux(S.target), y - (v.h - 64)) < 36) {
+        S.drag = 'target';
+        return true;
+      }
+      if (S.flying) return false;
+      S.drag = 'aim';
+      aimAt(x, y);
+      return true;
+    },
+    move: function (x, y) {
+      if (S.drag === 'target') {
+        S.target = Math.round(Sim.clamp((x - 64) / S.scale, 10, 90));
+        targetSlider.set(S.target, true);
+        if (!S.flying) clearShot();
+      } else if (S.drag === 'aim') {
+        aimAt(x, y);
+      }
+    },
+    up: function () {
+      if (S.drag === 'aim') fire();
+      S.drag = null;
+    },
+    hover: function (x, y) {
+      hoverX = x; hoverY = y;
+      cv.style.cursor = Math.hypot(x - ux(S.target), y - (v.h - 64)) < 34 ? 'grab' : 'crosshair';
+    },
+    leave: function () { hoverX = -999; hoverY = -999; cv.style.cursor = 'crosshair'; }
+  });
+
+  function aimAt(x, y) {
+    var dx = x - 64;
+    var dy = (v.h - 64) - y;
+    var ang = Math.atan2(dy, Math.max(1, dx)) * 180 / Math.PI;
+    S.angle = Math.round(Sim.clamp(ang, 5, 85));
+    var dist = Math.hypot(dx, Math.max(0, dy));
+    S.v0 = Math.round(Sim.clamp(Sim.map(dist, 35, 300, 5, 45), 5, 45));
+    v0Slider.set(S.v0, true);
+    angSlider.set(S.angle, true);
+    if (!S.flying) clearShot();
+    if (Math.random() < 0.15) Sim.beep(320 + S.angle * 4, 0.025, 'sine', 0.015);
+  }
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    if (S.flying) {
+      S.t += dt;
+      var p = predict(S.v0, S.angle, S.g);
+      if (S.t >= p.tf) {
+        S.hmax = Math.max(S.hmax, p.hmax);
+        S.trail.push({ x: p.range, y: 0 });
+        land();
+      } else {
+        S.x = S.vx * S.t;
+        S.y = S.vy * S.t - 0.5 * S.g * S.t * S.t;
+        S.hmax = Math.max(S.hmax, S.y);
+        if (S.trail.length === 0 || Math.hypot(S.x - S.trail[S.trail.length - 1].x, S.y - S.trail[S.trail.length - 1].y) > 0.04) {
+          S.trail.push({ x: S.x, y: S.y });
+        }
+      }
+    } else {
+      var gs = goalScale();
+      if (S.scale <= 0) S.scale = gs;
+      else S.scale += (gs - S.scale) * Math.min(1, dt * 9);
+    }
+
+    if (!S.result) paintReads();
+    else {
+      R.set('estado', S.result.hit ? '¡Diana! Error de ' + Math.abs(S.result.error).toFixed(2) + ' m' : 'Fallaste por ' + Math.abs(S.result.error).toFixed(2) + ' m',
+        S.result.hit ? 'good' : '');
+    }
+
+    fx.update(dt);
+    v.render();
+  });
+
+  clearShot();
+  cv.style.cursor = 'crosshair';
+  Sim.hint('Arrastra el blanco o ajusta los controles · dispara y busca la diana');
+})();
+</script>
+</body>
+</html>

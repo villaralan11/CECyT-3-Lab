@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Lightbulb, Calculator, Beaker, CheckCircle2, ArrowRight, FlaskConical } from "lucide-react";
+import { Lightbulb, Calculator, Beaker, CheckCircle2, ArrowRight, FlaskConical, Atom, type LucideIcon } from "lucide-react";
 import { PageHeader, Breadcrumb, CtaStrip } from "@/components/site/ui";
 
 const LAB_STEPS = [
@@ -12,20 +12,31 @@ const LAB_STEPS = [
   { n: 4, title: "Concluye", desc: "La estequiometría cuenta moles, no gramos: el que pesa igual no se agota igual. Verifícalo en el simulador.", icon: CheckCircle2 },
 ];
 
-const LABS = [
+type Lab = {
+  title: string;
+  subject: string;
+  href: string;
+  description: string;
+  color: "fuchsia" | "emerald";
+  icon: LucideIcon;
+};
+
+const LABS: Lab[] = [
   {
     title: "Reactivo limitante",
     subject: "Química",
     href: "/quimica/estequiometria",
     description: "Predice cuál reactivo se agota primero y calcula el rendimiento teórico con masas molares reales.",
     color: "fuchsia",
+    icon: FlaskConical,
   },
   {
-    title: "MRU a tiro parabólico",
+    title: "Física I–IV · 11 simuladores",
     subject: "Física",
-    href: "/fisica/tiros",
-    description: "Un solo simulador: MRU, MRUV y los tres tiros con Euler-Cromer validado contra la fórmula exacta.",
+    href: "/fisica",
+    description: "Cinemática, fuerzas, energía, fluidos, electricidad y ondas: once laboratorios con controles y gráficas en vivo.",
     color: "emerald",
+    icon: Atom,
   },
   {
     title: "Balanceo de combustiones",
@@ -33,13 +44,15 @@ const LABS = [
     href: "/quimica/balanceo",
     description: "Ajusta coeficientes de combustiones de metano, etano, etanol y glucosa con tabla de átomos en vivo.",
     color: "fuchsia",
+    icon: FlaskConical,
   },
   {
     title: "Nomenclatura IUPAC",
     subject: "Química",
     href: "/quimica/iupac",
-    description: "Fórmula ⇄ nombre en inorgánica y orgánica: 24 compuestos con explicación de las reglas.",
+    description: "Fórmula ⇄ nombre en inorgánica y orgánica: 25 compuestos con explicación de las reglas.",
     color: "fuchsia",
+    icon: FlaskConical,
   },
 ];
 
@@ -151,7 +164,7 @@ export default function LaboratoriosPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${c.bg} shadow-md`}>
-                      <FlaskConical className="h-5 w-5 text-white" />
+                      <lab.icon className="h-5 w-5 text-white" />
                     </div>
                     <span className={`text-xs font-semibold ${c.text}`}>{lab.subject}</span>
                   </div>

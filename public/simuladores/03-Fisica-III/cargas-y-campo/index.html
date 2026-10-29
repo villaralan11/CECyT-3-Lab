@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Cargas y campo · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-purple">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-purple">F3</span>
+    <div class="ct"><strong>Cargas y campo</strong><span>Física III · Electrostática</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+  var K = 8.99; /* k·q con q en nC y r en m → N/C */
+
+  var S = {
+    charges: [
+      { x: -0.9, y: 0, q: 5 },
+      { x: 0.9, y: 0, q: -5 }
+    ],
+    selected: 0,
+    probe: { x: 0, y: 1.1 },
+    showLines: true,
+    showVectors: false,
+    showLabels: true,
+    drag: null,
+    linesDirty: true,
+    lines: [],
+    field: { ex: 0, ey: 0, v: 0, mag: 0 }
+  };
+
+  function visible(w, h) {
+    var scale = Math.min(w / 5.0, h / 3.6);
+    return { scale: scale, hw: w / (2 * scale), hh: h / (2 * scale) };
+  }
+  function toPx(x, y, w, h) {
+    var g = visible(w, h);
+    return { x: w / 2 + x * g.scale, y: h / 2 - y * g.scale };
+  }
+  function toWorld(px, py, w, h) {
+    var g = visible(w, h);
+    return { x: (px - w / 2) / g.scale, y: (h / 2 - py) / g.scale };
+  }
+
+  function fieldAt(x, y) {
+    var ex = 0, ey = 0, vv = 0;
+    for (var i = 0; i < S.charges.length; i++) {
+      var c = S.charges[i];
+      var dx = x - c.x, dy = y - c.y;
+      var r2 = dx * dx + dy * dy;
+      var r = Math.sqrt(r2);
+      if (r < 0.075) r = 0.075;
+      var q = c.q;
+      var f = K * q / (r * r * r);
+      ex += f * dx;
+      ey += f * dy;
+      vv += K * q / r;
+    }
+    return { ex: ex, ey: ey, v: vv, mag: Math.hypot(ex, ey) };
+  }
+
+  /* ---------------------------------------------------------------- panel */
+  var panel = document.getElementById('panel');
+
+  var sCh = Sim.sec(panel, 'Cargas');
+  var rowAdd = Sim.btnrow(sCh);
+  Sim.button(rowAdd, '+ Agregar', function () { addCharge(1); }, { primary: true });
+  Sim.button(rowAdd, '− Agregar', function () { addCharge(-1); });
+
+  var chips = document.createElement('div');
+  chips.className = 'seg';
+  chips.style.marginTop = '11px';
+  sCh.appendChild(chips);
+
+  var magSlider = Sim.slider(sCh, {
+    label: 'Magnitud de la carga',
+    min: 1, max: 10, step: 0.5, value: 5, unit: 'nC', digits: 1,
+    onInput: function (v) {
+      var c = S.charges[S.selected];
+      if (!c) return;
+      c.q = Math.sign(c.q) * v;
+      changed();
+    }
+  });
+  var signSeg = Sim.seg(sCh, {
+    options: [['pos', 'Positiva'], ['neg', 'Negativa']],
+    value: 'pos',
+    onChange: function (v) {
+      var c = S.charges[S.selected];
+      if (!c) return;
+      c.q = Math.abs(c.q) * (v === 'pos' ? 1 : -1);
+      updateChips();
+      changed();
+    }
+  });
+  var rowDel = Sim.btnrow(sCh);
+  Sim.button(rowDel, 'Eliminar seleccionada', function () {
+    if (S.charges.length <= 1) {
+      Sim.hint('Debe quedar al menos una carga en la escena');
+      return;
+    }
+    S.charges.splice(S.selected, 1);
+    S.selected = Math.min(S.selected, S.charges.length - 1);
+    refreshControls();
+    changed();
+    Sim.beep(300, 0.05, 'triangle', 0.025);
+  });
+
+  var sView = Sim.sec(panel, 'Vista');
+  Sim.toggle(sView, {
+    label: 'Líneas de campo', value: true,
+    onChange: function (v) { S.showLines = v; }
+  });
+  Sim.toggle(sView, {
+    label: 'Vectores de campo', value: false,
+    onChange: function (v) { S.showVectors = v; }
+  });
+  Sim.toggle(sView, {
+    label: 'Etiquetas de carga', value: true,
+    onChange: function (v) { S.showLabels = v; }
+  });
+
+  var sProbe = Sim.sec(panel, 'Sonda de prueba');
+  var note = document.createElement('p');
+  note.className = 'note';
+  note.innerHTML = '<b>Arrastra el círculo blanco</b> para medir el campo y el potencial en cualquier punto. La sonda usa una carga de prueba de <b>+1 nC</b>.';
+  sProbe.appendChild(note);
+  var R = Sim.reads(sProbe, [
+    ['E', 'Campo |E|'],
+    ['dir', 'Dirección'],
+    ['V', 'Potencial V'],
+    ['r', 'Distancia a q'],
+    ['F', 'Fuerza sobre +1 nC'],
+    ['U', 'Energía de +1 nC'],
+    ['region', 'Zona del campo', { wide: true }]
+  ]);
+
+  var sEx = Sim.sec(panel, 'Ejemplos');
+  var rowEx = Sim.btnrow(sEx);
+  Sim.button(rowEx, 'Dipolo', function () {
+    S.charges = [{ x: -0.9, y: 0, q: 5 }, { x: 0.9, y: 0, q: -5 }];
+    S.selected = 0;
+    refreshControls();
+    changed();
+    Sim.hint('Dipolo: las líneas salen de la carga positiva y entran a la negativa');
+  });
+  Sim.button(rowEx, 'Iguales', function () {
+    S.charges = [{ x: -0.9, y: 0, q: 5 }, { x: 0.9, y: 0, q: 5 }];
+    S.selected = 0;
+    refreshControls();
+    changed();
+    Sim.hint('Dos cargas positivas se repelen: sus campos se suman en el centro');
+  });
+  Sim.button(rowEx, 'Una carga', function () {
+    S.charges = [{ x: 0, y: 0, q: 6 }];
+    S.selected = 0;
+    refreshControls();
+    changed();
+    Sim.hint('Una sola carga: el campo es radial y decae con 1/r²');
+  });
+
+  Sim.help(
+    '<p>Una carga eléctrica crea a su alrededor un campo. Otra carga siente una fuerza:</p>' +
+    '<p style="text-align:center"><b>E = k·q / r² &nbsp;&nbsp;·&nbsp;&nbsp; V = k·q / r &nbsp;&nbsp;·&nbsp;&nbsp; F = q₀·E</b></p>' +
+    '<p>Con varias cargas, los campos se suman como vectores (principio de superposición). Las <b>líneas de campo</b> salen de las cargas positivas y entran a las negativas; su densidad indica la intensidad.</p>' +
+    '<ul><li>El <b>campo E</b> apunta en la dirección en que empujaría a una carga positiva.</li>' +
+    '<li>El <b>potencial V</b> es una energía por unidad de carga; es positivo cerca de una carga positiva y negativo cerca de una negativa.</li>' +
+    '<li>La fuerza sobre una carga de prueba positiva va en el mismo sentido que E.</li></ul>' +
+    '<p>Arrastra las cargas y la sonda. Agrega o elimina cargas, cambia su magnitud y su signo, y compara los ejemplos.</p>'
+  );
+
+  /* ---------------------------------------------------------------- UI dinámica */
+  function updateChips() {
+    chips.innerHTML = '';
+    S.charges.forEach(function (c, i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      var sign = c.q >= 0 ? '+' : '−';
+      b.textContent = 'q' + (i + 1) + ' ' + sign + Math.abs(c.q).toFixed(Math.abs(c.q) % 1 ? 1 : 0);
+      b.classList.toggle('on', i === S.selected);
+      b.addEventListener('click', function () {
+        S.selected = i;
+        refreshControls();
+        Sim.beep(460, 0.035, 'triangle', 0.02);
+      });
+      chips.appendChild(b);
+    });
+  }
+
+  function refreshControls() {
+    updateChips();
+    var c = S.charges[S.selected];
+    if (!c) return;
+    magSlider.set(Math.abs(c.q), true);
+    signSeg.set(c.q >= 0 ? 'pos' : 'neg');
+  }
+
+  function changed() {
+    S.linesDirty = true;
+    updateChips();
+  }
+
+  function addCharge(sign) {
+    if (S.charges.length >= 4) {
+      Sim.hint('Máximo 4 cargas · elimina una para agregar otra');
+      return;
+    }
+    var g = visible(v.w, v.h);
+    var x = Sim.clamp(Sim.rand(-1.2, 1.2), -g.hw + 0.4, g.hw - 0.4);
+    var y = Sim.clamp(Sim.rand(-0.8, 0.8), -g.hh + 0.4, g.hh - 0.4);
+    S.charges.push({ x: x, y: y, q: 5 * sign });
+    S.selected = S.charges.length - 1;
+    refreshControls();
+    changed();
+    Sim.beep(sign > 0 ? 620 : 380, 0.06, 'sine', 0.035);
+  }
+
+  /* ---------------------------------------------------------------- campo y líneas */
+  function recomputeLines() {
+    S.lines = [];
+    if (!S.showLines) return;
+    var g = visible(v.w, v.h);
+    var nSeeds = 12;
+    for (var ci = 0; ci < S.charges.length; ci++) {
+      var c = S.charges[ci];
+      var dir = c.q >= 0 ? 1 : -1;
+      for (var s = 0; s < nSeeds; s++) {
+        var a = (s / nSeeds) * Sim.TAU + (ci * 0.23);
+        var pts = [];
+        var x = c.x + Math.cos(a) * 0.13;
+        var y = c.y + Math.sin(a) * 0.13;
+        for (var step = 0; step < 360; step++) {
+          var f = fieldAt(x, y);
+          if (!isFinite(f.mag) || f.mag < 0.0001) break;
+          pts.push({ x: x, y: y });
+          x += (f.ex / f.mag) * 0.045 * dir;
+          y += (f.ey / f.mag) * 0.045 * dir;
+          if (Math.abs(x) > g.hw + 0.2 || Math.abs(y) > g.hh + 0.2) break;
+          var stop = false;
+          for (var k = 0; k < S.charges.length; k++) {
+            if (k === ci) continue;
+            var oc = S.charges[k];
+            if (dir * oc.q < 0) {
+              var d = Math.hypot(x - oc.x, y - oc.y);
+              if (d < 0.12) { stop = true; break; }
+            }
+          }
+          if (stop) break;
+        }
+        if (pts.length > 2) S.lines.push(pts);
+      }
+    }
+    S.linesDirty = false;
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function draw(ctx, w, h) {
+    if (!v) return;
+    C = Sim.C;
+    var g = visible(w, h);
+    var f = fieldAt(S.probe.x, S.probe.y);
+    S.field = f;
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* retícula */
+    ctx.strokeStyle = C.grid;
+    ctx.lineWidth = 1;
+    var step = g.scale >= 150 ? 0.5 : 1;
+    var x0 = Math.ceil(-g.hw / step) * step;
+    var y0 = Math.ceil(-g.hh / step) * step;
+    for (var gx = x0; gx <= g.hw; gx += step) {
+      var px = w / 2 + gx * g.scale;
+      ctx.beginPath();
+      ctx.moveTo(px + 0.5, 0);
+      ctx.lineTo(px + 0.5, h);
+      ctx.stroke();
+    }
+    for (var gy = y0; gy <= g.hh; gy += step) {
+      var py = h / 2 - gy * g.scale;
+      ctx.beginPath();
+      ctx.moveTo(0, py + 0.5);
+      ctx.lineTo(w, py + 0.5);
+      ctx.stroke();
+    }
+    /* ejes */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.13)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0);
+    ctx.lineTo(w / 2, h);
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.stroke();
+    /* escala */
+    var mPx = g.scale;
+    ctx.strokeStyle = C.dim;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(36, h - 34);
+    ctx.lineTo(36 + mPx, h - 34);
+    ctx.moveTo(36, h - 39);
+    ctx.lineTo(36, h - 29);
+    ctx.moveTo(36 + mPx, h - 39);
+    ctx.lineTo(36 + mPx, h - 29);
+    ctx.stroke();
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(9, 600);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('1 m', 36, h - 44);
+
+    /* líneas de campo */
+    if (S.showLines) {
+      if (S.linesDirty) recomputeLines();
+      ctx.save();
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.28)' : 'rgba(0,0,0,.24)';
+      ctx.lineWidth = 1.1;
+      ctx.lineCap = 'round';
+      for (var i = 0; i < S.lines.length; i++) {
+        var pts = S.lines[i];
+        ctx.beginPath();
+        for (var p = 0; p < pts.length; p++) {
+          var pp = toPx(pts[p].x, pts[p].y, w, h);
+          if (p === 0) ctx.moveTo(pp.x, pp.y); else ctx.lineTo(pp.x, pp.y);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* vectores de campo */
+    if (S.showVectors) {
+      var vStep = g.scale >= 160 ? 0.4 : 0.55;
+      var vx0 = Math.ceil(-g.hw / vStep) * vStep;
+      var vy0 = Math.ceil(-g.hh / vStep) * vStep;
+      for (var vx = vx0; vx <= g.hw; vx += vStep) {
+        for (var vy = vy0; vy <= g.hh; vy += vStep) {
+          var near = false;
+          for (var c2 = 0; c2 < S.charges.length; c2++) {
+            if (Math.hypot(vx - S.charges[c2].x, vy - S.charges[c2].y) < 0.28) { near = true; break; }
+          }
+          if (near) continue;
+          var ff = fieldAt(vx, vy);
+          if (ff.mag < 0.02) continue;
+          var A = toPx(vx, vy, w, h);
+          var ux = ff.ex / ff.mag, uy = -ff.ey / ff.mag;
+          var len = 10;
+          var t = Sim.clamp(Math.log(1 + ff.mag) / 4.2, 0, 1);
+          ctx.globalAlpha = 0.35 + 0.4 * t;
+          Sim.arrow(ctx, A.x - ux * len / 2, A.y - uy * len / 2, A.x + ux * len / 2, A.y + uy * len / 2, {
+            color: t > 0.7 ? C.orange : (t > 0.4 ? C.teal : C.blue),
+            width: 1.4, head: 4.5
+          });
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    /* halos y cargas */
+    for (var ci = 0; ci < S.charges.length; ci++) {
+      var c = S.charges[ci];
+      var pos = toPx(c.x, c.y, w, h);
+      var col = c.q >= 0 ? C.red : C.blue;
+      var rad = 17 + Math.min(8, Math.abs(c.q) * 0.7);
+      var glow = ctx.createRadialGradient(pos.x, pos.y, rad * 0.2, pos.x, pos.y, rad * 3.4);
+      glow.addColorStop(0, colorA(col, C.dark ? 0.34 : 0.22));
+      glow.addColorStop(1, colorA(col, 0));
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, rad * 3.4, 0, Sim.TAU);
+      ctx.fill();
+
+      /* anillo de selección */
+      if (ci === S.selected) {
+        ctx.strokeStyle = colorA(col, 0.5);
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 5]);
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, rad + 9, 0, Sim.TAU);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      /* cuerpo */
+      var grd = ctx.createRadialGradient(pos.x - rad * 0.32, pos.y - rad * 0.35, rad * 0.1, pos.x, pos.y, rad);
+      grd.addColorStop(0, mixHex(col, '#ffffff', 0.35));
+      grd.addColorStop(1, col);
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, rad, 0, Sim.TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,.55)';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+
+      /* signo */
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = Math.max(2.4, rad * 0.17);
+      ctx.lineCap = 'round';
+      var arm = rad * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(pos.x - arm, pos.y);
+      ctx.lineTo(pos.x + arm, pos.y);
+      if (c.q >= 0) {
+        ctx.moveTo(pos.x, pos.y - arm);
+        ctx.lineTo(pos.x, pos.y + arm);
+      }
+      ctx.stroke();
+
+      /* etiqueta */
+      if (S.showLabels) {
+        Sim.tag(ctx, 'q' + (ci + 1) + ' = ' + (c.q >= 0 ? '+' : '−') + Math.abs(c.q).toFixed(Math.abs(c.q) % 1 ? 1 : 0) + ' nC', pos.x, pos.y + rad + 22, {
+          size: 9.5, bg: C.glass, color: C.ink
+        });
+      }
+    }
+
+    /* sonda */
+    var pr = toPx(S.probe.x, S.probe.y, w, h);
+    ctx.save();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.5)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    ctx.arc(pr.x, pr.y, 20, 0, Sim.TAU);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = C.card;
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.75)' : 'rgba(0,0,0,.62)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(pr.x, pr.y, 7.5, 0, Sim.TAU);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = C.ink;
+    ctx.beginPath();
+    ctx.arc(pr.x, pr.y, 2.2, 0, Sim.TAU);
+    ctx.fill();
+
+    /* vector E en la sonda */
+    if (f.mag > 0.001) {
+      var ux2 = f.ex / f.mag, uy2 = -f.ey / f.mag;
+      var lenE = Sim.clamp(22 + Math.log(1 + f.mag) * 20, 24, 86);
+      Sim.arrow(ctx, pr.x + ux2 * 14, pr.y + uy2 * 14, pr.x + ux2 * (14 + lenE), pr.y + uy2 * (14 + lenE), {
+        color: C.purple, width: 3, head: 9
+      });
+      Sim.tag(ctx, 'E', pr.x + ux2 * (26 + lenE) + (ux2 > 0 ? 8 : -8), pr.y + uy2 * (26 + lenE), {
+        size: 10, bg: C.card, color: C.purple, padX: 7
+      });
+    }
+
+    /* etiquetas */
+    Sim.tag(ctx, 'Campo eléctrico · sonda +1 nC', 80, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'left'
+    });
+    Sim.tag(ctx, 'k = 8.99 × 10⁹ N·m²/C²', w - 20, 26, {
+      size: 10, bg: C.glass, color: C.ink, align: 'right'
+    });
+    if (Math.abs(S.probe.y) < 0.08 && Math.abs(S.probe.x) < 0.08) {
+      Sim.tag(ctx, 'En el centro exacto: el campo puede anularse', w / 2, h - 34, {
+        size: 10, bg: C.card, color: C.orange
+      });
+    }
+  }
+
+  function colorA(hex, a) {
+    var n = parseInt(hex.slice(1), 16);
+    return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+  }
+  function mixHex(a, b, t) {
+    var na = parseInt(a.slice(1), 16), nb = parseInt(b.slice(1), 16);
+    var r = Math.round(((na >> 16) & 255) * (1 - t) + ((nb >> 16) & 255) * t);
+    var g = Math.round(((na >> 8) & 255) * (1 - t) + ((nb >> 8) & 255) * t);
+    var bl = Math.round((na & 255) * (1 - t) + (nb & 255) * t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
+  }
+
+  /* ---------------------------------------------------------------- lecturas */
+  var lastE = -1;
+  function updateReads() {
+    var f = fieldAt(S.probe.x, S.probe.y);
+    var ang = Math.atan2(f.ey, f.ex) * 180 / Math.PI;
+    if (ang < 0) ang += 360;
+    var nearest = 999;
+    for (var i = 0; i < S.charges.length; i++) {
+      var d = Math.hypot(S.probe.x - S.charges[i].x, S.probe.y - S.charges[i].y);
+      if (d < nearest) nearest = d;
+    }
+    var eTxt = f.mag >= 100 ? f.mag.toFixed(0) : (f.mag >= 10 ? f.mag.toFixed(1) : f.mag.toFixed(2));
+    R.set('E', eTxt + ' N/C');
+    R.set('dir', ang.toFixed(0) + '°');
+    var vTxt = Math.abs(f.v) >= 100 ? f.v.toFixed(0) : (Math.abs(f.v) >= 10 ? f.v.toFixed(1) : f.v.toFixed(2));
+    R.set('V', vTxt + ' V', f.v < 0 ? 'hot' : '');
+    R.set('r', nearest.toFixed(2) + ' m');
+    R.set('F', f.mag.toFixed(1) + ' nN');
+    R.set('U', f.v.toFixed(1) + ' nJ');
+    var region;
+    if (f.mag < 0.5) region = 'Campo casi nulo · punto neutro';
+    else if (f.mag < 10) region = 'Campo débil';
+    else if (f.mag < 60) region = 'Campo moderado';
+    else region = 'Campo intenso · cerca de una carga';
+    R.set('region', region, f.mag < 0.5 ? 'good' : '');
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      var w = v.w, h = v.h;
+      for (var i = S.charges.length - 1; i >= 0; i--) {
+        var pos = toPx(S.charges[i].x, S.charges[i].y, w, h);
+        if (Math.hypot(x - pos.x, y - pos.y) < 30) {
+          S.selected = i;
+          S.drag = { type: 'charge', index: i };
+          refreshControls();
+          cv.style.cursor = 'grabbing';
+          return true;
+        }
+      }
+      var pr = toPx(S.probe.x, S.probe.y, w, h);
+      if (Math.hypot(x - pr.x, y - pr.y) < 26) {
+        S.drag = { type: 'probe' };
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x, y) {
+      if (!S.drag) return;
+      var w = v.w, h = v.h;
+      var g = visible(w, h);
+      var p = toWorld(x, y, w, h);
+      p.x = Sim.clamp(p.x, -g.hw + 0.3, g.hw - 0.3);
+      p.y = Sim.clamp(p.y, -g.hh + 0.3, g.hh - 0.3);
+      if (S.drag.type === 'charge') {
+        var c = S.charges[S.drag.index];
+        c.x = p.x;
+        c.y = p.y;
+        S.linesDirty = true;
+      } else {
+        S.probe.x = p.x;
+        S.probe.y = p.y;
+      }
+    },
+    up: function () {
+      if (!S.drag) return;
+      S.drag = null;
+      cv.style.cursor = 'default';
+      Sim.beep(430, 0.03, 'sine', 0.02);
+    },
+    hover: function (x, y) {
+      var w = v.w, h = v.h;
+      var over = false;
+      for (var i = 0; i < S.charges.length; i++) {
+        var pos = toPx(S.charges[i].x, S.charges[i].y, w, h);
+        if (Math.hypot(x - pos.x, y - pos.y) < 30) { over = true; break; }
+      }
+      var pr = toPx(S.probe.x, S.probe.y, w, h);
+      if (Math.hypot(x - pr.x, y - pr.y) < 26) over = true;
+      cv.style.cursor = over ? 'grab' : 'default';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+    updateReads();
+    v.render();
+  });
+
+  refreshControls();
+  changed();
+  updateReads();
+  v.render();
+  Sim.hint('Arrastra cargas y la sonda · observa cómo se suman los campos');
+})();
+</script>
+</body>
+</html>

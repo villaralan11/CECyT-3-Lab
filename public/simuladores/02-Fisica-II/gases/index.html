@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="es" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f5f7">
+<title>Gases · Mis Simuladores</title>
+<link rel="stylesheet" href="../../estilo.css">
+</head>
+<body class="app acc-orange">
+<header class="bar">
+  <a class="back" href="../../index.html" title="Volver al inicio">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
+    <span>Mis Simuladores</span>
+  </a>
+  <div class="crumb">
+    <span class="badge b-green">F2</span>
+    <div class="ct"><strong>Gases y presión</strong><span>Física II · Teoría cinética</span></div>
+  </div>
+  <div class="grow"></div>
+  <button class="iconbtn" id="btnHelp" title="Cómo usar">?</button>
+  <button class="iconbtn" id="btnSound" title="Sonido"></button>
+  <button class="iconbtn" id="btnTheme" title="Tema"></button>
+  <button class="iconbtn" id="btnFull" title="Pantalla completa"></button>
+</header>
+
+<main class="layout">
+  <section class="stage" id="stage"><canvas id="cv"></canvas></section>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<script src="../../base.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = Sim.C;
+
+  /* Modelo 2D en unidades internas. El volumen mostrado se calibra a litros. */
+  var W = 1;
+  var MINH = 0.5, MAXH = 1.4;
+  var SIGMA0 = 0.06;         /* rapidez ~ SIGMA0·√T */
+  var CAL = 1.157;           /* calibración presión interna → kPa */
+  var LITERS = 3;            /* H = 1 equivale a 3 L */
+
+  var S = {
+    T: 300,
+    N: 80,
+    H: 1.0,
+    Htarget: 1.0,
+    pMeas: 100,
+    pSmooth: 100,
+    impulse: 0,
+    collisions: 0,
+    window: 0,
+    rate: 0,
+    colorBySpeed: true,
+    showHits: true,
+    dragPiston: false,
+    flashes: []
+  };
+
+  var particles = [];
+  var hist = [];
+
+  function sigma() { return SIGMA0 * Math.sqrt(S.T); }
+  function randn() {
+    var u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(Sim.TAU * v);
+  }
+  function newParticle() {
+    var s = sigma();
+    return {
+      x: Sim.rand(0.02, W - 0.02),
+      y: Sim.rand(0.02, S.H - 0.02),
+      vx: randn() * s,
+      vy: randn() * s
+    };
+  }
+  function ensureCount() {
+    while (particles.length < S.N) particles.push(newParticle());
+    if (particles.length > S.N) particles.length = S.N;
+  }
+  function setTemperature(T) {
+    T = Sim.clamp(T, 100, 800);
+    var ratio = Math.sqrt(T / S.T);
+    S.T = T;
+    for (var i = 0; i < particles.length; i++) {
+      particles[i].vx *= ratio;
+      particles[i].vy *= ratio;
+    }
+    ensureCount();
+  }
+
+  /* ---------------------------------------------------------------- panel */
+  var panel = document.getElementById('panel');
+
+  var sGas = Sim.sec(panel, 'Gas encerrado');
+  var nSlider = Sim.slider(sGas, {
+    label: 'Número de partículas',
+    min: 20, max: 140, step: 5, value: S.N, digits: 0,
+    onInput: function (v) { S.N = v; ensureCount(); }
+  });
+  var tSlider = Sim.slider(sGas, {
+    label: 'Temperatura',
+    min: 100, max: 800, step: 10, value: S.T, unit: 'K', digits: 0,
+    onInput: function (v) { setTemperature(v); }
+  });
+  var note = document.createElement('p');
+  note.className = 'note';
+  note.innerHTML = 'La temperatura fija la rapidez media de las partículas: más calor, más choques y más presión.';
+  sGas.appendChild(note);
+
+  var sPist = Sim.sec(panel, 'Émbolo');
+  var volSlider = Sim.slider(sPist, {
+    label: 'Volumen',
+    min: MINH * LITERS, max: MAXH * LITERS, step: 0.05, value: S.H * LITERS,
+    unit: 'L', digits: 2,
+    onInput: function (v) { S.Htarget = v / LITERS; }
+  });
+  var row = Sim.btnrow(sPist);
+  Sim.button(row, 'Comprimir', function () {
+    S.Htarget = 0.62;
+    volSlider.set(S.Htarget * LITERS, true);
+    Sim.hint('Comprimir: menos volumen, más choques contra las paredes y más presión');
+  });
+  Sim.button(row, 'Expandir', function () {
+    S.Htarget = 1.32;
+    volSlider.set(S.Htarget * LITERS, true);
+    Sim.hint('Expandir: más volumen, menos choques y menos presión');
+  });
+  var row2 = Sim.btnrow(sPist);
+  Sim.button(row2, 'Reiniciar', function () { resetAll(); });
+
+  var sView = Sim.sec(panel, 'Vista');
+  Sim.toggle(sView, {
+    label: 'Colorear por rapidez', value: true,
+    onChange: function (v) { S.colorBySpeed = v; }
+  });
+  Sim.toggle(sView, {
+    label: 'Marcar choques', value: true,
+    onChange: function (v) { S.showHits = v; }
+  });
+
+  var sData = Sim.sec(panel, 'Medidas');
+  var R = Sim.reads(sData, [
+    ['p', 'Presión medida'],
+    ['pid', 'Presión ideal'],
+    ['v', 'Volumen'],
+    ['t', 'Temperatura'],
+    ['n', 'Partículas'],
+    ['vm', 'Rapidez media'],
+    ['c', 'Choques por segundo'],
+    ['pv', 'Producto P·V', { wide: true }]
+  ]);
+
+  var sHist = Sim.sec(panel, 'Distribución de rapideces');
+  var histBox = document.createElement('div');
+  histBox.className = 'chartbox';
+  histBox.innerHTML = '<div class="chartcap"><span>Maxwell–Boltzmann</span><span>2D</span></div><canvas id="chHist"></canvas>';
+  sHist.appendChild(histBox);
+  var histNote = document.createElement('p');
+  histNote.className = 'note';
+  histNote.innerHTML = 'Las barras son las rapideces reales de las partículas; la curva punteada es la predicción teórica.';
+  sHist.appendChild(histNote);
+
+  Sim.help(
+    '<p>Un gas es un conjunto enorme de partículas que se mueven y chocan contra las paredes. La presión nace de esos choques:</p>' +
+    '<p style="text-align:center"><b>P · V = N · k · T</b></p>' +
+    '<ul><li>Si <b>comprimes</b> el gas (menos volumen), las partículas golpean más seguido y la presión sube.</li>' +
+    '<li>Si <b>calientas</b>, se mueven más rápido y la presión también sube.</li>' +
+    '<li>Si agregas <b>más partículas</b>, hay más choques y más presión.</li></ul>' +
+    '<p>La distribución de rapideces tiene forma de campana sesgada: pocas partículas van muy lento, pocas van muy rápido, y la mayoría está cerca del valor más probable. Al calentar, toda la curva se desplaza a la derecha.</p>' +
+    '<p>Arrastra el émbolo o usa los controles. La presión medida se obtiene contando los choques reales contra las paredes.</p>'
+  );
+
+  /* ---------------------------------------------------------------- física */
+  function resetAll() {
+    S.T = 300;
+    S.N = 80;
+    S.H = 1.0;
+    S.Htarget = 1.0;
+    S.pMeas = 100;
+    S.pSmooth = 100;
+    S.impulse = 0;
+    S.collisions = 0;
+    S.window = 0;
+    S.rate = 0;
+    S.flashes.length = 0;
+    particles.length = 0;
+    ensureCount();
+    nSlider.set(S.N, true);
+    tSlider.set(S.T, true);
+    volSlider.set(S.H * LITERS, true);
+    Sim.beep(480, 0.06, 'sine', 0.03);
+  }
+
+  function idealPressure() {
+    return 0.0125 * S.N * S.T / (S.H * LITERS);
+  }
+
+  function step(dt) {
+    /* el émbolo se acerca suavemente a su objetivo */
+    var dh = S.Htarget - S.H;
+    if (Math.abs(dh) > 0.0005) {
+      S.H += Sim.clamp(dh, -0.6 * dt, 0.6 * dt);
+    } else {
+      S.H = S.Htarget;
+    }
+
+    var r = 0.009;
+    var perimeter = 2 * (W + S.H);
+    var i, p;
+
+    for (i = 0; i < particles.length; i++) {
+      p = particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+
+      if (p.x < r) {
+        p.x = r;
+        if (p.vx < 0) {
+          S.impulse += 2 * Math.abs(p.vx);
+          S.collisions++;
+          addFlash(r, p.y, 1);
+          p.vx = -p.vx;
+        }
+      } else if (p.x > W - r) {
+        p.x = W - r;
+        if (p.vx > 0) {
+          S.impulse += 2 * Math.abs(p.vx);
+          S.collisions++;
+          addFlash(W - r, p.y, -1);
+          p.vx = -p.vx;
+        }
+      }
+
+      if (p.y < r) {
+        p.y = r;
+        if (p.vy < 0) {
+          S.impulse += 2 * Math.abs(p.vy);
+          S.collisions++;
+          addFlash(p.x, r, 2);
+          p.vy = -p.vy;
+        }
+      } else if (p.y > S.H - r) {
+        p.y = S.H - r;
+        if (p.vy > 0) {
+          S.impulse += 2 * Math.abs(p.vy);
+          S.collisions++;
+          addFlash(p.x, S.H - r, -2);
+          p.vy = -p.vy;
+        }
+      }
+
+      /* si el émbolo baja, empuja a la partícula */
+      if (p.y > S.H - r) {
+        p.y = S.H - r;
+        if (p.vy > 0) p.vy = -p.vy;
+      }
+    }
+
+    /*
+      En 2D, P = impulso total / (tiempo · perímetro).
+      CAL convierte a una escala de kPa coherente con la ley ideal.
+    */
+    S.window += dt;
+    if (S.window >= 0.28) {
+      var pRaw = S.impulse / (S.window * perimeter) * CAL;
+      S.pMeas = pRaw;
+      S.pSmooth += (pRaw - S.pSmooth) * 0.5;
+      S.rate = S.collisions / S.window;
+      S.impulse = 0;
+      S.collisions = 0;
+      S.window = 0;
+    }
+  }
+
+  function addFlash(x, y, dir) {
+    if (!S.showHits) return;
+    if (S.flashes.length > 44) S.flashes.shift();
+    S.flashes.push({ x: x, y: y, dir: dir, life: 0.28, age: 0 });
+  }
+
+  /* ---------------------------------------------------------------- vista */
+  var cv = document.getElementById('cv');
+  var v = Sim.view(cv, draw);
+  var time = 0;
+
+  function geom(w, h) {
+    var maxBoxH = h - 250;
+    var scale = Math.min(w * 0.36, maxBoxH / MAXH, 380);
+    scale = Math.max(scale, 90);
+    var bw = W * scale;
+    var bottom = h - 74;
+    return {
+      scale: scale,
+      bw: bw,
+      bx: (w - bw) / 2,
+      bottom: bottom,
+      cx: w / 2
+    };
+  }
+
+  function draw(ctx, w, h) {
+    C = Sim.C;
+    var g = geom(w, h);
+    var boxTop = g.bottom - S.H * g.scale;
+    var maxTop = g.bottom - MAXH * g.scale;
+
+    /* fondo */
+    var bg = ctx.createLinearGradient(0, 0, 0, h);
+    if (C.dark) { bg.addColorStop(0, '#101014'); bg.addColorStop(1, '#0b0b0d'); }
+    else { bg.addColorStop(0, '#fbfbfe'); bg.addColorStop(1, '#ffffff'); }
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    /* rieles laterales */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.14)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(g.bx - 7, g.bottom + 6);
+    ctx.lineTo(g.bx - 7, maxTop - 10);
+    ctx.moveTo(g.bx + g.bw + 7, g.bottom + 6);
+    ctx.lineTo(g.bx + g.bw + 7, maxTop - 10);
+    ctx.stroke();
+
+    /* cámara */
+    Sim.rr(ctx, g.bx, maxTop, g.bw, g.bottom - maxTop, 14);
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.025)' : 'rgba(0,0,0,.018)';
+    ctx.fill();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.14)' : 'rgba(0,0,0,.12)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* gas */
+    var heat = Sim.clamp((S.T - 100) / 700, 0, 1);
+    var gasTop = boxTop + 4;
+    var gg = ctx.createLinearGradient(0, gasTop, 0, g.bottom);
+    gg.addColorStop(0, 'rgba(' + Math.round(90 + 150 * heat) + ',' + Math.round(180 - 70 * heat) + ',' + Math.round(255 - 170 * heat) + ',' + (C.dark ? 0.10 : 0.13) + ')');
+    gg.addColorStop(1, 'rgba(' + Math.round(70 + 150 * heat) + ',' + Math.round(150 - 60 * heat) + ',' + Math.round(230 - 150 * heat) + ',' + (C.dark ? 0.03 : 0.05) + ')');
+    ctx.fillStyle = gg;
+    ctx.fillRect(g.bx + 2, gasTop, g.bw - 4, g.bottom - gasTop - 2);
+
+    /* partículas */
+    var sg = sigma();
+    var vmaxColor = Math.max(0.4, sg * 3.1);
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      var px = g.bx + p.x * g.scale;
+      var py = g.bottom - p.y * g.scale;
+      var speed = Math.hypot(p.vx, p.vy);
+      var col = S.colorBySpeed ? speedColor(speed, vmaxColor) : C.blue;
+      var rad = 2.1 + Math.min(1.4, speed / vmaxColor * 1.4);
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(px, py, rad, 0, Sim.TAU);
+      ctx.fill();
+      if (!C.dark) {
+        ctx.globalAlpha = 0.18;
+        ctx.beginPath();
+        ctx.arc(px, py, rad + 2.4, 0, Sim.TAU);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    /* destellos de choque */
+    for (var f = 0; f < S.flashes.length; f++) {
+      var fl = S.flashes[f];
+      var a = 1 - fl.age / fl.life;
+      if (a <= 0) continue;
+      var fx = g.bx + fl.x * g.scale;
+      var fy = g.bottom - fl.y * g.scale;
+      ctx.save();
+      ctx.globalAlpha = a * 0.75;
+      ctx.strokeStyle = C.orange;
+      ctx.lineWidth = 1.6;
+      if (Math.abs(fl.dir) === 1) {
+        var dx = fl.dir * (5 + (1 - a) * 9);
+        ctx.beginPath();
+        ctx.moveTo(fx, fy - 4);
+        ctx.lineTo(fx + dx, fy - 7);
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(fx + dx, fy);
+        ctx.moveTo(fx, fy + 4);
+        ctx.lineTo(fx + dx, fy + 7);
+        ctx.stroke();
+      } else {
+        var dy = Math.sign(fl.dir) * (5 + (1 - a) * 9);
+        ctx.beginPath();
+        ctx.moveTo(fx - 4, fy);
+        ctx.lineTo(fx - 7, fy + dy);
+        ctx.moveTo(fx, fy);
+        ctx.lineTo(fx, fy + dy);
+        ctx.moveTo(fx + 4, fy);
+        ctx.lineTo(fx + 7, fy + dy);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    /* émbolo */
+    var pistonY = boxTop;
+    var pistonH = 18;
+    var pg = ctx.createLinearGradient(0, pistonY - pistonH / 2, 0, pistonY + pistonH / 2);
+    pg.addColorStop(0, C.dark ? '#8d8d97' : '#e3e4e9');
+    pg.addColorStop(0.5, C.dark ? '#5c5c66' : '#b9bbc4');
+    pg.addColorStop(1, C.dark ? '#35353c' : '#8d909b');
+    ctx.fillStyle = pg;
+    Sim.rr(ctx, g.bx - 2, pistonY - pistonH / 2, g.bw + 4, pistonH, 6);
+    ctx.fill();
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.22)' : 'rgba(0,0,0,.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    /* varilla */
+    if (maxTop > 150) {
+      ctx.fillStyle = C.dark ? '#6f6f79' : '#c4c6ce';
+      Sim.rr(ctx, g.cx - 7, maxTop - 66, 14, pistonY - maxTop + 60, 5);
+      ctx.fill();
+      ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.16)' : 'rgba(0,0,0,.12)';
+      ctx.stroke();
+      /* mango */
+      ctx.fillStyle = C.blue;
+      Sim.rr(ctx, g.cx - 34, maxTop - 84, 68, 20, 9);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = Sim.font(9.5, 700);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('ÉMBOLO', g.cx, maxTop - 74);
+    } else {
+      ctx.fillStyle = C.blue;
+      Sim.rr(ctx, g.cx - 26, pistonY - 27, 52, 12, 6);
+      ctx.fill();
+    }
+
+    /* etiqueta de volumen */
+    ctx.strokeStyle = C.orange;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(g.bx + g.bw + 34, pistonY);
+    ctx.lineTo(g.bx + g.bw + 34, g.bottom);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(g.bx + g.bw + 29, pistonY);
+    ctx.lineTo(g.bx + g.bw + 39, pistonY);
+    ctx.moveTo(g.bx + g.bw + 29, g.bottom);
+    ctx.lineTo(g.bx + g.bw + 39, g.bottom);
+    ctx.stroke();
+    Sim.tag(ctx, (S.H * LITERS).toFixed(1) + ' L', g.bx + g.bw + 60, (pistonY + g.bottom) / 2, {
+      size: 9.5, bg: C.card, color: C.orange
+    });
+
+    /* termómetro */
+    if (w > 640) drawThermo(ctx, 54, h * 0.30, 120);
+    /* manómetro */
+    if (w > 640) drawGauge(ctx, w - 64, h * 0.30, 130);
+
+    /* etiquetas superiores */
+    Sim.tag(ctx, S.N + ' partículas · T = ' + S.T + ' K', g.cx, 28, {
+      size: 10.5, bg: C.glass, color: C.ink
+    });
+    Sim.tag(ctx, 'Presión medida ' + S.pSmooth.toFixed(0) + ' kPa', g.cx, 54, {
+      size: 10, bg: C.card, color: S.pSmooth > 160 ? C.orange : C.blue
+    });
+
+    if (Math.abs(S.Htarget - S.H) > 0.01) {
+      Sim.tag(ctx, 'Moviendo el émbolo…', g.cx, h - 32, {
+        size: 10, bg: C.glass, color: C.dim
+      });
+    } else {
+      Sim.tag(ctx, 'Arrastra el émbolo · P·V = ' + (S.pSmooth * S.H * LITERS).toFixed(0) + ' kPa·L', g.cx, h - 32, {
+        size: 10, bg: C.glass, color: C.ink
+      });
+    }
+  }
+
+  function speedColor(speed, vmax) {
+    var t = Sim.clamp(speed / vmax, 0, 1);
+    var stops = [
+      [0.00, 90, 180, 255],
+      [0.34, 80, 220, 220],
+      [0.62, 255, 214, 10],
+      [0.82, 255, 159, 10],
+      [1.00, 255, 69, 58]
+    ];
+    for (var i = 1; i < stops.length; i++) {
+      if (t <= stops[i][0]) {
+        var a = stops[i - 1], b = stops[i];
+        var k = (t - a[0]) / (b[0] - a[0]);
+        return 'rgb(' + Math.round(a[1] + (b[1] - a[1]) * k) + ',' +
+          Math.round(a[2] + (b[2] - a[2]) * k) + ',' +
+          Math.round(a[3] + (b[3] - a[3]) * k) + ')';
+      }
+    }
+    return 'rgb(255,69,58)';
+  }
+
+  function drawThermo(ctx, cx, top, height) {
+    var bottom = top + height;
+    ctx.save();
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
+    Sim.rr(ctx, cx - 7, top, 14, height - 14, 7);
+    ctx.fill();
+    var frac = Sim.clamp((S.T - 100) / 700, 0, 1);
+    var fillH = (height - 20) * frac;
+    var gr = ctx.createLinearGradient(0, bottom - 10 - fillH, 0, bottom - 10);
+    gr.addColorStop(0, '#ff453a');
+    gr.addColorStop(1, '#ff9f0a');
+    Sim.rr(ctx, cx - 4, bottom - 12 - fillH, 8, Math.max(2, fillH), 4);
+    ctx.fillStyle = gr;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, bottom - 4, 13, 0, Sim.TAU);
+    ctx.fillStyle = '#ff453a';
+    ctx.fill();
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(9, 650);
+    ctx.textAlign = 'center';
+    ctx.fillText('T', cx, top - 10);
+    ctx.fillStyle = C.ink;
+    ctx.font = Sim.font(10, 700);
+    ctx.fillText(S.T + ' K', cx, bottom + 24);
+    ctx.restore();
+  }
+
+  function drawGauge(ctx, cx, top, height) {
+    var bottom = top + height;
+    var maxP = 280;
+    var frac = Sim.clamp(S.pSmooth / maxP, 0, 1);
+    ctx.save();
+    ctx.fillStyle = C.dark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.05)';
+    Sim.rr(ctx, cx - 7, top, 14, height, 7);
+    ctx.fill();
+    var fillH = (height - 6) * frac;
+    var gr = ctx.createLinearGradient(0, bottom, 0, top);
+    gr.addColorStop(0, C.blue);
+    gr.addColorStop(0.55, C.teal);
+    gr.addColorStop(0.82, C.orange);
+    gr.addColorStop(1, C.pink);
+    Sim.rr(ctx, cx - 4, bottom - fillH, 8, Math.max(2, fillH), 4);
+    ctx.fillStyle = gr;
+    ctx.fill();
+    /* marcas */
+    ctx.strokeStyle = C.dark ? 'rgba(255,255,255,.3)' : 'rgba(0,0,0,.22)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(8, 600);
+    ctx.textAlign = 'left';
+    for (var p = 0; p <= maxP; p += 70) {
+      var yy = bottom - (height - 6) * (p / maxP);
+      ctx.beginPath();
+      ctx.moveTo(cx + 9, yy);
+      ctx.lineTo(cx + 15, yy);
+      ctx.stroke();
+      ctx.fillText(p, cx + 19, yy + 3);
+    }
+    ctx.fillStyle = C.dim;
+    ctx.font = Sim.font(9, 650);
+    ctx.textAlign = 'center';
+    ctx.fillText('P (kPa)', cx + 8, top - 10);
+    ctx.fillStyle = C.ink;
+    ctx.font = Sim.font(10, 700);
+    ctx.fillText(S.pSmooth.toFixed(0), cx + 8, bottom + 20);
+    ctx.restore();
+  }
+
+  /* ---------------------------------------------------------------- histograma */
+  var histCv = document.getElementById('chHist');
+  var hctx = histCv.getContext('2d');
+  var BINS = 22;
+
+  function drawHist() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    var cw = histCv.clientWidth || 300;
+    var ch = histCv.clientHeight || 128;
+    if (histCv.width !== Math.round(cw * dpr) || histCv.height !== Math.round(ch * dpr)) {
+      histCv.width = Math.round(cw * dpr);
+      histCv.height = Math.round(ch * dpr);
+    }
+    hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    hctx.clearRect(0, 0, cw, ch);
+
+    var padL = 8, padR = 8, padT = 10, padB = 18;
+    var x0 = padL, x1 = cw - padR, y0 = padT, y1 = ch - padB;
+
+    var sg = sigma();
+    var vmax = Math.max(1.8, sg * 4.2);
+    if (!hist.length) {
+      hist = [];
+      for (var b = 0; b < BINS; b++) hist.push(0);
+    }
+    for (var i = 0; i < hist.length; i++) hist[i] = 0;
+
+    var sumV = 0;
+    for (var p = 0; p < particles.length; p++) {
+      var sp = Math.hypot(particles[p].vx, particles[p].vy);
+      sumV += sp;
+      var bin = Math.floor(sp / vmax * BINS);
+      if (bin < 0) bin = 0;
+      if (bin >= BINS) bin = BINS - 1;
+      hist[bin]++;
+    }
+    var n = Math.max(1, particles.length);
+    var binW = vmax / BINS;
+    var dens = [];
+    var maxD = 0;
+    for (var j = 0; j < BINS; j++) {
+      var d = hist[j] / (n * binW);
+      dens.push(d);
+      if (d > maxD) maxD = d;
+    }
+
+    /* curva teórica 2D */
+    var fmax = 0;
+    var curve = [];
+    for (var k = 0; k <= 100; k++) {
+      var vv = vmax * k / 100;
+      var f = (vv / (sg * sg)) * Math.exp(-(vv * vv) / (2 * sg * sg));
+      curve.push(f);
+      if (f > fmax) fmax = f;
+    }
+    var ymax = Math.max(maxD, fmax) * 1.12 || 1;
+
+    /* barras */
+    for (var q = 0; q < BINS; q++) {
+      var bx = x0 + (q / BINS) * (x1 - x0);
+      var bw = (x1 - x0) / BINS - 1.5;
+      var bh = (dens[q] / ymax) * (y1 - y0);
+      var col = q / BINS;
+      var r = Math.round(10 + 240 * col);
+      var g2 = Math.round(132 + 30 * (1 - Math.abs(col - 0.5) * 2));
+      var b2 = Math.round(255 - 210 * col);
+      hctx.fillStyle = 'rgba(' + r + ',' + g2 + ',' + b2 + ',.8)';
+      Sim.rr(hctx, bx, y1 - bh, bw, bh, 2);
+      hctx.fill();
+    }
+
+    /* curva */
+    hctx.beginPath();
+    for (var c = 0; c <= 100; c++) {
+      var cxp = x0 + (c / 100) * (x1 - x0);
+      var cyp = y1 - (curve[c] / ymax) * (y1 - y0);
+      if (c === 0) hctx.moveTo(cxp, cyp); else hctx.lineTo(cxp, cyp);
+    }
+    hctx.strokeStyle = C.dark ? 'rgba(255,255,255,.85)' : 'rgba(30,30,32,.8)';
+    hctx.lineWidth = 1.7;
+    hctx.setLineDash([4, 4]);
+    hctx.stroke();
+    hctx.setLineDash([]);
+
+    /* ejes */
+    hctx.strokeStyle = C.line;
+    hctx.lineWidth = 1;
+    hctx.beginPath();
+    hctx.moveTo(x0, y1 + 0.5);
+    hctx.lineTo(x1, y1 + 0.5);
+    hctx.stroke();
+
+    hctx.fillStyle = C.dim;
+    hctx.font = Sim.font(8.5, 600);
+    hctx.textAlign = 'center';
+    hctx.fillText('0', x0, ch - 5);
+    hctx.fillText(vmax.toFixed(1), x1, ch - 5);
+    hctx.textAlign = 'left';
+    hctx.fillText('rapidez', x0 + 2, y0 + 8);
+
+    /* rapidez media */
+    var mean = sumV / n;
+    var mx = x0 + (mean / vmax) * (x1 - x0);
+    hctx.strokeStyle = C.orange;
+    hctx.lineWidth = 1.4;
+    hctx.setLineDash([2, 3]);
+    hctx.beginPath();
+    hctx.moveTo(mx, y0);
+    hctx.lineTo(mx, y1);
+    hctx.stroke();
+    hctx.setLineDash([]);
+  }
+
+  /* ---------------------------------------------------------------- puntero */
+  Sim.pointer(cv, {
+    down: function (x, y) {
+      var g = geom(v.w, v.h);
+      var pistonY = g.bottom - S.H * g.scale;
+      if (Math.abs(y - pistonY) < 22 && x > g.bx - 12 && x < g.bx + g.bw + 12) {
+        S.dragPiston = true;
+        cv.style.cursor = 'grabbing';
+        return true;
+      }
+      return false;
+    },
+    move: function (x, y) {
+      if (!S.dragPiston) return;
+      var g = geom(v.w, v.h);
+      var H = (g.bottom - y) / g.scale;
+      H = Sim.clamp(H, MINH, MAXH);
+      S.Htarget = H;
+      S.H = H;
+      volSlider.set(H * LITERS, true);
+      if (Math.random() < 0.18) Sim.beep(260 + H * 130, 0.02, 'sine', 0.012);
+    },
+    up: function () {
+      if (!S.dragPiston) return;
+      S.dragPiston = false;
+      cv.style.cursor = 'grab';
+    },
+    hover: function (x, y) {
+      var g = geom(v.w, v.h);
+      var pistonY = g.bottom - S.H * g.scale;
+      cv.style.cursor = Math.abs(y - pistonY) < 20 && x > g.bx - 12 && x < g.bx + g.bw + 12 ? 'grab' : 'default';
+    },
+    leave: function () { cv.style.cursor = 'default'; }
+  });
+
+  /* ---------------------------------------------------------------- loop */
+  Sim.loop(function (dt) {
+    time += dt;
+
+    var steps = 2;
+    for (var i = 0; i < steps; i++) step(dt / steps);
+
+    for (var f = S.flashes.length - 1; f >= 0; f--) {
+      S.flashes[f].age += dt;
+      if (S.flashes[f].age >= S.flashes[f].life) S.flashes.splice(f, 1);
+    }
+
+    var mean = 0;
+    for (var m = 0; m < particles.length; m++) {
+      mean += Math.hypot(particles[m].vx, particles[m].vy);
+    }
+    mean = particles.length ? mean / particles.length : 0;
+
+    R.set('p', S.pSmooth.toFixed(0) + ' kPa', S.pSmooth > 170 ? 'hot' : '');
+    R.set('pid', idealPressure().toFixed(0) + ' kPa');
+    R.set('v', (S.H * LITERS).toFixed(2) + ' L');
+    R.set('t', S.T.toFixed(0) + ' K');
+    R.set('n', S.N + '');
+    R.set('vm', mean.toFixed(2) + ' u');
+    R.set('c', S.rate.toFixed(0) + ' /s');
+    R.set('pv', (S.pSmooth * S.H * LITERS).toFixed(0) + ' kPa·L · se mantiene si T no cambia');
+
+    drawHist();
+    v.render();
+  });
+
+  ensureCount();
+  S.pSmooth = 100;
+  v.render();
+  Sim.hint('Arrastra el émbolo o calienta el gas · observa la presión y la distribución');
+})();
+</script>
+</body>
+</html>
