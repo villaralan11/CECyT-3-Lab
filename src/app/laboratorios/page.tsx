@@ -1,62 +1,456 @@
 "use client";
 
-import Link from "next/link";
-import { motion } from "framer-motion";
-import { Lightbulb, Calculator, Beaker, CheckCircle2, ArrowRight, FlaskConical, Atom, type LucideIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import dynamic from "next/dynamic";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Activity,
+  ArrowLeftRight,
+  ArrowUpRight,
+  AudioWaveform,
+  BookOpen,
+  Car,
+  ChevronDown,
+  Crosshair,
+  Droplets,
+  FlaskConical,
+  Languages,
+  Magnet,
+  Maximize2,
+  Scale,
+  Search,
+  Spline,
+  Wind,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { PageHeader, Breadcrumb, CtaStrip } from "@/components/site/ui";
 
-const LAB_STEPS = [
-  { n: 1, title: "Plantea la hipótesis", desc: "Con 8 g de H₂ y 8 g de O₂ para 2H₂ + O₂ → 2H₂O: ¿cuál se agota primero? Intuye, no calcules.", icon: Lightbulb },
-  { n: 2, title: "Realiza el cálculo", desc: "Gramos ÷ masa molar: 8 g de H₂ ≈ 4 mol, 8 g de O₂ ≈ 0.25 mol. Divide entre su coeficiente.", icon: Calculator },
-  { n: 3, title: "Registra los resultados", desc: "H₂: 4 ÷ 2 = 2 rondas · O₂: 0.25 ÷ 1 = 0.25 rondas. El menor gana (o pierde): el O₂ limita.", icon: Beaker },
-  { n: 4, title: "Concluye", desc: "La estequiometría cuenta moles, no gramos: el que pesa igual no se agota igual. Verifícalo en el simulador.", icon: CheckCircle2 },
-];
+/* ------------------------------------------------------------------ tipos */
+
+type GroupId = "fisica-i" | "fisica-ii" | "fisica-iii" | "fisica-iv" | "quimica" | "ingles";
+type ThemeId = "blue" | "emerald" | "violet" | "amber" | "fuchsia" | "sky";
 
 type Lab = {
+  id: string;
   title: string;
-  subject: string;
+  desc: string;
+  tag: string;
+  group: GroupId;
   href: string;
-  description: string;
-  color: "fuchsia" | "emerald";
   icon: LucideIcon;
+  kind: "iframe" | "component";
+  /** Ruta pública del simulador standalone (kind = iframe). */
+  src?: string;
+  /** Componente React cargado sólo al abrir la sección (kind = component). */
+  component?: ComponentType;
 };
+
+type Group = {
+  id: GroupId;
+  label: string;
+  subtitle: string;
+  theme: ThemeId;
+};
+
+/* ------------------------------------------------------------------ temas */
+
+const THEMES: Record<
+  ThemeId,
+  { icon: string; soft: string; dot: string; ring: string; hover: string }
+> = {
+  blue: {
+    icon: "bg-gradient-to-br from-blue-500 to-indigo-500",
+    soft: "border-blue-200 bg-blue-50 text-blue-700",
+    dot: "bg-blue-500",
+    ring: "ring-blue-200",
+    hover: "hover:border-blue-200",
+  },
+  emerald: {
+    icon: "bg-gradient-to-br from-emerald-500 to-teal-500",
+    soft: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    dot: "bg-emerald-500",
+    ring: "ring-emerald-200",
+    hover: "hover:border-emerald-200",
+  },
+  violet: {
+    icon: "bg-gradient-to-br from-violet-500 to-purple-500",
+    soft: "border-violet-200 bg-violet-50 text-violet-700",
+    dot: "bg-violet-500",
+    ring: "ring-violet-200",
+    hover: "hover:border-violet-200",
+  },
+  amber: {
+    icon: "bg-gradient-to-br from-amber-500 to-orange-500",
+    soft: "border-amber-200 bg-amber-50 text-amber-700",
+    dot: "bg-amber-500",
+    ring: "ring-amber-200",
+    hover: "hover:border-amber-200",
+  },
+  fuchsia: {
+    icon: "bg-gradient-to-br from-fuchsia-500 to-pink-500",
+    soft: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
+    dot: "bg-fuchsia-500",
+    ring: "ring-fuchsia-200",
+    hover: "hover:border-fuchsia-200",
+  },
+  sky: {
+    icon: "bg-gradient-to-br from-sky-500 to-cyan-500",
+    soft: "border-sky-200 bg-sky-50 text-sky-700",
+    dot: "bg-sky-500",
+    ring: "ring-sky-200",
+    hover: "hover:border-sky-200",
+  },
+};
+
+const GROUPS: Group[] = [
+  { id: "fisica-i", label: "Física I", subtitle: "Cinemática y movimiento", theme: "blue" },
+  { id: "fisica-ii", label: "Física II", subtitle: "Fuerzas, energía y fluidos", theme: "emerald" },
+  { id: "fisica-iii", label: "Física III", subtitle: "Electricidad y magnetismo", theme: "violet" },
+  { id: "fisica-iv", label: "Física IV", subtitle: "Ondas y fenómenos periódicos", theme: "amber" },
+  { id: "quimica", label: "Química", subtitle: "Estequiometría, balanceo y nomenclatura", theme: "fuchsia" },
+  { id: "ingles", label: "Inglés", subtitle: "Grammar trainers del plan DEMS", theme: "sky" },
+];
+
+/* ------------------------------------------------------------------ carga diferida */
+
+const EstequiometriaSimulator = dynamic(
+  () => import("@/components/simulators/estequiometria-simulator"),
+  { ssr: false, loading: () => <LabSkeleton /> },
+);
+const BalanceoSimulator = dynamic(
+  () => import("@/components/simulators/balanceo-simulator"),
+  { ssr: false, loading: () => <LabSkeleton /> },
+);
+const IUPACTrainer = dynamic(() => import("@/components/simulators/iupac-trainer"), {
+  ssr: false,
+  loading: () => <LabSkeleton />,
+});
+const VerbTensesTrainer = dynamic(() => import("@/components/simulators/verb-tenses-trainer"), {
+  ssr: false,
+  loading: () => <LabSkeleton />,
+});
+const ModalVerbsTrainer = dynamic(() => import("@/components/simulators/modal-verbs-trainer"), {
+  ssr: false,
+  loading: () => <LabSkeleton />,
+});
+const PassiveVoiceTrainer = dynamic(() => import("@/components/simulators/passive-voice-trainer"), {
+  ssr: false,
+  loading: () => <LabSkeleton />,
+});
+const ReportedSpeechTrainer = dynamic(
+  () => import("@/components/simulators/reported-speech-trainer"),
+  { ssr: false, loading: () => <LabSkeleton /> },
+);
+
+/* ------------------------------------------------------------------ catálogo */
 
 const LABS: Lab[] = [
   {
+    id: "mru-mruv",
+    title: "MRU y MRUV",
+    desc: "Velocidad constante y aceleración: posición, velocidad y gráficas en vivo.",
+    tag: "Cinemática",
+    group: "fisica-i",
+    href: "/simuladores/01-Fisica-I/mru-mruv/index.html",
+    icon: Car,
+    kind: "iframe",
+    src: "/simuladores/01-Fisica-I/mru-mruv/index.html",
+  },
+  {
+    id: "tiro-parabolico",
+    title: "Tiro parabólico",
+    desc: "Ángulo, rapidez y gravedad: acierta el blanco en Tierra, Luna y Marte.",
+    tag: "Movimiento en 2D",
+    group: "fisica-i",
+    href: "/simuladores/01-Fisica-I/tiro-parabolico/index.html",
+    icon: Crosshair,
+    kind: "iframe",
+    src: "/simuladores/01-Fisica-I/tiro-parabolico/index.html",
+  },
+  {
+    id: "fuerzas-y-movimiento",
+    title: "Fuerzas y movimiento",
+    desc: "Fricción, plano inclinado y diagramas de cuerpo libre.",
+    tag: "Dinámica",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/fuerzas-y-movimiento/index.html",
+    icon: Scale,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/fuerzas-y-movimiento/index.html",
+  },
+  {
+    id: "colisiones",
+    title: "Colisiones",
+    desc: "Choques entre carritos: momento y energía antes y después.",
+    tag: "Momento lineal",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/colisiones/index.html",
+    icon: ArrowLeftRight,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/colisiones/index.html",
+  },
+  {
+    id: "energia-patinador",
+    title: "Energía del patinador",
+    desc: "Energía potencial, cinética y calor en una pista curva.",
+    tag: "Trabajo y energía",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/energia-patinador/index.html",
+    icon: Activity,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/energia-patinador/index.html",
+  },
+  {
+    id: "resortes-y-mas",
+    title: "Resortes y masas",
+    desc: "Oscilaciones verticales: periodo, frecuencia y amortiguamiento.",
+    tag: "Movimiento armónico",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/resortes-y-mas/index.html",
+    icon: Spline,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/resortes-y-mas/index.html",
+  },
+  {
+    id: "flotabilidad",
+    title: "Flotabilidad",
+    desc: "Empuje, peso y densidad: ¿flota, se hunde o queda a medias?",
+    tag: "Hidrostática",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/flotabilidad/index.html",
+    icon: Droplets,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/flotabilidad/index.html",
+  },
+  {
+    id: "gases",
+    title: "Gases y presión",
+    desc: "Teoría cinética, émbolo y presión medida choque por choque.",
+    tag: "Termodinámica",
+    group: "fisica-ii",
+    href: "/simuladores/02-Fisica-II/gases/index.html",
+    icon: Wind,
+    kind: "iframe",
+    src: "/simuladores/02-Fisica-II/gases/index.html",
+  },
+  {
+    id: "cargas-y-campo",
+    title: "Cargas y campo",
+    desc: "Superposición, líneas de campo, potencial y sonda de prueba.",
+    tag: "Electrostática",
+    group: "fisica-iii",
+    href: "/simuladores/03-Fisica-III/cargas-y-campo/index.html",
+    icon: Magnet,
+    kind: "iframe",
+    src: "/simuladores/03-Fisica-III/cargas-y-campo/index.html",
+  },
+  {
+    id: "ley-de-ohm",
+    title: "Ley de Ohm",
+    desc: "Circuitos en serie y paralelo con corriente animada.",
+    tag: "Circuitos eléctricos",
+    group: "fisica-iii",
+    href: "/simuladores/03-Fisica-III/ley-de-ohm/index.html",
+    icon: Zap,
+    kind: "iframe",
+    src: "/simuladores/03-Fisica-III/ley-de-ohm/index.html",
+  },
+  {
+    id: "ondas-en-cuerda",
+    title: "Ondas en cuerda",
+    desc: "Ondas viajeras y estacionarias, nodos, vientres y resonancia.",
+    tag: "Ondas mecánicas",
+    group: "fisica-iv",
+    href: "/simuladores/04-Fisica-IV/ondas-en-cuerda/index.html",
+    icon: AudioWaveform,
+    kind: "iframe",
+    src: "/simuladores/04-Fisica-IV/ondas-en-cuerda/index.html",
+  },
+  {
+    id: "estequiometria",
     title: "Reactivo limitante",
-    subject: "Química",
+    desc: "Predice qué reactivo se agota primero y calcula el rendimiento teórico con masas molares reales.",
+    tag: "Estequiometría",
+    group: "quimica",
     href: "/quimica/estequiometria",
-    description: "Predice cuál reactivo se agota primero y calcula el rendimiento teórico con masas molares reales.",
-    color: "fuchsia",
     icon: FlaskConical,
+    kind: "component",
+    component: EstequiometriaSimulator,
   },
   {
-    title: "Física I–IV · 11 simuladores",
-    subject: "Física",
-    href: "/fisica",
-    description: "Cinemática, fuerzas, energía, fluidos, electricidad y ondas: once laboratorios con controles y gráficas en vivo.",
-    color: "emerald",
-    icon: Atom,
-  },
-  {
+    id: "balanceo",
     title: "Balanceo de combustiones",
-    subject: "Química",
+    desc: "Ajusta coeficientes de combustiones con tabla de átomos en vivo.",
+    tag: "Balanceo",
+    group: "quimica",
     href: "/quimica/balanceo",
-    description: "Ajusta coeficientes de combustiones de metano, etano, etanol y glucosa con tabla de átomos en vivo.",
-    color: "fuchsia",
     icon: FlaskConical,
+    kind: "component",
+    component: BalanceoSimulator,
   },
   {
+    id: "iupac",
     title: "Nomenclatura IUPAC",
-    subject: "Química",
+    desc: "Fórmula ⇄ nombre en inorgánica y orgánica: 25 compuestos explicados.",
+    tag: "Nomenclatura",
+    group: "quimica",
     href: "/quimica/iupac",
-    description: "Fórmula ⇄ nombre en inorgánica y orgánica: 25 compuestos con explicación de las reglas.",
-    color: "fuchsia",
     icon: FlaskConical,
+    kind: "component",
+    component: IUPACTrainer,
+  },
+  {
+    id: "verb-tenses",
+    title: "Verb Tenses",
+    desc: "12 ejercicios de tiempos verbales con marcadores: since, last year, look!, yet, while.",
+    tag: "Grammar",
+    group: "ingles",
+    href: "/ingles/verb-tenses",
+    icon: Languages,
+    kind: "component",
+    component: VerbTensesTrainer,
+  },
+  {
+    id: "modal-verbs",
+    title: "Modal Verbs",
+    desc: "Can, could, should, must, might: deducción, obligación y permiso en contexto.",
+    tag: "Grammar",
+    group: "ingles",
+    href: "/ingles/modal-verbs",
+    icon: Languages,
+    kind: "component",
+    component: ModalVerbsTrainer,
+  },
+  {
+    id: "passive-voice",
+    title: "Passive Voice",
+    desc: "Transforma voz activa ⇄ pasiva con tiempos y sujetos agentes.",
+    tag: "Grammar",
+    group: "ingles",
+    href: "/ingles/passive-voice",
+    icon: Languages,
+    kind: "component",
+    component: PassiveVoiceTrainer,
+  },
+  {
+    id: "reported-speech",
+    title: "Reported Speech",
+    desc: "Reporta declaraciones, preguntas y órdenes ajustando tiempos y pronombres.",
+    tag: "Grammar",
+    group: "ingles",
+    href: "/ingles/reported-speech",
+    icon: BookOpen,
+    kind: "component",
+    component: ReportedSpeechTrainer,
   },
 ];
 
+const STORAGE_KEY = "cecyt3-labs-open";
+
+/* ------------------------------------------------------------------ helpers */
+
+function LabSkeleton() {
+  return (
+    <div className="space-y-3 p-4" aria-hidden="true">
+      <div className="h-4 w-40 animate-pulse rounded bg-black/[0.06]" />
+      <div className="h-3 w-full animate-pulse rounded bg-black/[0.05]" />
+      <div className="h-3 w-4/5 animate-pulse rounded bg-black/[0.05]" />
+      <div className="h-40 w-full animate-pulse rounded-xl bg-black/[0.04]" />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ página */
+
 export default function LaboratoriosPage() {
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [query, setQuery] = useState("");
+  const [ready, setReady] = useState(false);
+  const pendingHash = useRef<string | null>(null);
+
+  /* Restaurar secciones abiertas / deep-link #lab */
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    let restored: Record<string, boolean> = {};
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) restored = JSON.parse(raw) as Record<string, boolean>;
+    } catch {
+      restored = {};
+    }
+    if (hash && LABS.some((lab) => lab.id === hash)) {
+      restored[hash] = true;
+    } else if (Object.keys(restored).length === 0) {
+      restored[LABS[0].id] = true;
+    }
+    pendingHash.current = hash || null;
+    const frame = requestAnimationFrame(() => {
+      setOpen(restored);
+      setReady(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  /* Persistir estado */
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(open));
+    } catch {
+      /* modo privado: ignorar */
+    }
+  }, [open, ready]);
+
+  /* Desplazar a la sección del hash cuando ya está montada */
+  useEffect(() => {
+    if (!ready || !pendingHash.current) return;
+    const id = pendingHash.current;
+    pendingHash.current = null;
+    const timer = window.setTimeout(() => {
+      document.getElementById(`lab-${id}`)?.scrollIntoView({ block: "start" });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [ready]);
+
+  /* Cambiar de hash dentro de la página (p. ej. /laboratorios#iupac) abre esa sección */
+  useEffect(() => {
+    const onHash = () => {
+      const id = window.location.hash.replace(/^#/, "");
+      if (!id || !LABS.some((lab) => lab.id === id)) return;
+      setOpen((prev) => ({ ...prev, [id]: true }));
+      requestAnimationFrame(() => {
+        document.getElementById(`lab-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  const toggle = useCallback((id: string) => {
+    setOpen((prev) => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return LABS;
+    return LABS.filter((lab) =>
+      `${lab.title} ${lab.desc} ${lab.tag} ${GROUPS.find((g) => g.id === lab.group)?.label ?? ""}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [query]);
+
+  const openCount = LABS.filter((lab) => open[lab.id]).length;
+
+  const expandAll = () => {
+    const next: Record<string, boolean> = {};
+    filtered.forEach((lab) => {
+      next[lab.id] = true;
+    });
+    setOpen(next);
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
       <Breadcrumb items={[{ label: "Inicio", href: "/" }, { label: "Laboratorios" }]} />
@@ -66,121 +460,191 @@ export default function LaboratoriosPage() {
         accent="fuchsia"
         title={
           <>
-            Del concepto al{" "}
+            Todos los laboratorios en{" "}
             <span className="bg-gradient-to-r from-fuchsia-500 to-pink-500 bg-clip-text text-transparent">
-              experimento
+              una sola página
             </span>
             .
           </>
         }
-        subtitle="Guías que convierten la teoría en decisiones, observaciones y resultados. Cada laboratorio sigue el método científico que usarás en la industria: hipótesis, cálculo, registro y conclusión."
+        subtitle="Abre sólo el laboratorio que necesitas: cada sección se carga al desplegarla, así la página arranca ligera y no se satura. Puedes cerrarla en cualquier momento y seguir con otra."
       />
 
-      {/* Featured lab: reactivo limitante */}
-      <div className="mt-12 grid lg:grid-cols-12 gap-10">
-        {/* Left: featured lab card */}
-        <div className="lg:col-span-5">
-          <div className="rounded-2xl border-2 border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 to-pink-50 p-6 sticky top-24">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-fuchsia-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-                Recomendado
-              </span>
-              <span className="text-xs text-fuchsia-700 font-semibold">Química</span>
-            </div>
-            <h2 className="mt-3 text-2xl font-bold text-foreground">Reactivo limitante</h2>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              El caso clásico: si reaccionan 8 g de H₂ con 8 g de O₂ para formar agua,
-              ¿cuál se agota primero? A igual masa, no a igual cantidad de materia.
-            </p>
-            <div className="mt-4 rounded-xl bg-white/70 backdrop-blur border border-fuchsia-200/60 px-4 py-3 font-mono text-sm text-foreground">
-              2H<sub>2</sub> + O<sub>2</sub> → 2H<sub>2</sub>O · 8 g + 8 g
-            </div>
-            <Link
-              href="/quimica/estequiometria"
-              className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
+      {/* Barra de control */}
+      <div className="sticky top-20 z-20 mt-8 rounded-2xl border border-black/[0.07] bg-white/85 p-3 shadow-[0_8px_24px_-18px_rgba(24,24,27,0.35)] backdrop-blur-md">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar laboratorio, tema o materia…"
+              aria-label="Buscar laboratorio"
+              className="w-full rounded-xl border border-black/[0.08] bg-white py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-fuchsia-300 focus:ring-2 focus:ring-fuchsia-100"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:inline">
+              {openCount} abiertos · {LABS.length} labs
+            </span>
+            <button
+              type="button"
+              onClick={expandAll}
+              className="rounded-full border border-border bg-white px-3.5 py-2 text-[12.5px] font-semibold text-foreground transition hover:border-fuchsia-300 hover:bg-fuchsia-50/50 active:scale-95"
             >
-              <FlaskConical className="h-4 w-4" />
-              Abrir laboratorio
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Right: steps */}
-        <div className="lg:col-span-7">
-          <h3 className="text-lg font-bold text-foreground mb-4">Método científico aplicado</h3>
-          <div className="relative space-y-4">
-            {LAB_STEPS.map((step, i) => (
-              <motion.div
-                key={step.n}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="relative flex gap-4 rounded-2xl border border-border bg-white p-5 hover:shadow-md transition-shadow"
-              >
-                <div className="flex-shrink-0">
-                  <div className="relative h-12 w-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white font-bold shadow-md">
-                    {step.n}
-                  </div>
-                  {i < LAB_STEPS.length - 1 && (
-                    <div className="absolute top-12 left-1/2 -translate-x-1/2 w-px h-[calc(100%+1rem)] bg-gradient-to-b from-fuchsia-300 to-transparent" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <step.icon className="h-4 w-4 text-fuchsia-500" />
-                    <h4 className="text-base font-bold text-foreground">{step.title}</h4>
-                  </div>
-                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+              Mostrar todos
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen({})}
+              className="rounded-full border border-border bg-white px-3.5 py-2 text-[12.5px] font-semibold text-foreground transition hover:border-fuchsia-300 hover:bg-fuchsia-50/50 active:scale-95"
+            >
+              Ocultar todos
+            </button>
           </div>
         </div>
       </div>
 
-      {/* All labs grid */}
-      <div className="mt-16">
-        <h2 className="text-2xl font-bold text-foreground mb-6">Otros laboratorios disponibles</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {LABS.map((lab, i) => {
-            const cmap = {
-              fuchsia: { bg: "from-fuchsia-500 to-pink-500", text: "text-fuchsia-700", border: "border-fuchsia-200" },
-              emerald: { bg: "from-emerald-500 to-teal-500", text: "text-emerald-700", border: "border-emerald-200" },
-            };
-            const c = cmap[lab.color as "fuchsia" | "emerald"];
-            return (
-              <motion.div
-                key={lab.title}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-              >
-                <Link
-                  href={lab.href}
-                  className={`group block rounded-2xl border-2 ${c.border} bg-white p-5 hover:shadow-lg transition-all hover:-translate-y-1`}
+      {/* Secciones */}
+      <div className="mt-10 space-y-10">
+        {GROUPS.map((group) => {
+          const labs = filtered.filter((lab) => lab.group === group.id);
+          if (labs.length === 0) return null;
+          const theme = THEMES[group.theme];
+          return (
+            <section key={group.id} id={group.id} className="scroll-mt-40">
+              <div className="flex items-center gap-3 border-b border-black/[0.06] pb-3">
+                <span
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[11px] font-bold uppercase text-white shadow-sm ${theme.icon}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${c.bg} shadow-md`}>
-                      <lab.icon className="h-5 w-5 text-white" />
+                  {group.label.slice(0, 2)}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-[19px] font-bold tracking-[-0.02em] text-foreground">
+                    {group.label}
+                  </h2>
+                  <p className="text-[12.5px] text-muted-foreground">{group.subtitle}</p>
+                </div>
+                <span className={`ml-auto shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${theme.soft}`}>
+                  {labs.length} {labs.length === 1 ? "lab" : "labs"}
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-2.5">
+                {labs.map((lab) => {
+                  const isOpen = Boolean(open[lab.id]);
+                  return (
+                    <div
+                      key={lab.id}
+                      id={`lab-${lab.id}`}
+                      className={`scroll-mt-40 overflow-hidden rounded-2xl border bg-white transition-shadow ${
+                        isOpen
+                          ? `border-black/[0.09] shadow-[0_18px_44px_-30px_rgba(24,24,27,0.5)] ring-2 ${theme.ring}`
+                          : `border-black/[0.07] ${theme.hover}`
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggle(lab.id)}
+                        aria-expanded={isOpen}
+                        aria-controls={`panel-${lab.id}`}
+                        className="flex w-full items-start gap-3.5 p-4 text-left transition hover:bg-black/[0.015]"
+                      >
+                        <span
+                          className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${theme.icon}`}
+                        >
+                          <lab.icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex items-start justify-between gap-3">
+                            <span className="min-w-0 text-[14.5px] font-semibold leading-snug tracking-[-0.01em] text-foreground sm:text-[15px]">
+                              {lab.title}
+                            </span>
+                            <ChevronDown
+                              className={`mt-0.5 h-4.5 w-4.5 shrink-0 text-muted-foreground transition-transform duration-300 ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                            />
+                          </span>
+                          <span className="mt-1 block text-[12px] leading-relaxed text-muted-foreground sm:text-[12.5px]">
+                            {lab.desc}
+                          </span>
+                          <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] ${theme.soft}`}
+                            >
+                              <span className={`h-1 w-1 rounded-full ${theme.dot}`} />
+                              {lab.tag}
+                            </span>
+                            <span className="text-[10.5px] text-muted-foreground">
+                              {isOpen ? "Cargado" : "Se carga al abrir"}
+                            </span>
+                          </span>
+                        </span>
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            key="panel"
+                            id={`panel-${lab.id}`}
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-black/[0.06] bg-[#fbfbfd]">
+                              <div className="flex flex-wrap items-center justify-end gap-2 px-3 py-2">
+                                <a
+                                  href={lab.href}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-[11.5px] font-semibold text-foreground transition hover:border-fuchsia-300 hover:bg-fuchsia-50/60"
+                                >
+                                  <Maximize2 className="h-3.5 w-3.5" />
+                                  Abrir aparte
+                                </a>
+                              </div>
+
+                              {lab.kind === "iframe" && lab.src ? (
+                                <iframe
+                                  key={lab.src}
+                                  src={lab.src}
+                                  title={`Laboratorio: ${lab.title}`}
+                                  loading="lazy"
+                                  allow="fullscreen"
+                                  className="block h-[min(78vh,880px)] min-h-[520px] w-full border-0 bg-white"
+                                />
+                              ) : (
+                                <div className="px-3 pb-4 sm:px-4">
+                                  {lab.component ? <lab.component /> : <LabSkeleton />}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <span className={`text-xs font-semibold ${c.text}`}>{lab.subject}</span>
-                  </div>
-                  <h3 className="mt-3 text-lg font-bold text-foreground">{lab.title}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{lab.description}</p>
-                  <div className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-foreground group-hover:gap-2 transition-all">
-                    Abrir laboratorio <ArrowRight className="h-3.5 w-3.5" />
-                  </div>
-                </Link>
-              </motion.div>
-            );
-          })}
-        </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
+
+        {filtered.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-black/10 bg-white p-10 text-center">
+            <p className="text-sm font-semibold text-foreground">Sin resultados para «{query}»</p>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Prueba con «ohm», «ondas», «estequiometría» o el nombre de la materia.
+            </p>
+          </div>
+        )}
       </div>
 
-      <div className="mt-12">
+      <div className="mt-14">
         <CtaStrip
           title="¿Quieres más retos?"
           description="Prueba los retos de 5 minutos: quizzes rápidos con feedback pedagógico que te dan puntos para subir de nivel."
