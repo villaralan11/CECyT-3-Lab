@@ -44,15 +44,16 @@
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function themePref() {
-    try { return localStorage.getItem('simTheme') || 'auto'; } catch (e) { return 'auto'; }
+    try {
+      return localStorage.getItem('simTheme') === 'dark' ? 'dark' : 'light';
+    } catch (e) { return 'light'; }
   }
   function isDark() {
-    var t = themePref();
-    return t === 'dark' || (t === 'auto' && !!mq && mq.matches);
+    return themePref() === 'dark';
   }
   function applyTheme() {
     var t = themePref();
-    var dark = t === 'dark' || (t === 'auto' && !!mq && mq.matches);
+    var dark = t === 'dark';
     root.setAttribute('data-theme', t);
     root.setAttribute('data-resolved', dark ? 'dark' : 'light');
     palette = pal(dark);
@@ -199,9 +200,9 @@
 
     var bTheme = doc.getElementById('btnTheme');
     if (bTheme) bTheme.addEventListener('click', function () {
-      var seq = ['auto', 'light', 'dark'];
+      var seq = ['light', 'dark'];
       var cur = themePref();
-      var next = seq[(seq.indexOf(cur) + 1) % 3];
+      var next = seq[(seq.indexOf(cur) + 1) % 2];
       try { localStorage.setItem('simTheme', next); } catch (e) {}
       applyTheme();
       beep(520, 0.05, 'sine', 0.028);

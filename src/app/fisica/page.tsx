@@ -11,7 +11,6 @@ import {
   Car,
   Crosshair,
   Droplets,
-  Library,
   Magnet,
   Scale,
   Spline,
@@ -206,7 +205,7 @@ export default function FisicaPage() {
             </span>
           </>
         }
-        subtitle="Cinemática, fuerzas, energía, fluidos, electricidad y ondas en una biblioteca interactiva de Física I a IV. Sin conexión, sin cuentas y sin instalar nada."
+        subtitle="Cinemática, fuerzas, energía, fluidos, electricidad y ondas: 11 simuladores interactivos de Física I a IV que funcionan sin conexión, sin cuentas y sin instalar nada."
       />
 
       {/* Unit index */}
@@ -232,31 +231,6 @@ export default function FisicaPage() {
             </span>
           </a>
         ))}
-      </div>
-
-      {/* Library entry */}
-      <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50 via-teal-50/70 to-white p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-200 bg-white text-emerald-600 shadow-sm">
-            <Library className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[13px] font-semibold text-foreground">
-              Biblioteca completa, sin conexión
-            </p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-muted-foreground">
-              Filtra por unidad, busca por tema y abre cada simulador con tema claro/oscuro y
-              pantalla completa.
-            </p>
-          </div>
-        </div>
-        <a
-          href="/simuladores/index.html"
-          className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-2 text-[12px] font-semibold text-white shadow-sm shadow-emerald-500/20 transition-all hover:shadow-md hover:shadow-emerald-500/30 active:scale-95"
-        >
-          Abrir biblioteca
-          <ArrowRight className="h-3.5 w-3.5" />
-        </a>
       </div>
 
       {/* Units */}
@@ -343,23 +317,22 @@ export default function FisicaPage() {
             ¿Listo para experimentar?
           </h2>
           <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Abre la biblioteca completa para filtrar por unidad y buscar por tema. Cada simulador
-            incluye controles, gráficas en vivo y una guía breve; también puedes probar los retos
-            de 5 minutos.
+            Elige un simulador de la unidad que estés cursando. Cada uno incluye controles,
+            gráficas en vivo y una guía breve; si quieres medirte, prueba los retos de 5 minutos.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2.5">
-            <a
-              href="/simuladores/index.html"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-px hover:shadow-xl hover:shadow-emerald-500/40 active:translate-y-0 active:scale-95"
-            >
-              Abrir biblioteca
-              <ArrowRight className="h-4 w-4" />
-            </a>
             <Link
               href="/retos"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:border-emerald-300 hover:bg-emerald-50/40 active:scale-95"
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-px hover:shadow-xl hover:shadow-emerald-500/40 active:translate-y-0 active:scale-95"
             >
               Ver retos
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/progreso"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-5 py-2.5 text-sm font-semibold text-foreground transition-all hover:border-emerald-300 hover:bg-emerald-50/40 active:scale-95"
+            >
+              Mi progreso
             </Link>
           </div>
         </div>

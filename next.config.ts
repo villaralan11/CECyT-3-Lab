@@ -25,13 +25,18 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/simuladores",
-        destination: "/simuladores/index.html",
-        permanent: false,
+        destination: "/fisica",
+        permanent: true,
       },
       {
         source: "/simuladores/",
-        destination: "/simuladores/index.html",
-        permanent: false,
+        destination: "/fisica",
+        permanent: true,
+      },
+      {
+        source: "/simuladores/index.html",
+        destination: "/fisica",
+        permanent: true,
       },
     ];
   },
