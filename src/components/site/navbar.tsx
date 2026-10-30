@@ -21,7 +21,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const pathname = usePathname();
-  const navRef = useRef<HTMLNavElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);

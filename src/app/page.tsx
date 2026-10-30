@@ -847,14 +847,14 @@ export default function Home() {
       </section>
 
       {/* MINI RETO — adelanto de /retos */}
-      <section ref={miniRetoRef} className={`bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)] ${miniRetoRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
+      <section ref={miniRetoRef.ref} className={`bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)] ${miniRetoRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <MiniReto />
         </div>
       </section>
 
       {/* ACCESOS RÁPIDOS */}
-      <section ref={quickRef} className={`py-[clamp(3rem,6vw,6rem)] ${quickRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
+      <section ref={quickRef.ref} className={`py-[clamp(3rem,6vw,6rem)] ${quickRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="grid gap-6 md:grid-cols-3">
             <Link href="/laboratorios" className="group relative block overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-200 hover:shadow-xl hover:shadow-fuchsia-500/10">
