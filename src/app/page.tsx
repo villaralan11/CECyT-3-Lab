@@ -23,7 +23,6 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
-import { useInView } from "@/hooks/use-in-view";
 import { PageHeader, Breadcrumb } from "@/components/site/ui";
 
 const SUBJECTS = [
@@ -388,15 +387,6 @@ function SubjectMarquee({ className = "" }: { className?: string }) {
 }
 
 export default function Home() {
-  // SSR-safe IntersectionObserver hooks
-  const heroRef = useInView({ rootMargin: "0px" });
-  const methodRef = useInView();
-  const subjectsRef = useInView();
-  const statsRef = useInView();
-  const topicsRef = useInView();
-  const miniRetoRef = useInView();
-  const quickRef = useInView();
-
   return (
     <>
       {/* HERO */}
@@ -616,42 +606,26 @@ export default function Home() {
               <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />
               El método
             </span>
-            <motion.h2
-              initial={{ opacity: 0, y: 16 }}
-              animate={methodRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-              transition={{ duration: 0.5 }}
-              className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground"
-            >
+            <h2 className="animate-fade-in-up mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
               Tres materias.{" "}
               <span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">
                 Un mismo método
               </span>{" "}
               de aprender.
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={methodRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="mt-4 text-lg text-muted-foreground leading-relaxed"
-            >
+            </h2>
+            <p className="animate-fade-in-up delay-2 mt-4 text-lg text-muted-foreground leading-relaxed">
               Física, Química e Inglés del plan DEMS, cada tema con su secuencia
               completa: <strong className="text-foreground">falla productiva</strong>,{" "}
               <strong className="text-foreground">simulador</strong>,{" "}
               <strong className="text-foreground">ejemplo resuelto</strong>. De la
               cinemática a las ondas, de las fuerzas a los fluidos, del nombre IUPAC al
               reactivo limitante, del presente simple al reported speech.
-            </motion.p>
+            </p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {SUBJECTS.map((s, idx) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, y: 24 }}
-                animate={subjectsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="h-full"
-              >
+              <div key={s.id} className={`animate-fade-in-up delay-${idx + 2} h-full`}>
                 <Link
                   href={s.href}
                   className={`group relative block h-full overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/[0.06] ${s.hoverBorder}`}
@@ -679,7 +653,7 @@ export default function Home() {
                     </div>
                   </div>
                 </Link>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -688,12 +662,7 @@ export default function Home() {
       {/* STATS — panel Liquid Glass oscuro */}
       <section id="plataforma" className="relative scroll-mt-24 py-4 sm:py-6">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={statsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17171a]/95 text-white shadow-[0_32px_80px_-32px_rgba(23,23,26,0.6)] backdrop-blur-xl sm:rounded-[2.5rem]"
-          >
+          <div className="animate-fade-in-up relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17171a]/95 text-white shadow-[0_32px_80px_-32px_rgba(23,23,26,0.6)] backdrop-blur-xl sm:rounded-[2.5rem]">
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
               <div className="absolute -top-32 left-[8%] h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[100px]" />
               <div className="absolute -bottom-40 right-[6%] h-80 w-80 rounded-full bg-emerald-400/15 blur-[100px]" />
@@ -708,14 +677,9 @@ export default function Home() {
                     <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 shadow-[0_0_10px_rgba(232,121,249,0.9)]" />
                     La plataforma en números
                   </div>
-                  <motion.h2
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={statsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-                    transition={{ duration: 0.5 }}
-                    className="mt-3 text-[clamp(1.5rem,2.5vw,2rem)] font-semibold tracking-[-0.025em] text-white"
-                  >
+                  <h2 className="mt-3 text-[clamp(1.5rem,2.5vw,2rem)] font-semibold tracking-[-0.025em] text-white">
                     Todo listo para practicar hoy
-                  </motion.h2>
+                  </h2>
                 </div>
                 <Link
                   href="/progreso"
@@ -728,12 +692,9 @@ export default function Home() {
 
               <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-10 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-0">
                 {STATS.map((s, i) => (
-                  <motion.div
+                  <div
                     key={s.label}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={statsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
-                    transition={{ delay: 0.1 + i * 0.07, duration: 0.4 }}
-                    className={`relative lg:px-7 ${i > 0 ? "lg:border-l lg:border-white/10" : ""} ${i === 0 ? "lg:pl-0" : ""} ${i === STATS.length - 1 ? "lg:pr-0" : ""}`}
+                    className={`animate-slide-up delay-${i + 2} relative lg:px-7 ${i > 0 ? "lg:border-l lg:border-white/10" : ""} ${i === 0 ? "lg:pl-0" : ""} ${i === STATS.length - 1 ? "lg:pr-0" : ""}`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/10 ${s.aura} ${s.tint} shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]`}>
@@ -745,11 +706,11 @@ export default function Home() {
                       {s.value}
                     </div>
                     <div className="mt-2.5 max-w-[15rem] text-[12px] leading-relaxed text-white/55">{s.sub}</div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -766,23 +727,13 @@ export default function Home() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Descubrir temas
               </span>
-              <motion.h2
-                initial={{ opacity: 0, y: 12 }}
-                animate={topicsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-                transition={{ duration: 0.5 }}
-                className="mt-4 text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold tracking-[-0.035em] text-foreground"
-              >
+              <h2 className="mt-4 text-balance text-[clamp(1.75rem,3.4vw,2.5rem)] font-semibold tracking-[-0.035em] text-foreground">
                 Explora los <span className="text-fuchsia-600">10 temas</span> de la plataforma
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={topicsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-                className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground"
-              >
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
                 Cada uno con su secuencia completa: falla productiva, simulador interactivo y ejemplo resuelto.
                 Haz clic en cualquier tema para abrir su página.
-              </motion.p>
+              </p>
             </div>
             <div className="hidden items-center gap-2 rounded-full border border-black/[0.06] bg-white/70 px-3.5 py-2 text-[12px] font-medium text-muted-foreground shadow-[0_1px_2px_rgba(24,24,27,0.04)] backdrop-blur-md md:inline-flex">
               <Layers className="h-3.5 w-3.5 text-fuchsia-500" />
@@ -790,12 +741,7 @@ export default function Home() {
             </div>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={topicsRef.isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11"
-          >
+          <div className="animate-fade-in-up mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11">
             <div className="grid min-w-0 md:grid-cols-2">
               {[0, 1].map((col) => (
                 <div
@@ -805,11 +751,8 @@ export default function Home() {
                   {TOPICS.slice(col * 5, col * 5 + 5).map((t, idx) => {
                     const s = subjectOf(t.subject);
                     return (
-                      <motion.li
+                      <li
                         key={t.n}
-                        initial={{ opacity: 0, x: -16 }}
-                        animate={topicsRef.isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -16 }}
-                        transition={{ delay: 0.05 + idx * 0.04, duration: 0.4 }}
                         className="group relative flex min-w-0 items-center gap-3 px-3.5 py-4 transition-colors hover:bg-white/80 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-500/40 sm:gap-4 sm:px-5"
                       >
                         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border font-mono text-[11px] font-semibold tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-11 sm:w-11 sm:rounded-[13px] ${s.bgSoft} ${s.border} ${s.text}`}>
@@ -836,25 +779,25 @@ export default function Home() {
                             aria-hidden="true"
                           />
                         )}
-                      </motion.li>
+                      </li>
                     );
                   })}
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* MINI RETO — adelanto de /retos */}
-      <section ref={miniRetoRef.ref} className={`bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)] ${miniRetoRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
+      <section className="animate-fade-in-up bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)]">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <MiniReto />
         </div>
       </section>
 
       {/* ACCESOS RÁPIDOS */}
-      <section ref={quickRef.ref} className={`py-[clamp(3rem,6vw,6rem)] ${quickRef.isInView ? "animate-fade-in-up" : "opacity-0"}`}>
+      <section className="animate-fade-in-up py-[clamp(3rem,6vw,6rem)]">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="grid gap-6 md:grid-cols-3">
             <Link href="/laboratorios" className="group relative block overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-200 hover:shadow-xl hover:shadow-fuchsia-500/10">
