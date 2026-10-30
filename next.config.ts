@@ -2,12 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: false,
-  // NOTE: el repo incluye componentes shadcn/ui sin sus dependencias instaladas
-  // (accordion, calendar, chart, ...). Se mantiene el flag para que el build de
-  // producción no falle por esos archivos no utilizados.
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   async redirects() {
     return [
       {
