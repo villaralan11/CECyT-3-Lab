@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Atom,
   FlaskConical,
@@ -264,14 +263,11 @@ function MiniReto() {
                 const showCorrect = done && isCorrect;
                 const showWrong = done && isPicked && !isCorrect;
                 return (
-                  <motion.button
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.05 }}
+                  <button
+                    key={`${idx}-${i}`}
                     onClick={() => pick(i)}
                     disabled={done}
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
+                    className={`animate-fade-in-up delay-${i + 1} flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
                       showCorrect
                         ? "border-emerald-400 bg-emerald-50 text-emerald-700"
                         : showWrong
@@ -289,20 +285,13 @@ function MiniReto() {
                       </div>
                     )}
                     <span className="font-mono">{opt}</span>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
 
-            <AnimatePresence>
-              {done && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.25 }}
-                  className="overflow-hidden"
-                >
+            {done && (
+              <div className="animate-fade-in overflow-hidden">
                   <div
                     className={`mt-4 rounded-xl border p-3 text-sm ${
                       picked === q.correct
@@ -322,9 +311,8 @@ function MiniReto() {
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
 
             <div className="mt-5 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
@@ -336,16 +324,14 @@ function MiniReto() {
               </p>
               <div className="flex items-center gap-2">
                 {done && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                  <button
                     onClick={advance}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-95"
+                    className="animate-scale-in inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-95"
                   >
                     {isLast ? <RotateCcw className="h-3.5 w-3.5" /> : null}
                     {isLast ? "Reiniciar" : "Siguiente reto"}
                     {!isLast && <ChevronRight className="h-3.5 w-3.5" />}
-                  </motion.button>
+                  </button>
                 )}
               </div>
             </div>
@@ -402,24 +388,18 @@ export default function Home() {
           <div className="grid w-full lg:grid-cols-12 gap-12 items-center">
             <div className="min-w-0 max-md:flex max-md:min-h-[calc(100dvh-5.25rem)] max-md:flex-col lg:col-span-7 text-center lg:text-left">
               <div className="max-md:flex max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="hero-compact-hide inline-flex items-center gap-2.5 rounded-full border border-border bg-white/80 px-4 py-1.5 text-xs font-semibold text-foreground/80 shadow-sm backdrop-blur"
+              <div
+                className="animate-fade-in-up hero-compact-hide inline-flex items-center gap-2.5 rounded-full border border-border bg-white/80 px-4 py-1.5 text-xs font-semibold text-foreground/80 shadow-sm backdrop-blur"
               >
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75 animate-soft-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500" />
                 </span>
                 Prácticas Activas · Plan DEMS
-              </motion.div>
+              </div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.05 }}
-                className="hero-compact-title mt-4 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground sm:mt-5 max-[359px]:text-[2.5rem]"
+              <h1
+                className="animate-fade-in-up delay-1 hero-compact-title mt-4 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground sm:mt-5 max-[359px]:text-[2.5rem]"
               >
                 <span className="block">Falla.</span>
                 <span className="block bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent animated-gradient">
@@ -434,14 +414,11 @@ export default function Home() {
                     aria-hidden="true"
                     preserveAspectRatio="none"
                   >
-                    <motion.path
+                    <path
                       d="M3 9C60 3 160 3 217 8"
                       stroke="url(#underline-grad)"
                       strokeWidth="4"
                       strokeLinecap="round"
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
                     />
                     <defs>
                       <linearGradient id="underline-grad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
@@ -452,13 +429,10 @@ export default function Home() {
                     </defs>
                   </svg>
                 </span>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.15 }}
-                className="mt-5 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed sm:mt-6"
+              <p
+                className="animate-fade-in-up delay-2 mt-5 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed sm:mt-6"
               >
                 Laboratorio virtual de{" "}
                 <Link href="/fisica" className="text-emerald-700 font-semibold hover:underline">Física</Link>,{" "}
@@ -466,13 +440,10 @@ export default function Home() {
                 <Link href="/ingles" className="text-amber-700 font-semibold hover:underline">Inglés</Link> con la
                 secuencia{" "}
                 <span className="font-semibold text-foreground">falla productiva → simulador → ejemplo resuelto</span>.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.25 }}
-                className="mt-6 flex flex-wrap gap-2 justify-center sm:mt-8 sm:gap-3 lg:justify-start"
+              <div
+                className="animate-fade-in-up delay-3 mt-6 flex flex-wrap gap-2 justify-center sm:mt-8 sm:gap-3 lg:justify-start"
               >
                 <Link
                   href="/fisica"
@@ -488,18 +459,15 @@ export default function Home() {
                   <Zap className="h-4 w-4 text-fuchsia-500" />
                   Probar un reto
                 </Link>
-              </motion.div>
+              </div>
 
               </div>
               <SubjectMarquee className="hero-compact-hide md:hidden -mx-4 sm:-mx-6 max-[359px]:hidden" />
             </div>
 
             {/* Right visual — tarjetas inclinadas */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="lg:col-span-5 relative"
+            <div
+              className="animate-scale-in delay-2 lg:col-span-5 relative"
             >
               <div className="relative mx-auto w-full max-w-md">
                 <div className="flex flex-col">
@@ -518,11 +486,9 @@ export default function Home() {
                     </div>
                     <div className="mt-4 h-20 rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/25 flex items-end gap-1 px-3 pb-3 relative z-10">
                       {[40, 65, 30, 80, 50, 90, 60, 75].map((h, i) => (
-                        <motion.div
+                        <div
                           key={i}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${h}%` }}
-                          transition={{ delay: 0.5 + i * 0.08, duration: 0.4 }}
+                          style={{ height: `${h}%` }}
                           className="flex-1 bg-white/80 rounded-sm"
                         />
                       ))}
@@ -575,10 +541,8 @@ export default function Home() {
                 </div>
 
                 <Link href="/progreso" className="absolute -top-3 -right-2 z-20 block" title="Ver mi progreso">
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                    className="rounded-2xl border border-border bg-white/95 p-3 shadow-lg shadow-black/5 backdrop-blur flex items-center gap-2.5 transition-all hover:shadow-xl hover:border-fuchsia-200"
+                  <div
+                    className="float-soft rounded-2xl border border-border bg-white/95 p-3 shadow-lg shadow-black/5 backdrop-blur flex items-center gap-2.5 transition-all hover:shadow-xl hover:border-fuchsia-200"
                   >
                   <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center shadow-sm shadow-fuchsia-500/30">
                     <Trophy className="h-4 w-4 text-white" />
@@ -587,10 +551,10 @@ export default function Home() {
                     <div className="text-xs text-muted-foreground">Tu avance</div>
                     <div className="text-sm font-bold text-foreground">0 %</div>
                   </div>
-                  </motion.div>
+                  </div>
                 </Link>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
 
@@ -744,7 +708,7 @@ export default function Home() {
           <div className="animate-fade-in-up mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11">
             <div className="grid min-w-0 md:grid-cols-2">
               {[0, 1].map((col) => (
-                <div
+                <ul
                   key={col}
                   className={`min-w-0 ${col === 1 ? "border-t border-black/[0.06] md:border-l md:border-t-0" : ""}`}
                 >
@@ -782,7 +746,7 @@ export default function Home() {
                       </li>
                     );
                   })}
-                </div>
+                </ul>
               ))}
             </div>
           </div>

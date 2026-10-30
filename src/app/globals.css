@@ -318,6 +318,15 @@
   opacity: 0;
 }
 
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-soft {
+  animation: float-soft 4s ease-in-out infinite;
+}
+
 /* Stagger delays */
 .delay-1 { animation-delay: 40ms; }
 .delay-2 { animation-delay: 80ms; }
@@ -337,6 +346,10 @@
   .animate-scale-in {
     animation-duration: 0.01ms !important;
     opacity: 1 !important;
+  }
+
+  .float-soft {
+    animation: none !important;
   }
 }
 
