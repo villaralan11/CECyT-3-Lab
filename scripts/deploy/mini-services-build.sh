@@ -59,8 +59,8 @@ main() {
         fi
     done
     
-    if [ -f ./.zscripts/mini-services-start.sh ]; then
-        cp ./.zscripts/mini-services-start.sh "$DIST_DIR/mini-services-start.sh"
+    if [ -f ./scripts/deploy/mini-services-start.sh ]; then
+        cp ./scripts/deploy/mini-services-start.sh "$DIST_DIR/mini-services-start.sh"
         chmod +x "$DIST_DIR/mini-services-start.sh"
     fi
     

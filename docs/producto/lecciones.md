@@ -22,6 +22,6 @@
 3. **Escritura libre inglés** con nlp.ts + LLM pequeño para feedback gramatical explicativo.
 
 ### Métricas Fase 1 (demo)
-- n=5 demo: +70.6% pre→post, p=0.04, d=4.38, NPS 8.4, completitud 100% (ver `docs/informe-piloto.md:1` y `scripts/analisis-piloto.py:1`).
+- n=5 demo: +70.6% pre→post, p=0.04, d=4.38, NPS 8.4, completitud 100% (ver `docs/producto/informe-piloto.md:1` y `scripts/analisis-piloto.py:1`).
 
 > Si repetimos, recortar alcance a 1 tema y medir con grupo control.

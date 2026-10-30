@@ -2,7 +2,7 @@
 """
 Análisis piloto CECyT 3 Lab — t-test pareado + Cohen d (solo stdlib)
 Uso: python3 scripts/analisis-piloto.py data/piloto-2026-2.template.csv
-Salida: docs/informe-piloto.md (y docs/piloto-grafico.png si matplotlib disponible)
+Salida: docs/producto/informe-piloto.md (y docs/piloto-grafico.png si matplotlib disponible)
 """
 import sys, pathlib, csv, math, statistics
 
@@ -91,7 +91,7 @@ md = f"""# Informe Piloto — CECyT 3 Lab (Química 04-06)
 ## Decisión Go/No-Go Fase 2
 - Go si O1 y completitud ≥60% y NPS ≥7
 """
-out_md = pathlib.Path("docs/informe-piloto.md")
+out_md = pathlib.Path("docs/producto/informe-piloto.md")
 out_md.write_text(md, encoding="utf-8")
 print(f"Informe → {out_md}")
 print(md)

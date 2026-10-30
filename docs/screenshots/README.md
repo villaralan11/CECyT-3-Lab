@@ -16,6 +16,6 @@ git checkout v3-actual # v3 (igual que main 5a3c791)
 git checkout main      # vuelve a actual
 ```
 
-**Tamaño:** 6 PNGs, ~2.8M total. Todas las capturas anteriores temporales (audit-*, mpa-*, orig-*, v2-*, v3-*, v4-*) fueron movidas a `/tmp/backup-cecyt3-pngs` y ya no están en el repo (ver `.gitignore:58`).
+**Tamaño:** 6 PNGs, ~2.8 MB en total. Las capturas temporales (`audit-*`, `mpa-*`, `orig-*`) no se versionan; si el peso crece, mover las versiones históricas a almacenamiento externo (GitHub Releases o Drive) y dejar solo las actuales.
 
 **Generación:** `npx playwright screenshot http://localhost:3000 docs/screenshots/v3-actual/hero.png --full-page` con Playwright 1.63 + Chrome 153.

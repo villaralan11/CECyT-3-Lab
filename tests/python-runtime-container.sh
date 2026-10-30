@@ -3,7 +3,7 @@
 set -euo pipefail
 
 RUNNER_IMAGE="${RUNNER_IMAGE:-z-ai-python-deploy-runner:test}"
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.zscripts" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts/deploy" && pwd)"
 TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 

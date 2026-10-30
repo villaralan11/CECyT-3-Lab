@@ -5,7 +5,7 @@ exec 2>&1
 
 set -e
 
-# 获取脚本所在目录（.zscripts 目录，即 workspace-agent/.zscripts）
+# 获取脚本所在目录（scripts/deploy 目录，即 workspace-agent/scripts/deploy）
 # 使用 $0 获取脚本路径（兼容 sh 和 bash）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 

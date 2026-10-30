@@ -16,7 +16,7 @@
 │   └── 1.2.3 Validación experta (2 profesores firman bancos)
 ├── 1.3 Plataforma Web (Next.js 16)
 │   ├── 1.3.1 Arquitectura y Design System
-│   │   ├── 1.3.1.1 Tokens (color, radius 16px, shadow) → DESIGN.md
+│   │   ├── 1.3.1.1 Tokens (color, radius 16px, shadow) → docs/desarrollo/DESIGN.md
 │   │   ├── 1.3.1.2 Layout, Nav, Progreso (localStorage)
 │   │   └── 1.3.1.3 Responsive + A11y (WCAG AA, 44px touch)
 │   ├── 1.3.2 Simuladores Química
@@ -57,7 +57,7 @@
 | **1.3.2.1-3** | Simuladores | `src/components/simulators/*` | 20 casos verificados vs fuente (IUPAC 2024, balanceo RH), sin “Próximamente” |
 | **1.3.3** | Secuencia | Por tema | Cada tema 04-06 tiene falla + sim + ejemplo con auto-explicación interactiva |
 | **1.4.1** | Tests | `*.test.ts` | Coverage ≥70%, 0 tests skipped |
-| **1.5.4** | Análisis | `docs/informe-piloto.md` | p-valor, mejora %, NPS, 3 recomendaciones priorizadas |
+| **1.5.4** | Análisis | `docs/producto/informe-piloto.md` | p-valor, mejora %, NPS, 3 recomendaciones priorizadas |
 
 ---
 

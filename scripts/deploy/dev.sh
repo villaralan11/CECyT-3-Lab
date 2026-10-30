@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# 获取脚本所在目录（.zscripts）
+# 获取脚本所在目录（scripts/deploy）
 # 使用 $0 获取脚本路径（与 build.sh 保持一致）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -67,7 +67,7 @@ start_mini_services() {
 			bun install
 			echo "[$service_name] Running bun run dev..."
 			exec bun run dev
-		) >"$PROJECT_DIR/.zscripts/mini-service-${service_name}.log" 2>&1 &
+		) >"$PROJECT_DIR/scripts/deploy/mini-service-${service_name}.log" 2>&1 &
 
 		local service_pid=$!
 		echo "[$service_name] Started in background (PID: $service_pid)"

@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.zscripts" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts/deploy" && pwd)"
 TEST_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TEST_ROOT"' EXIT
 

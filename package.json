@@ -1,24 +1,44 @@
 {
-  "name": "nextjs_tailwind_shadcn_ts",
+  "name": "cecyt3-lab",
   "version": "0.2.1",
+  "description": "Laboratorio virtual de Física, Química e Inglés para el CECyT No. 3 (IPN).",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/villaralan11/CECyT-3-Lab.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "deploy:build": "bash scripts/deploy/build.sh",
+    "deploy:dev": "bash scripts/deploy/dev.sh",
+    "deploy:start": "bash scripts/deploy/start.sh",
+    "deploy:database": "bash scripts/deploy/database-runtime-build.sh",
+    "deploy:python-runtime": "bash scripts/deploy/python-runtime-build.sh",
+    "deploy:mini-services:install": "bash scripts/deploy/mini-services-install.sh",
+    "deploy:mini-services:build": "bash scripts/deploy/mini-services-build.sh",
+    "deploy:mini-services:start": "bash scripts/deploy/mini-services-start.sh"
   },
   "dependencies": {
-    "3dmol": "^2.5.5",
     "@prisma/client": "^6.11.1",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-scroll-area": "^1.2.9",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-toast": "^1.2.14",
+    "3dmol": "^2.5.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.2",
@@ -36,11 +56,13 @@
     "@tailwindcss/postcss": "^4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^5.0.5",
     "bun-types": "^1.3.4",
     "eslint": "^9",
     "eslint-config-next": "^16.1.1",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

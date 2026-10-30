@@ -13,10 +13,10 @@
 
 | Tarea | WBS | DoD |
 |-------|-----|-----|
-| Charter firmado (borrador) | 1.1.1 | `PROJECT_CHARTER.md` v1.0 en `main` |
-| WBS + Roadmap | 1.1.1 | `docs/WBS.md` + `docs/ROADMAP.md` en `main` |
+| Charter firmado (borrador) | 1.1.1 | `docs/producto/PROJECT_CHARTER.md` v1.0 en `main` |
+| WBS + Roadmap | 1.1.1 | `docs/producto/WBS.md` + `docs/producto/ROADMAP.md` en `main` |
 | Restaurar QA | 1.4.1/1.4.2 | `vitest.config.ts` + `vitest` ≥70% + `.github/workflows/ci.yml` verde |
-| Design tokens base | 1.3.1.1 | `DESIGN.md` con colores, radius, sombras, tipografía |
+| Design tokens base | 1.3.1.1 | `docs/desarrollo/DESIGN.md` con colores, radius, sombras, tipografía |
 | Validar Sponsor + 1 profesor | 1.1.2 | Email/compromiso escrito |
 
 **Entregable Sprint 0:** Repo con Charter+WBS+Roadmap + CI verde. **Sin esto no avanzas.**
@@ -68,7 +68,7 @@
 | 08-15/12 | Análisis: t-test pareado, Cohen d, gráficos, informe |
 
 **DoD Sprint 3 (M4):**
-- `docs/informe-piloto.md` (5 páginas): N, mejora %, p-valor, NPS, 3 lecciones
+- `docs/producto/informe-piloto.md` (5 páginas): N, mejora %, p-valor, NPS, 3 lecciones
 - Excel `data/piloto-2026-2.xlsx` (anonimizado) con pre/post
 - Si mejora <20% → informe explica por qué y propone ajuste (no se maquilla)
 
@@ -80,7 +80,7 @@
 | Tarea | DoD |
 |-------|-----|
 | Demo a Sponsor (20 min) | Slides 10 + demo vivo + informe |
-| Lecciones aprendidas | `docs/lecciones.md` (qué salió bien/mal) |
+| Lecciones aprendidas | `docs/producto/lecciones.md` (qué salió bien/mal) |
 | Plan Fase 2 (si Go) | Auth Supabase + Física/Inglés, estimado 8 semanas, presupuesto |
 | Archivo y tag | `git tag fase1-2026-12` + backup |
 

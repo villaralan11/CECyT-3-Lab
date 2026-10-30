@@ -91,25 +91,24 @@ Basado en investigación educativa: *Kapur (falla productiva)* y *Renkl (worked 
 ## 📁 Estructura del Proyecto
 
 ```
-src/
-├── app/                    # Pages: /, /fisica/*, /quimica/*, /ingles/*, /retos, /progreso
-├── components/
-│   ├── simulators/         # Simuladores: MRU, MRUV, Tiros, IUPAC, Balanceo, Estequiometría
-│   ├── didactic/           # Componentes pedagógicos: falla productiva, ejemplos resueltos
-│   └── chemistry/          # Visor 3D de moléculas
-├── lib/                    # Utilidades: nlp.ts, balance.ts, tests
-└── api/progress            # Backend de sincronización de progreso
-
-prisma/
-└── schema.prisma           # Modelos: User, Progress, Event
-
-docs/
-├── PROJECT_CHARTER.md      # Objetivos SMART y alcance
-├── ROADMAP.md              # Sprints y planificación
-├── WBS.md                  # Estructura de desglose del trabajo
-├── DESIGN.md               # Sistema de diseño y tokens
-├── guia-profesor.md        # Guía para docentes
-└── informe-piloto.md       # Resultados del piloto + análisis estadístico
+.
+├── src/                    # Aplicación Next.js (App Router)
+│   ├── app/                # Páginas y API (/api/progress)
+│   ├── components/         # UI, simuladores, didáctica y visor 3D
+│   ├── hooks/
+│   └── lib/                # Utilidades + tests Vitest
+├── public/simuladores/     # Simuladores HTML/JS por materia
+├── prisma/                 # Esquema de base de datos
+├── data/                   # Plantillas CSV del piloto
+├── docs/
+│   ├── producto/           # Gestión: charter, roadmap, WBS, informe piloto
+│   ├── guias/              # Material para docentes y consentimiento
+│   ├── desarrollo/         # Sistema de diseño y notas técnicas
+│   └── screenshots/        # Capturas de las 3 versiones
+├── scripts/
+│   ├── analisis-piloto.py  # Análisis estadístico del piloto
+│   └── deploy/             # Scripts de despliegue del sandbox
+└── tests/                  # Pruebas de los scripts de despliegue
 ```
 
 ---
@@ -123,8 +122,8 @@ docs/
 git clone https://github.com/villaralan11/CECyT-3-Lab.git
 cd CECyT-3-Lab
 
-# Instalar dependencias
-npm install
+# Instalar dependencias (npm es el gestor oficial: ver package-lock.json)
+npm ci
 
 # Configurar variables de entorno (opcional)
 cp .env.example .env.local
@@ -139,7 +138,8 @@ npm run dev
 # Abre http://localhost:3000
 
 # Tests
-npm test          # Vitest (38 tests)
+npm test              # Vitest (38 tests)
+npm run test:coverage # Cobertura (requiere @vitest/coverage-v8)
 
 # Linting
 npm run lint
@@ -165,18 +165,21 @@ Sistema de colores por materia:
 
 **Tokens:** Radius 16px (cards), full (pills) · Touch targets 44px · WCAG AA · Tipografía: Geist Sans + Mono
 
-Ver detalles completos en [`DESIGN.md`](./DESIGN.md)
+Ver detalles completos en [`docs/desarrollo/DESIGN.md`](./docs/desarrollo/DESIGN.md)
 
 ---
 
 ## 📚 Documentación
 
-- **[PROJECT_CHARTER.md](./PROJECT_CHARTER.md)** — Objetivos, alcance, riesgos
-- **[ROADMAP.md](./docs/ROADMAP.md)** — Sprints e hitos
-- **[WBS.md](./docs/WBS.md)** — Estructura de desglose
-- **[DESIGN.md](./DESIGN.md)** — Sistema de diseño completo
-- **[guia-profesor.md](./docs/guia-profesor.md)** — Manual para docentes
-- **[informe-piloto.md](./docs/informe-piloto.md)** — Resultados + análisis t-test y Cohen d
+Índice completo en **[docs/README.md](./docs/README.md)**.
+
+- **[Charter](./docs/producto/PROJECT_CHARTER.md)** — Objetivos, alcance y riesgos
+- **[Roadmap](./docs/producto/ROADMAP.md)** — Sprints e hitos
+- **[WBS](./docs/producto/WBS.md)** — Estructura de desglose del trabajo
+- **[Sistema de diseño](./docs/desarrollo/DESIGN.md)** — Tokens, componentes y accesibilidad
+- **[Guía del profesor](./docs/guias/guia-profesor.md)** — Manual para docentes
+- **[Informe del piloto](./docs/producto/informe-piloto.md)** — Resultados + análisis t-test y Cohen d
+- **[Scripts](./scripts/README.md)** — Análisis del piloto y despliegue
 
 ---
 

@@ -62,7 +62,7 @@
 | E2 — Simuladores Química validados | Cálculos verificados contra 20 casos reales (IUPAC/Balanceo RH 2024), tests verdes |
 | E3 — Paquete didáctico | `docs/pedagogia.md` + `docs/cobertura-curricular.md` con trazabilidad DEMS + 15 refs APA |
 | E4 — Piloto + Informe | Excel pre/post N≥30 + informe 5 páginas con análisis estadístico (t-test) |
-| E5 — Repo con calidad | CI verde, coverage ≥70%, `PROJECT_CHARTER.md` + `ROADMAP.md` + `WBS.md` actualizados |
+| E5 — Repo con calidad | CI verde, coverage ≥70%, `docs/producto/PROJECT_CHARTER.md` + `ROADMAP.md` + `WBS.md` actualizados |
 
 ---
 
@@ -86,7 +86,7 @@
 | Hito | Fecha | Criterio |
 |------|-------|----------|
 | M0 — Charter firmado | 20/09/2026 | Sponsor firma este documento |
-| M1 — WBS + Roadmap + CI verde | 30/09/2026 | `docs/WBS.md`, `docs/ROADMAP.md`, `vitest` ≥70% |
+| M1 — WBS + Roadmap + CI verde | 30/09/2026 | `docs/producto/WBS.md`, `docs/producto/ROADMAP.md`, `vitest` ≥70% |
 | M2 — Química Fase 1 completa | 31/10/2026 | E1+E2+E3 aceptados por profesores |
 | M3 — Piloto lanzado | 15/11/2026 | 30 alumnos con pre-test + acceso |
 | M4 — Informe piloto | 15/12/2026 | E4 con mejora ≥20% y NPS ≥7 |
@@ -151,4 +151,4 @@ Si no se cumple 1, el proyecto es **no exitoso pero aprendido** → se documenta
 
 ---
 
-**Próximo paso inmediato:** Validar este Charter con tu Sponsor en 5 días y pasar a `docs/WBS.md` + `docs/ROADMAP.md`. Sin eso, todo lo demás es decoración.
+**Próximo paso inmediato:** Validar este Charter con tu Sponsor en 5 días y pasar a `docs/producto/WBS.md` + `docs/producto/ROADMAP.md`. Sin eso, todo lo demás es decoración.

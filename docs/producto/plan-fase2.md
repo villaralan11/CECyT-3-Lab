@@ -1,6 +1,6 @@
 # Plan Fase 2 — CECyT 3 Lab (Go/No-Go)
 
-**Decisión:** **Go** si O1 (+20% y p<0.05) + completitud ≥60% + NPS ≥7. Ver `docs/informe-piloto.md:1`.
+**Decisión:** **Go** si O1 (+20% y p<0.05) + completitud ≥60% + NPS ≥7. Ver `docs/producto/informe-piloto.md:1`.
 
 ### Alcance Fase 2 (8 semanas, 1 persona, 10-12h/semana)
 
@@ -33,4 +33,4 @@
 - Piloto 2 con +15% mínimo (más exigente al ser 2ª iteración)
 
 ### No-Go (si O1 no se cumple)
-- Documentar en `docs/lecciones.md:1`, archivar tag `fase1-2026-12` y pivotar a 1 tema profundo con grupo control.
+- Documentar en `docs/producto/lecciones.md:1`, archivar tag `fase1-2026-12` y pivotar a 1 tema profundo con grupo control.
