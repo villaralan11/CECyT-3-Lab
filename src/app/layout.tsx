@@ -1,25 +1,23 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/site/navbar";
 import { Footer } from "@/components/site/footer";
 import { BackToTop } from "@/components/site/back-to-top";
 
-const notoSans = localFont({
-  src: "./fonts/NotoSans-latin.woff2",
+const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
-  weight: "400 700",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  fallback: ["system-ui", "-apple-system", "Segoe UI", "sans-serif"],
 });
 
-const notoMono = localFont({
-  src: "./fonts/NotoSansMono-latin.woff2",
+const notoMono = Noto_Sans_Mono({
   variable: "--font-noto-mono",
-  weight: "400 700",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
   display: "swap",
-  fallback: ["ui-monospace", "SFMono-Regular", "Consolas", "monospace"],
 });
 
 export const metadata: Metadata = {
