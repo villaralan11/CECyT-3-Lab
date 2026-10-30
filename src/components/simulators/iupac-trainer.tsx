@@ -38,6 +38,32 @@ const TYPE_META: Record<CompoundType, { label: string; group: "Inorgánico" | "O
   acido_org: { label: "Ácido carboxílico", group: "Orgánico", color: "text-fuchsia-700", bgSoft: "bg-fuchsia-50", border: "border-fuchsia-200" },
 };
 
+function hashString(value: string): number {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+// Deterministic shuffle: SSR and client must produce the same option order.
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  const result = [...items];
+  let state = seed || 1;
+  const next = () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 const COMPOUNDS: Compound[] = [
   // Óxidos
   { formula: "CO₂", name: "dióxido de carbono", type: "oxido", hint: "Óxido: prefijos griegos según nº de O (mono-, di-, tri-).", explanation: "C + 2 O. 'di-' por 2 oxígenos. Como el C tiene varias valencias, aquí va con la menor (IV)." },
@@ -104,11 +130,11 @@ export default function IUPACTrainer() {
     const others = COMPOUNDS.filter((c) => TYPE_META[c.type].group !== TYPE_META[current.type].group);
 
     const candidates = [...sameType, ...sameGroup, ...others].filter((c) => c.name !== current.name);
-    // Dedupe and shuffle
+    // Dedupe, then shuffle with a seed derived from the current item.
     const unique = Array.from(new Set(candidates.map((c) => c.name))).map((n) => candidates.find((c) => c.name === n)!);
-    const shuffled = [...unique].sort(() => Math.random() - 0.5).slice(0, 3);
-    const opts = [...shuffled, current].sort(() => Math.random() - 0.5);
-    return opts;
+    const seed = hashString(`${current.formula}-${idx}`);
+    const shuffled = seededShuffle(unique, seed).slice(0, 3);
+    return seededShuffle([...shuffled, current], seed + 1);
   }, [current, idx]);
 
   const onPick = (i: number) => {

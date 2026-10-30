@@ -283,6 +283,63 @@
   animation: soft-ping 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
+/* ---- CSS-driven reveal animations (replace framer-motion whileInView) ---- */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+  opacity: 0;
+}
+.animate-slide-up {
+  animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Stagger delays */
+.delay-1 { animation-delay: 40ms; }
+.delay-2 { animation-delay: 80ms; }
+.delay-3 { animation-delay: 120ms; }
+.delay-4 { animation-delay: 160ms; }
+.delay-5 { animation-delay: 200ms; }
+.delay-6 { animation-delay: 240ms; }
+.delay-7 { animation-delay: 280ms; }
+.delay-8 { animation-delay: 320ms; }
+.delay-9 { animation-delay: 360ms; }
+.delay-10 { animation-delay: 400ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-scale-in {
+    animation-duration: 0.01ms !important;
+    opacity: 1 !important;
+  }
+}
+
 /* Teléfonos en horizontal / ventanas muy bajas: hero compacto (sin cortar CTAs) */
 @media (max-width: 1023px) and (max-height: 520px) {
   .hero-compact-hide { display: none !important; }
