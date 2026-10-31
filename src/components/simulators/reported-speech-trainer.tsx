@@ -144,10 +144,11 @@ export default function ReportedSpeechTrainer() {
     <QuizTrainer
       title="Grammar · Reported Speech"
       description="Cuenta lo que alguien dijo sin citarlo: backshift de tiempos, ajuste de pronombres y marcadores (now→then, yesterday→the day before), preguntas sin auxiliar e imperativos con to + infinitivo."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 10 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de reported speech."
+      topicId="10_reported"
+      intro="Has completado los 10 ejercicios de reported speech."
     />
   );
 }

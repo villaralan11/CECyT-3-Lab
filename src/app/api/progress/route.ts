@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { getDb } from "@/lib/db";
 
 // GET /api/progress?userId=xxx — lista progreso por usuario
 export async function GET(req: NextRequest) {
   const userId = req.nextUrl.searchParams.get("userId");
   if (!userId) return NextResponse.json({ error: "userId requerido" }, { status: 400 });
 
-  // Si no hay DB configurada, fallback a 501 para que el cliente use localStorage
-  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith("file:")) {
-    return NextResponse.json({ error: "DB no configurada, usa localStorage", fallback: true }, { status: 501 });
-  }
-
   try {
+    const db = getDb();
     const progress = await db.progress.findMany({ where: { userId } });
     return NextResponse.json({ progress });
   } catch (e) {
     console.error("[progress GET]", e);
-    return NextResponse.json({ error: "DB error", fallback: true }, { status: 500 });
+    // fallback a 501 para que el cliente use localStorage
+    return NextResponse.json({ error: "DB error, usa localStorage", fallback: true }, { status: 501 });
   }
 }
 
@@ -27,11 +24,8 @@ export async function POST(req: NextRequest) {
 
   if (!userId || !topicId) return NextResponse.json({ error: "userId y topicId requeridos" }, { status: 400 });
 
-  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.startsWith("file:")) {
-    return NextResponse.json({ ok: true, fallback: true, message: "DB no configurada, guardado en localStorage" });
-  }
-
   try {
+    const db = getDb();
     // asegura usuario existe (anon o real)
     await db.user.upsert({
       where: { id: userId },
@@ -62,6 +56,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ progress });
   } catch (e) {
     console.error("[progress POST]", e);
-    return NextResponse.json({ error: "DB error", fallback: true }, { status: 500 });
+    return NextResponse.json({ ok: true, fallback: true, message: "DB error, guardado en localStorage" }, { status: 501 });
   }
 }

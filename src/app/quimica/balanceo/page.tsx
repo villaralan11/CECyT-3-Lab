@@ -1,6 +1,6 @@
 import { Breadcrumb } from "@/components/site/ui";
 import BalanceoSimulator from "@/components/simulators/balanceo-simulator";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
@@ -17,7 +17,7 @@ const FAILURE = {
     "Sí, pero falta poner 2CO₂",
   ],
   correct: 1,
-  reveal: "Balancenado H sin revisar O es el error #1. Derecha: CO₂ (2 O) + 2H₂O (2 O) = 4 O, izquierda solo 2 O. Hay que ajustar el coeficiente del O₂ a 2. Y nunca toques subíndices (O₂→O₄ cambia la sustancia). Practícalo abajo con el conteo vivo.",
+  reveal: "Balancear H sin revisar O es el error #1. Derecha: CO₂ (2 O) + 2H₂O (2 O) = 4 O, izquierda solo 2 O. Hay que ajustar el coeficiente del O₂ a 2. Y nunca toques subíndices (O₂→O₄ cambia la sustancia). Practícalo abajo con el conteo vivo.",
 };
 
 const EXAMPLE = {
@@ -61,12 +61,12 @@ export default function BalanceoPage() {
       ]} />
 
       <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-bold text-fuchsia-700">DEM S Química I · Unidad 3</span>
+        <span className="font-bold text-fuchsia-700">Plan DEMS · Química I · Unidad 3</span>
         <span className="text-muted-foreground">· Ley de conservación de la masa · 8 reacciones validadas (RH 2024) ·</span>
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="05_balanceo" />
 
       <BalanceoSimulator />
 

@@ -38,35 +38,9 @@ const TYPE_META: Record<CompoundType, { label: string; group: "Inorgánico" | "O
   acido_org: { label: "Ácido carboxílico", group: "Orgánico", color: "text-fuchsia-700", bgSoft: "bg-fuchsia-50", border: "border-fuchsia-200" },
 };
 
-function hashString(value: string): number {
-  let hash = 2166136261;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-// Deterministic shuffle: SSR and client must produce the same option order.
-function seededShuffle<T>(items: T[], seed: number): T[] {
-  const result = [...items];
-  let state = seed || 1;
-  const next = () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let t = Math.imul(state ^ (state >>> 15), 1 | state);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(next() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
-}
-
 const COMPOUNDS: Compound[] = [
   // Óxidos
-  { formula: "CO₂", name: "dióxido de carbono", type: "oxido", hint: "Óxido: prefijos griegos según nº de O (mono-, di-, tri-).", explanation: "C + 2 O. 'di-' por 2 oxígenos. Como el C tiene varias valencias, aquí va con la menor (IV)." },
+  { formula: "CO₂", name: "dióxido de carbono", type: "oxido", hint: "Óxido: prefijos griegos según nº de O (mono-, di-, tri-).", explanation: "C + 2 O. 'di-' por 2 oxígenos. Como el C tiene varias valencias, aquí va con la mayor (IV)." },
   { formula: "SO₃", name: "trióxido de azufre", type: "oxido", hint: "Óxido ácido de un no-metal. Prefijo 'tri-' por 3 O.", explanation: "S + 3 O. Anhídrido sulfúrico. Prefijo 'tri-' porque hay 3 átomos de O." },
   { formula: "Na₂O", name: "óxido de sodio", type: "oxido", hint: "Óxido básico (metal + O). Sodio valencia 1.", explanation: "Na⁺ + O²⁻. Se necesitan 2 Na para compensar la carga del O²⁻. Sin prefijos (valencia única)." },
   { formula: "CaO", name: "óxido de calcio", type: "oxido", hint: "Cal viva. Ca²⁺ + O²⁻.", explanation: "Cal viva. Ca²⁺ y O²⁻ se neutralizan 1:1. Sin prefijos." },
@@ -85,7 +59,7 @@ const COMPOUNDS: Compound[] = [
   { formula: "KBr", name: "bromuro de potasio", type: "sal", hint: "Sal binaria de haluro.", explanation: "K⁺ + Br⁻. Bromuro. Sal binaria típica de haluro." },
   { formula: "CaCO₃", name: "carbonato de calcio", type: "sal", hint: "Sal de ácido carbónico. Cambia -ico → -ato.", explanation: "Ca²⁺ + CO₃²⁻. Sal de ácido carbónico (H₂CO₃). -ico del ácido → -ato en la sal." },
   { formula: "FeSO₄", name: "sulfato de hierro (II)", type: "sal", hint: "Hierro con valencia 2 → (II).", explanation: "Fe²⁺ + SO₄²⁻. Hierro (II) → sal verde. La valencia va entre paréntesis." },
-  { formula: "AgNO₃", name: "nitrato de plata", type: "sal", hint: "Sal de ácido nítrico. Plata +1.", explanation: "Ag⁺ + NO₃⁻. Nitrato de plata. Lentes de laboratorio para detectar cloruros." },
+  { formula: "AgNO₃", name: "nitrato de plata", type: "sal", hint: "Sal de ácido nítrico. Plata +1.", explanation: "Ag⁺ + NO₃⁻. Se usa en el laboratorio para detectar cloruros: forma un precipitado blanco de AgCl que se oscurece con la luz." },
   // Alcanos
   { formula: "CH₄", name: "metano", type: "alcano", hint: "Alcano 1 C: met- + -ano.", explanation: "1 C → met-. Sin enlaces dobles → -ano. Gas metano, componente del gas natural." },
   { formula: "C₂H₆", name: "etano", type: "alcano", hint: "Alcano 2 C: et- + -ano.", explanation: "2 C → et-. -ano por enlace simple. Segundo alcano de la serie." },
@@ -101,6 +75,37 @@ const COMPOUNDS: Compound[] = [
   { formula: "CH₃COCH₃", name: "propanona", type: "cetona", hint: "Cetona 3 C, C=O en medio.", explanation: "3 C con C=O en el carbono central. Propanona (acetona). Quitaesmalte." },
 ];
 
+// PRNG determinista (mulberry32) para que servidor y cliente generen las
+// mismas opciones y no haya mismatch de hidratación.
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const rand = mulberry32(seed);
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export default function IUPACTrainer() {
   const { save } = useProgress();
   const [filter, setFilter] = useState<"all" | "inorgánico" | "orgánico">("all");
@@ -110,6 +115,8 @@ export default function IUPACTrainer() {
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [showHint, setShowHint] = useState(false);
   const [history, setHistory] = useState<boolean[]>([]);
+  // Compuestos dominados (respondidos bien al menos una vez)
+  const [mastered, setMastered] = useState<Set<string>>(new Set());
 
   const pool = useMemo(
     () =>
@@ -121,7 +128,7 @@ export default function IUPACTrainer() {
 
   const current = pool[idx % pool.length];
 
-  // Generate 3 distractors + 1 correct, shuffled
+  // Generate 3 distractors + 1 correct, shuffled (determinista por pregunta)
   const options = useMemo(() => {
     if (!current) return [];
     // Prefer distractors of the same type, then same group, then any
@@ -130,12 +137,13 @@ export default function IUPACTrainer() {
     const others = COMPOUNDS.filter((c) => TYPE_META[c.type].group !== TYPE_META[current.type].group);
 
     const candidates = [...sameType, ...sameGroup, ...others].filter((c) => c.name !== current.name);
-    // Dedupe, then shuffle with a seed derived from the current item.
+    // Dedupe and shuffle deterministically
     const unique = Array.from(new Set(candidates.map((c) => c.name))).map((n) => candidates.find((c) => c.name === n)!);
-    const seed = hashString(`${current.formula}-${idx}`);
+    const seed = hashStr(`${current.name}#${idx}#${filter}`);
     const shuffled = seededShuffle(unique, seed).slice(0, 3);
-    return seededShuffle([...shuffled, current], seed + 1);
-  }, [current, idx]);
+    const opts = seededShuffle([...shuffled, current], seed ^ 0x9e3779b9);
+    return opts;
+  }, [current, idx, filter]);
 
   const onPick = (i: number) => {
     if (picked !== null) return;
@@ -147,10 +155,13 @@ export default function IUPACTrainer() {
       total: s.total + 1,
     }));
     setHistory((h) => [...h, isCorrect]);
-    // guarda progreso (Fase 2 backend + local)
-    const newCorrect = (isCorrect ? 1 : 0) + score.correct;
-    const newTotal = score.total + 1;
-    save("04_iupac", newCorrect, newTotal);
+    // guarda progreso: compuestos dominados sobre el banco completo
+    if (isCorrect && !mastered.has(current.name)) {
+      const next = new Set(mastered);
+      next.add(current.name);
+      setMastered(next);
+      save("04_iupac", next.size, COMPOUNDS.length);
+    }
   };
 
   const next = () => {
@@ -166,7 +177,6 @@ export default function IUPACTrainer() {
     setShowHint(false);
     setHistory([]);
   };
-
   const changeFilter = (f: "all" | "inorgánico" | "orgánico") => {
     setFilter(f);
     setIdx(0);
@@ -266,17 +276,29 @@ export default function IUPACTrainer() {
         </div>
       </div>
 
-      {/* 3D Viewer for orgánicos (VSEPR) */}
+      {/* 3D Viewer para orgánicos (VSEPR) */}
       {["alcano", "alqueno", "alcohol", "cetona", "acido_org"].includes(current.type) && (
         <MolViewer
           sdf={
             current.formula === "CH₄" ? SDFS.CH4 :
             current.formula === "C₂H₆" ? SDFS.C2H6 :
-            current.formula === "C₂H₅OH" || current.formula === "CH₃OH" ? SDFS.C2H5OH :
+            current.formula === "C₃H₈" ? SDFS.C3H8 :
+            current.formula === "C₂H₄" ? SDFS.C2H4 :
+            current.formula === "CH₃OH" ? SDFS.CH3OH :
+            current.formula === "C₂H₅OH" ? SDFS.C2H5OH :
+            current.formula === "CH₃COCH₃" ? SDFS.ACETONE :
+            current.formula === "CH₃COOH" ? SDFS.ACETIC :
             SDFS.CH4
           }
           formula={current.formula}
           name={current.name}
+          geometry={
+            current.type === "alqueno" || current.type === "acido_org"
+              ? "Geometría plana (~120°) alrededor del doble enlace C=C"
+              : current.type === "cetona"
+              ? "Carbonilo C=O plano (~120°) entre los dos CH₃"
+              : "Geometría tetraédrica (109.5°) alrededor de cada C sp³"
+          }
         />
       )}
 
@@ -381,7 +403,7 @@ export default function IUPACTrainer() {
           Reiniciar marcador
         </button>
         <span className="text-[10px] text-muted-foreground/70">
-          {pool.length} compuestos en el banco
+          {pool.length} compuestos en el banco · {mastered.size}/{COMPOUNDS.length} dominados
         </span>
       </div>
 

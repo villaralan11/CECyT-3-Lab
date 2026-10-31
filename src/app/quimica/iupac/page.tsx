@@ -1,11 +1,11 @@
 import { Breadcrumb } from "@/components/site/ui";
 import IUPACTrainer from "@/components/simulators/iupac-trainer";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
   title: "Nomenclatura IUPAC — CECyT No. 3 Lab",
-  description: "Secuencia completa falla productiva → simulador → ejemplo resuelto: 25 compuestos orgánicos e inorgánicos (DEM S Química I, Unidad 2).",
+  description: "Secuencia completa falla productiva → simulador → ejemplo resuelto: 25 compuestos orgánicos e inorgánicos (Plan DEMS · Química I, Unidad 2).",
 };
 
 const FAILURE = {
@@ -17,7 +17,7 @@ const FAILURE = {
     "Sí, pero sería trióxido de hierro",
   ],
   correct: 1,
-  reveal: "Los prefijos di-/tri- son para no-metales con enlace covalente (CO₂, SO₃). Para metales de transición con valencia variable (Fe²⁺/Fe³⁺) usas Stock: óxido de hierro (III). El Fe²O³ no es 'trióxido', es Fe(III). Esta confusión es justo lo que entrenarás abajo.",
+  reveal: "Los prefijos di-/tri- son para no-metales con enlace covalente (CO₂, SO₃). Para metales de transición con valencia variable (Fe²⁺/Fe³⁺) usas Stock: óxido de hierro (III). El Fe₂O₃ no es 'trióxido', es Fe(III). Esta confusión es justo lo que entrenarás abajo.",
 };
 
 const EXAMPLE = {
@@ -61,12 +61,12 @@ export default function IUPACPage() {
       ]} />
 
       <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-bold text-fuchsia-700">DEM S Química I · Unidad 2</span>
+        <span className="font-bold text-fuchsia-700">Plan DEMS · Química I · Unidad 2</span>
         <span className="text-muted-foreground">· Nomenclatura sistemática y Stock · 25 compuestos validados (RH 2024) ·</span>
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="04_iupac" />
 
       <IUPACTrainer />
 

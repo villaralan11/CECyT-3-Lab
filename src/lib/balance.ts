@@ -1,9 +1,25 @@
 // Solver dinámico de balanceo — matriz estequiométrica + RREF con fracciones
 // Para 8 reacciones pre-cargadas y cualquier reacción nueva ingresada por el alumno
 
+// Convierte dígitos subíndice Unicode (₀-₉) a ASCII (0-9)
+export function normalizeSubscripts(formula: string): string {
+  const SUBS = "₀₁₂₃₄₅₆₇₈₉";
+  return formula.replace(/[₀-₉]/g, (c) => String(SUBS.indexOf(c)));
+}
+
+// Fórmula química válida tras normalizar subíndices: elementos + paréntesis
+const VALID_FORMULA = /^(?:[A-Z][a-z]?\d*(?:\([^)]+\)\d*)?)+$/;
+
+export function isValidFormula(formula: string): boolean {
+  const f = normalizeSubscripts(formula.trim()).replace(/\s+/g, "");
+  return f.length > 0 && VALID_FORMULA.test(f);
+}
+
 export function parseFormula(formula: string): Record<string, number> {
+  // Normaliza subíndices Unicode (CH₄ → CH4) antes de parsear
+  const src = normalizeSubscripts(formula).replace(/\s+/g, "");
   // Expande paréntesis (OH)2 -> O2H2 etc.
-  let expanded = formula.replace(/\(([^)]+)\)(\d*)/g, (_, inside: string, mult: string) => {
+  const expanded = src.replace(/\(([^)]+)\)(\d*)/g, (_, inside: string, mult: string) => {
     const m = mult ? parseInt(mult, 10) : 1;
     return inside.replace(/([A-Z][a-z]?)(\d*)/g, (_: string, el: string, n: string) => el + (n ? parseInt(n, 10) * m : m));
   });
@@ -54,6 +70,8 @@ function lcm(a: number, b: number): number {
 export function balanceReaction(reactants: string[], products: string[]): number[] | null {
   const species = [...reactants, ...products];
   const n = species.length;
+  // Valida cada fórmula antes de intentar resolver
+  if (species.some((f) => !isValidFormula(f))) return null;
   const counts = species.map(parseFormula);
   const elements = Array.from(new Set(counts.flatMap((c) => Object.keys(c)))).sort();
   const m = elements.length;

@@ -38,7 +38,8 @@
   ],
   "exclude": [
     "node_modules",
+    "extracted",
     "examples",
-    "coverage"
+    "skills"
   ]
 }

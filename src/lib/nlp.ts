@@ -53,12 +53,11 @@ export function normalizeEnglish(input: string): string {
   // Expandir contracciones
   // Ordenar por longitud descendente para evitar reemplazos parciales
   const keys = Object.keys(CONTRACTIONS).sort((a, b) => b.length - a.length);
+  // Split/join para evitar escapes de regex
   for (const k of keys) {
-    const re = new RegExp(`\\b${k.replace("'", "'")} \\b`, "g"); // placeholder, usaremos simple replace
-    // Usamos split/join para evitar regex escapa
     s = s.split(k).join(CONTRACTIONS[k]);
   }
-  // Segunda pasada con regex word boundary sin dependencia de espacio
+  // Segunda pasada con regex word boundary para atrapar restos pegados a otras letras
   for (const k of keys) {
     const pattern = new RegExp(`\\b${k.replace("'", "\\'")}\\b`, "g");
     s = s.replace(pattern, CONTRACTIONS[k]);
@@ -87,26 +86,58 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /**
+ * Compara dos respuestas normalizadas palabra por palabra.
+ * Un typo se tolera solo si:
+ *  - la palabra tiene ≥ 5 letras (evita aceptar errores gramaticales cortos: go/goes, is/was)
+ *  - la distancia Levenshtein es exactamente 1
+ *  - y NO es un cambio de sufijo (comparten todo menos la última pareja de letras:
+ *    lives/lived, works/worked son errores de tiempo verbal, no typos)
+ * Máximo 1 typo por respuesta.
+ */
+function tokensMatch(a: string, b: string): boolean {
+  const ta = a.split(" ").filter(Boolean);
+  const tb = b.split(" ").filter(Boolean);
+  if (ta.length !== tb.length) return false;
+  let typos = 0;
+  for (let i = 0; i < ta.length; i++) {
+    const wa = ta[i];
+    const wb = tb[i];
+    if (wa === wb) continue;
+    if (
+      typos === 0 &&
+      wa.length >= 5 &&
+      wb.length >= 5 &&
+      levenshtein(wa, wb) === 1 &&
+      wa.slice(0, -2) !== wb.slice(0, -2) // no es un cambio de sufijo
+    ) {
+      typos = 1;
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
+/**
  * Evalúa si la respuesta del usuario es correcta de forma tolerante
  * @param input respuesta del alumno
  * @param expected respuesta esperada (o array de aceptadas)
- * @param opts tolerancias
+ * @param opts reservado para tolerancias futuras
  */
 export function isCorrectEnglish(
   input: string,
   expected: string | string[],
-  opts: { maxDistance?: number; ignorePunct?: boolean } = {}
+  _opts: { maxDistance?: number; ignorePunct?: boolean } = {}
 ): boolean {
-  const { maxDistance = 1 } = opts;
   const normInput = normalizeEnglish(input);
   const candidates = Array.isArray(expected) ? expected : [expected];
   for (const c of candidates) {
     const normExpected = normalizeEnglish(c);
     if (normInput === normExpected) return true;
-    // Tolerancia a un typo (distancia 1) si la cadena es >4 chars
-    if (normInput.length > 4 && levenshtein(normInput, normExpected) <= maxDistance) return true;
-    // Tolerancia a espacios/puntuación extra ya manejada por normalize, pero doble check sin espacios
+    // Espacios/puntuación extra ya normalizados; doble check sin espacios
     if (normInput.replace(/\s/g, "") === normExpected.replace(/\s/g, "")) return true;
+    // Tolerancia a typos palabra por palabra (no acepta errores gramaticales)
+    if (normInput.length > 4 && tokensMatch(normInput, normExpected)) return true;
   }
   return false;
 }

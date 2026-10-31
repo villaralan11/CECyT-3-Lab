@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
   FlaskConical,
   TrendingDown,
@@ -75,6 +75,18 @@ export default function EstequiometriaSimulator() {
   const [rIdx, setRIdx] = useState(0);
   const reaction = REACTIONS[rIdx];
   const [masses, setMasses] = useState<number[]>(reaction.reactants.map(() => 8));
+  // Reacciones exploradas: el alumno movió al menos un slider en cada una
+  const [explored, setExplored] = useState<Set<string>>(new Set());
+
+  const setMass = (i: number, v: number) => {
+    setMasses((m) => m.map((x, j) => (j === i ? v : x)));
+    if (!explored.has(reaction.id)) {
+      const next = new Set(explored);
+      next.add(reaction.id);
+      setExplored(next);
+      save("06_estequiometria", next.size, REACTIONS.length);
+    }
+  };
 
   const switchReaction = (i: number) => {
     setRIdx(i);
@@ -118,17 +130,6 @@ export default function EstequiometriaSimulator() {
     };
   });
 
-  // Auto-guarda progreso al interactuar
-  const esteqSavedRef = useRef(false);
-  useEffect(() => {
-    const hasInteracted = masses.some((m) => m !== 8);
-    if (hasInteracted && !esteqSavedRef.current) {
-      esteqSavedRef.current = true;
-      save("06_estequiometria", 1, 1);
-    } else if (!hasInteracted) {
-      esteqSavedRef.current = false;
-    }
-  }, [masses, save]);
   // Find max mass for bar scaling
   const maxMass = Math.max(...masses, ...yields.map((y) => y.grams), 1);
 
@@ -187,7 +188,7 @@ export default function EstequiometriaSimulator() {
                 max={50}
                 step={0.5}
                 unit="g"
-                onChange={(v) => setMasses((m) => m.map((x, j) => (j === i ? v : x)))}
+                onChange={(v) => setMass(i, v)}
                 color="fuchsia"
                 description={`Masa molar: ${r.molarMass.toFixed(2)} g/mol`}
               />
@@ -383,10 +384,11 @@ export default function EstequiometriaSimulator() {
         </div>
       </div>
 
-      {/* Insights */}
+        {/* Insights */}
       <div className="grid sm:grid-cols-2 gap-3">
         <Insight color="rose" title="¿Por qué O₂ y no H₂?" icon={<AlertTriangle className="h-4 w-4" />}>
-          Con 8 g de H₂ y 8 g de O₂, el <strong>limitante es el O₂</strong> aunque las masas sean iguales. La estequiometría cuenta <strong>moles</strong>, no gramos: 8 g de H₂ son ~4 mol, pero 8 g de O₂ son solo 0.25 mol. Y como la reacción pide 2:1, las "rondas" resultan 2 (H₂) vs 0.25 (O₂) → gana O₂.
+          Con 8 g de H₂ y 8 g de O₂, el <strong>limitante es el O₂</strong> aunque las masas sean iguales. La estequiometría cuenta <strong>moles</strong>, no gramos: 8 g de H₂ son ~4 mol, pero 8 g de O₂ son solo 0.25 mol. Y como la reacción pide 2:1, las "rondas" resultan 2 (H₂) vs 0.25 (O₂) → el O₂ se agota primero: es el limitante.
+          <div className="mt-2 text-xs font-mono">{explored.size}/{REACTIONS.length} reacciones exploradas</div>
         </Insight>
         <Insight color="emerald" title="El truco: mol ÷ coef" icon={<CheckCircle2 className="h-4 w-4" />}>
           Para comparar reactivos con coeficientes distintos, divide sus moles entre su coeficiente en la ecuación. El <strong>menor</strong> es el limitante. Ese número (rondas) te dice cuántas "veces" se puede ejecutar la reacción. Multiplica por el coeficiente del producto → moles obtenidos → × masa molar → gramos teóricos.

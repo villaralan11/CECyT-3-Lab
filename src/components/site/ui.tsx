@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowUpRight, Play } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // =================== SECTION HEADER ===================
@@ -12,11 +12,13 @@ export function PageHeader({
   title,
   subtitle,
   accent = "fuchsia",
+  titleClass,
 }: {
   eyebrow: string;
   title: React.ReactNode;
   subtitle?: string;
   accent?: "fuchsia" | "emerald" | "amber";
+  titleClass?: string;
 }) {
   const cmap = {
     fuchsia: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
@@ -39,7 +41,7 @@ export function PageHeader({
         <span className={cn("h-1.5 w-1.5 rounded-full", dot[accent])} />
         {eyebrow}
       </span>
-      <h1 className="mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-foreground leading-tight">
+      <h1 className={cn("mt-3 text-4xl sm:text-5xl font-bold tracking-tight text-foreground leading-tight", titleClass)}>
         {title}
       </h1>
       {subtitle && (
@@ -51,69 +53,77 @@ export function PageHeader({
   );
 }
 
-// =================== SIM CARD (link to a simulator page) ===================
+// =================== FANCY TITLE TEXT ===================
+/* El tratamiento del hero de /fisica: degradado vivo con barrido
+   animado, halo de color difuso y subrayado curvo que se dibuja. */
 
-export function SimCard({
-  index,
-  name,
-  description,
-  type,
-  href,
-  accentBg,
-  accentText,
-  accentBorder,
-  accentBgSoft,
-  badge,
+const FANCY_THEMES = {
+  emerald: {
+    text: "from-emerald-600 via-teal-500 to-cyan-400",
+    halo: "from-emerald-400/25 via-teal-300/25 to-cyan-300/35",
+    stops: ["#059669", "#14b8a6", "#22d3ee"],
+  },
+  fuchsia: {
+    text: "from-fuchsia-600 via-pink-500 to-rose-400",
+    halo: "from-fuchsia-400/25 via-pink-300/25 to-rose-300/35",
+    stops: ["#c026d3", "#ec4899", "#fb7185"],
+  },
+  amber: {
+    text: "from-amber-600 via-orange-500 to-yellow-400",
+    halo: "from-amber-400/25 via-orange-300/25 to-yellow-300/35",
+    stops: ["#d97706", "#f97316", "#facc15"],
+  },
+} as const;
+
+export function FancyTitleText({
+  children,
+  theme,
+  gradientId,
 }: {
-  index: string;
-  name: string;
-  description: string;
-  type: string;
-  href: string;
-  accentBg: string;
-  accentText: string;
-  accentBorder: string;
-  accentBgSoft: string;
-  badge?: string;
+  children: React.ReactNode;
+  theme: keyof typeof FANCY_THEMES;
+  gradientId: string;
 }) {
+  const t = FANCY_THEMES[theme];
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.4 }}
-    >
-      <Link
-        href={href}
-        className="group relative block h-full overflow-hidden rounded-2xl border border-border bg-white p-5 shadow-sm hover:shadow-xl hover:shadow-black/5 hover:-translate-y-1 transition-all duration-300"
+    <span className="relative inline-block">
+      {/* Halo de color detrás del texto */}
+      <span
+        aria-hidden="true"
+        className={`absolute -inset-x-4 -inset-y-2 rounded-full bg-gradient-to-r ${t.halo} blur-xl animated-gradient`}
+      />
+      <span
+        className={`relative bg-gradient-to-r ${t.text} bg-clip-text text-transparent animated-gradient pr-[0.12em] -mr-[0.12em]`}
       >
-        <div className={cn("absolute top-0 left-0 right-0 h-1 bg-gradient-to-r scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500", accentBg)} />
-        <div className="flex items-start justify-between">
-          <span className="text-xs font-mono font-bold text-muted-foreground group-hover:text-foreground transition-colors">{index}</span>
-          <div className="flex items-center gap-1.5">
-            {badge && (
-              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide", accentBgSoft, accentText)}>
-                {badge}
-              </span>
-            )}
-            <span className={cn("inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", accentBgSoft, accentText, accentBorder)}>
-              {type}
-            </span>
-          </div>
-        </div>
-        <h3 className="mt-3 text-lg font-bold text-foreground leading-tight">{name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-3">{description}</p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", accentText)}>
-            <Play className="h-3 w-3" />
-            Abrir simulador
-          </span>
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground group-hover:text-white group-hover:border-transparent group-hover:bg-gradient-to-br group-hover:from-fuchsia-500 group-hover:to-pink-500 transition-all duration-300">
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </span>
-        </div>
-      </Link>
-    </motion.div>
+        {children}
+      </span>
+      {/* Subrayado curvo que se dibuja — altura fija para que no se
+          estire con el ancho del título ni suba a cruzar las letras */}
+      <svg
+        className="absolute -bottom-4 left-0 h-2.5 w-full"
+        viewBox="0 0 220 12"
+        fill="none"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <motion.path
+          d="M3 9C60 3 160 3 217 8"
+          stroke={`url(#${gradientId})`}
+          strokeWidth="4"
+          strokeLinecap="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
+        />
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+            <stop stopColor={t.stops[0]} />
+            <stop offset="0.5" stopColor={t.stops[1]} />
+            <stop offset="1" stopColor={t.stops[2]} />
+          </linearGradient>
+        </defs>
+      </svg>
+    </span>
   );
 }
 
@@ -121,19 +131,21 @@ export function SimCard({
 
 export function Breadcrumb({ items }: { items: { label: string; href?: string }[] }) {
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6">
-      {items.map((it, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5">
-          {it.href ? (
-            <Link href={it.href} className="hover:text-foreground transition-colors">
-              {it.label}
-            </Link>
-          ) : (
-            <span className="text-foreground font-semibold">{it.label}</span>
-          )}
-          {i < items.length - 1 && <span className="text-muted-foreground/50">/</span>}
-        </span>
-      ))}
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6">
+      <ol className="flex items-center gap-1.5 flex-wrap">
+        {items.map((it, i) => (
+          <li key={i} className="inline-flex items-center gap-1.5">
+            {it.href ? (
+              <Link href={it.href} className="hover:text-foreground transition-colors">
+                {it.label}
+              </Link>
+            ) : (
+              <span className="text-foreground font-semibold" aria-current="page">{it.label}</span>
+            )}
+            {i < items.length - 1 && <span className="text-muted-foreground/50" aria-hidden="true">/</span>}
+          </li>
+        ))}
+      </ol>
     </nav>
   );
 }

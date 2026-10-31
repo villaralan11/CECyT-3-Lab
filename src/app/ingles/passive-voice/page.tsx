@@ -3,7 +3,7 @@ import PassiveVoiceTrainer from "@/components/simulators/passive-voice-trainer";
 
 export const metadata = {
   title: "Grammar · Passive Voice — CECyT No. 3 Lab",
-  description: "8 transformaciones activa → pasiva cubriendo todos los tiempos y modales.",
+  description: "9 transformaciones activa → pasiva cubriendo los principales tiempos y modales.",
 };
 
 export default function PassiveVoicePage() {

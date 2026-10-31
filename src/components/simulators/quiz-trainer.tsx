@@ -14,6 +14,7 @@ import {
 import { SimHeader, Insight } from "./shared";
 import { cn } from "@/lib/utils";
 import { isCorrectEnglish } from "@/lib/nlp";
+import { useProgress } from "@/hooks/use-progress";
 
 export type QItem = {
   prompt: string;
@@ -35,6 +36,7 @@ export function QuizTrainer({
   items,
   accentColor = "amber",
   intro,
+  topicId,
 }: {
   title: string;
   description: string;
@@ -42,106 +44,71 @@ export function QuizTrainer({
   items: QItem[];
   accentColor?: "amber" | "fuchsia" | "emerald";
   intro?: string;
+  topicId?: string; // id de progreso (ej. "07_verb"); si se pasa, registra avance
 }) {
+  const { save } = useProgress();
   const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<(boolean | null)[]>(items.map(() => null));
+  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
+  const [writeHistory, setWriteHistory] = useState<Record<number, string>>({});
+  const [writeValue, setWriteValue] = useState("");
   const [showHint, setShowHint] = useState(false);
 
   const item = items[idx];
   const total = items.length;
-  const [writeValue, setWriteValue] = useState("");
   const isWriteMode = item.type === "write";
 
   const score = results.filter((r) => r === true).length;
   const answered = results.filter((r) => r !== null).length;
 
+  // Guarda avance cuando cambia el número de aciertos únicos
+  const recordProgress = (nextResults: (boolean | null)[]) => {
+    if (!topicId) return;
+    const correct = nextResults.filter((r) => r === true).length;
+    if (correct > 0) save(topicId, correct, total);
+  };
+
   const onPick = (i: number) => {
-    if (picked !== null) return;
-    setPicked(i);
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = i === item.correct;
-      return next;
-    });
-  };
-
-  const goto = (i: number) => {
-    if (i < 0 || i >= total) return;
-    setIdx(i);
-    setPicked(results[i] !== null ? items[i].correct : null); // if already answered, keep showing as answered
-    // Actually we need to track the picked index separately - let me redo
-    setShowHint(false);
-  };
-
-  const next = () => {
-    if (idx < total - 1) {
-      setIdx(idx + 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const prev = () => {
-    if (idx > 0) {
-      setIdx(idx - 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const reset = () => {
-    setIdx(0);
-    setPicked(null);
-    setWriteValue("");
-    setResults(items.map(() => null));
-    setShowHint(false);
-    setPickedHistory(items.map(() => null));
-  };
-
-  // For showing picked, we need to track which option user picked (not just correct/incorrect)
-  // Let me track separately
-  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
-
-  const onPickV2 = (i: number) => {
     if (pickedHistory[idx] !== null) return;
-    setPickedHistory((h) => {
-      const next = [...h];
-      next[idx] = i;
-      return next;
-    });
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = i === item.correct;
-      return next;
-    });
-    setPicked(i);
+    const nextPicked = [...pickedHistory];
+    nextPicked[idx] = i;
+    setPickedHistory(nextPicked);
+    const nextResults = [...results];
+    nextResults[idx] = i === item.correct;
+    setResults(nextResults);
+    recordProgress(nextResults);
   };
 
   const onSubmitWrite = () => {
     if (pickedHistory[idx] !== null || !writeValue.trim()) return;
     const expected = item.accepted ?? [item.options[item.correct]];
     const correct = isCorrectEnglish(writeValue, expected);
-    setPickedHistory((h) => {
-      const next = [...h];
-      next[idx] = correct ? item.correct : -1;
-      return next;
-    });
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = correct;
-      return next;
-    });
-    setPicked(correct ? item.correct : -1);
+    setWriteHistory((w) => ({ ...w, [idx]: writeValue }));
+    const nextPicked = [...pickedHistory];
+    nextPicked[idx] = correct ? item.correct : -1;
+    setPickedHistory(nextPicked);
+    const nextResults = [...results];
+    nextResults[idx] = correct;
+    setResults(nextResults);
+    recordProgress(nextResults);
   };
 
-  const gotoV2 = (i: number) => {
+  const goto = (i: number) => {
     if (i < 0 || i >= total) return;
     setIdx(i);
-    setPicked(pickedHistory[i]);
+    setWriteValue(writeHistory[i] ?? "");
+    setShowHint(false);
+  };
+
+  const next = () => goto(idx + 1);
+  const prev = () => goto(idx - 1);
+
+  const reset = () => {
+    setIdx(0);
     setWriteValue("");
+    setResults(items.map(() => null));
+    setPickedHistory(items.map(() => null));
+    setWriteHistory({});
     setShowHint(false);
   };
 
@@ -213,7 +180,7 @@ export function QuizTrainer({
             return (
               <button
                 key={i}
-                onClick={() => gotoV2(i)}
+                onClick={() => goto(i)}
                 className={cn(
                   "h-7 w-7 text-xs font-bold rounded-full transition-all border",
                   isCurrent && `bg-gradient-to-br ${c.gradient} text-white border-transparent shadow-sm scale-110`,
@@ -280,7 +247,7 @@ export function QuizTrainer({
         {isWriteMode ? (
           <div className="mt-5 space-y-3">
             <textarea
-              value={writeValue}
+              value={pickedHistory[idx] !== null ? writeHistory[idx] ?? writeValue : writeValue}
               onChange={(e) => setWriteValue(e.target.value)}
               disabled={pickedHistory[idx] !== null}
               placeholder={item.placeholder ?? "Escribe tu respuesta aquí..."}
@@ -307,7 +274,7 @@ export function QuizTrainer({
             return (
               <button
                 key={i}
-                onClick={() => onPickV2(i)}
+                onClick={() => onPick(i)}
                 disabled={pickedHistory[idx] !== null}
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all",
@@ -411,7 +378,7 @@ export function QuizTrainer({
             onClick={reset}
             className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
           >
-            <Trophy className="h-3.5 w-3.5" /> Reiniciar
+            <Trophy className="h-3.5 w-3.5" /> Terminar y reiniciar
           </button>
         )}
       </div>

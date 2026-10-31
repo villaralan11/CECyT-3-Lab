@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Rocket } from "lucide-react";
 
 const LINKS = [
@@ -19,9 +19,7 @@ const LINKS = [
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
   const pathname = usePathname();
-  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -30,17 +28,12 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => {
-    const idx = LINKS.findIndex(
-      (l) => (l.href === "/" ? pathname === "/" : pathname.startsWith(l.href))
-    );
-    setActiveIndex(idx >= 0 ? idx : 0);
-  }, [pathname]);
-
+  // Helper to close menu (used by mobile link clicks)
   const handleMobileNav = () => setOpen(false);
 
   return (
     <header
+      data-site-chrome=""
       className={`sticky z-50 transition-all duration-300 ${
         scrolled
           ? "top-3 mx-3 sm:mx-4 lg:mx-6 rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-lg shadow-black/[0.06]"
@@ -51,14 +44,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group" onClick={handleMobileNav}>
-            <Image
-              src="/cecyt3-logo-optimized.webp"
-              alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-border bg-white group-hover:scale-105 transition-transform"
-              priority
-            />
+            <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-border bg-white group-hover:scale-105 transition-transform" />
             <div className="leading-tight">
               <div className="text-sm font-bold tracking-tight text-foreground">
                 CECyT No. 3
@@ -70,16 +56,8 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <nav ref={navRef} className="hidden lg:flex items-center gap-1 relative">
-            {/* Animated active indicator - CSS only */}
-            <div
-              className="absolute bottom-0 left-0 h-0.5 w-[80px] rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] pointer-events-none"
-              style={{
-                transform: `translateX(${activeIndex * 72}px)`,
-              }}
-              aria-hidden="true"
-            />
-            {LINKS.map((l, i) => {
+          <nav className="hidden lg:flex items-center gap-1">
+            {LINKS.map((l) => {
               const active =
                 l.href === "/"
                   ? pathname === "/"
@@ -88,14 +66,20 @@ export function Navbar() {
                 <Link
                   key={l.href}
                   href={l.href}
-                  onClick={() => setActiveIndex(i)}
-                  className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-colors z-10 ${
+                    className={`relative px-3 py-2 text-[13px] font-semibold rounded-lg transition-colors ${
                     active
                       ? "text-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                   }`}
                 >
                   {l.label}
+                  {active && (
+                    <motion.div
+                      layoutId="navbar-active"
+                      className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
                 </Link>
               );
             })}
@@ -123,35 +107,40 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* Mobile menu - CSS animation */}
-        <div
-          className={`lg:hidden overflow-hidden transition-all duration-300 ease-out ${
-            open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-          }`}
-        >
-          <div className="py-3 space-y-1 border-t border-border">
-            {LINKS.map((l, i) => {
-              const active =
-                l.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(l.href);
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={handleMobileNav}
-                  className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    active
-                      ? "bg-secondary text-foreground animate-fade-in"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="lg:hidden overflow-hidden"
+            >
+              <div className="py-3 space-y-1 border-t border-border">
+                {LINKS.map((l) => {
+                  const active =
+                    l.href === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(l.href);
+                  return (
+                    <Link
+                      key={l.href}
+                      href={l.href}
+                      onClick={handleMobileNav}
+                      className={`block px-3 py-2 text-sm font-medium rounded-lg ${
+                        active
+                          ? "bg-secondary text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      {l.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );

@@ -3,7 +3,7 @@ import ReportedSpeechTrainer from "@/components/simulators/reported-speech-train
 
 export const metadata = {
   title: "Grammar · Reported Speech — CECyT No. 3 Lab",
-  description: "8 transformaciones con backshift, ajuste de pronombres, marcadores temporales y preguntas sin auxiliar.",
+  description: "10 transformaciones con backshift, ajuste de pronombres, marcadores temporales y preguntas sin auxiliar.",
 };
 
 export default function ReportedSpeechPage() {

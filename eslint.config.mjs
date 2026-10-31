@@ -19,10 +19,6 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     // React rules
     "react-hooks/exhaustive-deps": "off",
     "react-hooks/purity": "off",
-    // TODO: refactorizar los hooks de animación para cumplir estas reglas.
-    // Por ahora quedan como advertencia para no bloquear el CI.
-    "react-hooks/refs": "warn",
-    "react-hooks/set-state-in-effect": "warn",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
     "react/prop-types": "off",
@@ -48,7 +44,7 @@ const eslintConfig = [...nextCoreWebVitals, ...nextTypescript, {
     "no-useless-escape": "off",
   },
 }, {
-  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "coverage/**", "public/**", "next-env.d.ts", "examples/**", "skills"]
+  ignores: ["node_modules/**", ".next/**", "out/**", "build/**", "next-env.d.ts", "examples/**", "skills", "extracted/**", "db/**"]
 }];
 
 export default eslintConfig;

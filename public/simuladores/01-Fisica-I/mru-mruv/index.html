@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="es" data-theme="light">
+<html lang="es" data-theme="auto">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f5f5f7">
-<title>MRU y MRUV · CECyT No. 3 Lab</title>
+<title>MRU y MRUV · CECyT-3 Lab · Física</title>
 <link rel="stylesheet" href="../../estilo.css">
 </head>
 <body class="app acc-blue">
 <header class="bar">
-  <a class="back" href="/fisica" title="Volver a Física">
+  <a class="back" href="/fisica" title="Volver al catálogo de Física">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5 7 10l5.5 5.5"/></svg>
-    <span>Física</span>
+    <span>Catálogo</span>
   </a>
   <div class="crumb">
     <span class="badge b-blue">F1</span>
@@ -48,6 +48,17 @@
     cam: 0,
     best: null
   };
+
+  /* Mejor tiempo persistente por modo (mru / mruv) */
+  function bestKey() { return 'cecyt3-best-mru-' + S.mode; }
+  function loadBest() {
+    try { S.best = JSON.parse(localStorage.getItem(bestKey())); } catch (e) { S.best = null; }
+    if (typeof S.best !== 'number' || !isFinite(S.best)) S.best = null;
+  }
+  function saveBest(t) {
+    try { localStorage.setItem(bestKey(), JSON.stringify(t)); } catch (e) {}
+  }
+  loadBest();
 
   var fx = Sim.fx();
   var confettiDone = false;
@@ -139,12 +150,12 @@
     S.finished = false;
     S.tMeta = 0;
     S.cam = 0;
-    S.best = null;
     lastSampleT = -1;
     chX.clear();
     chV.clear();
     fx.clear();
     confettiDone = false;
+    loadBest();
     paint();
   }
 
@@ -164,7 +175,8 @@
     S.running = false;
     S.tMeta = S.t;
     btnStart.textContent = 'Otra vez';
-    if (S.best == null || S.tMeta < S.best) S.best = S.tMeta;
+    if (S.best == null || S.tMeta < S.best) { S.best = S.tMeta; saveBest(S.best); }
+    Sim.report(S.mode === 'mru' ? '01_mru' : '02_mruv', 1, 1);
     Sim.chord([659.25, 783.99, 1046.5], 0.2, 100);
   }
 

@@ -1,10 +1,9 @@
 import Link from "next/link";
-import Image from "next/image";
 import { GraduationCap } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="relative bg-foreground text-background/80 mt-auto overflow-hidden">
+    <footer data-site-chrome="" className="relative bg-foreground text-background/80 mt-auto overflow-hidden">
       {/* Top gradient hairline */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-emerald-400/60 via-fuchsia-400/60 to-amber-400/60" aria-hidden="true" />
       {/* Ambient glows */}
@@ -15,14 +14,7 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <Image
-                src="/cecyt3-logo-optimized.webp"
-                alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white"
-                priority
-              />
+              <img src="/cecyt3-logo.png" alt="CECyT No. 3 — Estanislao Ramírez Ruiz — IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-white/20 bg-white" />
               <div>
                 <div className="text-base font-bold text-background">CECyT No. 3 IPN</div>
                 <div className="text-[10px] uppercase tracking-[0.18em] opacity-70 font-semibold">
@@ -71,13 +63,13 @@ export function Footer() {
             </div>
             <ul className="mt-4 space-y-2 text-sm">
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="https://www.cecyt3.ipn.mx" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-emerald-400">›</span>
                   Sitio oficial CECyT No. 3
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
+                <a href="https://www.ipn.mx" target="_blank" rel="noopener noreferrer" className="hover:text-background transition-colors inline-flex items-center gap-1.5">
                   <span className="text-amber-400">›</span>
                   Instituto Politécnico Nacional
                 </a>

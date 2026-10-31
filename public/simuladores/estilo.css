@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Mis Simuladores · CECyT 3
+   CECyT-3 Lab · Física · CECyT 3
    Sistema de diseño compartido — claro / oscuro, vidrio, tipografía del sistema
    ========================================================================== */
 
@@ -20,15 +20,15 @@
   --seg-on:#ffffff;
   --sh-sm:0 1px 2px rgba(0,0,0,.04), 0 6px 18px rgba(0,0,0,.05);
   --sh-lg:0 2px 8px rgba(0,0,0,.06), 0 24px 60px rgba(0,0,0,.14);
-  --blue:#3b82f6;
-  --green:#10b981;
-  --orange:#f59e0b;
-  --purple:#8b5cf6;
-  --teal:#14b8a6;
-  --pink:#d946ef;
-  --yellow:#eab308;
-  --indigo:#6366f1;
-  --red:#ef4444;
+  --blue:#0a84ff;
+  --green:#30d158;
+  --orange:#ff9f0a;
+  --purple:#bf5af2;
+  --teal:#64d2ff;
+  --pink:#ff375f;
+  --yellow:#ffd60a;
+  --indigo:#5e5ce6;
+  --red:#ff453a;
   --accent:var(--blue);
 }
 
@@ -62,7 +62,7 @@ html[data-resolved="dark"]{
 *{box-sizing:border-box;margin:0;padding:0}
 html{ -webkit-text-size-adjust:100%; }
 body{
-  font-family:"Noto Sans","Noto Sans Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI Variable Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
   min-height:100dvh;
@@ -122,10 +122,10 @@ body.app{
   color:#fff;font-size:10.5px;font-weight:750;letter-spacing:.02em;
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 2px 6px rgba(0,0,0,.16);
 }
-.b-blue{background:linear-gradient(145deg,#3b82f6,#6366f1)}
-.b-green{background:linear-gradient(145deg,#10b981,#14b8a6)}
-.b-purple{background:linear-gradient(145deg,#8b5cf6,#a855f7)}
-.b-orange{background:linear-gradient(145deg,#f59e0b,#f97316)}
+.b-blue{background:linear-gradient(145deg,#0a84ff,#5e5ce6)}
+.b-green{background:linear-gradient(145deg,#30d158,#0aa86a)}
+.b-purple{background:linear-gradient(145deg,#bf5af2,#7d4bff)}
+.b-orange{background:linear-gradient(145deg,#ff9f0a,#ff6b22)}
 .ct{display:flex;flex-direction:column;line-height:1.2;min-width:0}
 .ct strong{
   font-size:14px;font-weight:600;letter-spacing:-.012em;

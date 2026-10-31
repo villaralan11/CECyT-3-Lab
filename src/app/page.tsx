@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { useProgress } from "@/hooks/use-progress";
 import {
   Atom,
   FlaskConical,
@@ -23,7 +24,6 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
-import { PageHeader, Breadcrumb } from "@/components/site/ui";
 
 const SUBJECTS = [
   {
@@ -83,7 +83,7 @@ const STATS = [
   { value: "3", label: "Materias", sub: "Física · Química · Inglés", icon: Layers, tint: "text-emerald-300", aura: "bg-emerald-400/10" },
   { value: "10", label: "Temas", sub: "Cada uno con falla + sim + ejemplo", icon: BookOpen, tint: "text-fuchsia-300", aura: "bg-fuchsia-400/10" },
   { value: "18", label: "Simuladores", sub: "11 Física · 3 Química · 4 Inglés", icon: Microscope, tint: "text-amber-300", aura: "bg-amber-400/10" },
-  { value: "82", label: "Ejercicios", sub: "Bancos + reacciones + transformaciones", icon: Target, tint: "text-rose-300", aura: "bg-rose-400/10" },
+  { value: "86", label: "Ejercicios", sub: "Bancos + reacciones + transformaciones + retos", icon: Target, tint: "text-rose-300", aura: "bg-rose-400/10" },
 ];
 
 const TOPICS = [
@@ -93,13 +93,28 @@ const TOPICS = [
   { n: "04", subject: "quimica", name: "Nomenclatura IUPAC", desc: "Orgánica e Inorgánica · 25 compuestos", href: "/quimica/iupac" },
   { n: "05", subject: "quimica", name: "Balanceo de ecuaciones", desc: "Steppers + tabla de átomos en vivo", href: "/quimica/balanceo" },
   { n: "06", subject: "quimica", name: "Estequiometría", desc: "Reactivo limitante y rendimiento", href: "/quimica/estequiometria" },
-  { n: "07", subject: "ingles", name: "Verb Tenses", desc: "12 ejercicios con marcadores temporales", href: "/ingles/verb-tenses" },
+  { n: "07", subject: "ingles", name: "Verb Tenses", desc: "14 ejercicios con marcadores temporales", href: "/ingles/verb-tenses" },
   { n: "08", subject: "ingles", name: "Passive Voice", desc: "Transformaciones activa → pasiva", href: "/ingles/passive-voice" },
   { n: "09", subject: "ingles", name: "Modal Verbs", desc: "Obligación, prohibición, deducción", href: "/ingles/modal-verbs" },
   { n: "10", subject: "ingles", name: "Reported Speech", desc: "Backshift + marcadores + imperativos", href: "/ingles/reported-speech" },
 ];
 
 const subjectOf = (id: string) => SUBJECTS.find((s) => s.id === id)!;
+
+/* Badge de avance real del hero (usa la bitácora local del alumno) */
+function HeroProgressBadge() {
+  const { progress } = useProgress();
+  const items = Object.values(progress);
+  const sumScore = items.reduce((a, p) => a + p.score, 0);
+  const sumTotal = items.reduce((a, p) => a + Math.max(1, p.total), 0);
+  const pct = items.length > 0 ? Math.min(100, Math.round((sumScore / sumTotal) * 100)) : 0;
+  return (
+    <div className="leading-tight">
+      <div className="text-xs text-muted-foreground">Tu avance</div>
+      <div className="text-sm font-bold text-foreground">{pct} %</div>
+    </div>
+  );
+}
 
 /* MINI RETO — adelanto interactivo de la sección /retos */
 const MINI_QUESTIONS = [
@@ -185,7 +200,7 @@ function MiniReto() {
             </span>
           </h2>
           <p className="mt-3 text-sm text-muted-foreground">
-            Una pregunta real de la sección <Link href="/retos" className="font-semibold text-amber-700 hover:underline">Retos</Link>:
+            Una pregunta real de la sección <Link href="/retos" className="font-semibold text-amber-600 hover:underline">Retos</Link>:
             así se ve el formato: intentas, fallas con propósito y recibes la explicación al instante.
           </p>
         </div>
@@ -247,7 +262,8 @@ function MiniReto() {
                           : r === false
                           ? "bg-rose-400"
                           : "bg-border"
-                      }`} />
+                      }`}
+                    />
                   );
                 })}
               </div>
@@ -264,11 +280,8 @@ function MiniReto() {
                 const showCorrect = done && isCorrect;
                 const showWrong = done && isPicked && !isCorrect;
                 return (
-                  <motion.button
+                  <button
                     key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.05 }}
                     onClick={() => pick(i)}
                     disabled={done}
                     className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-all ${
@@ -289,7 +302,7 @@ function MiniReto() {
                       </div>
                     )}
                     <span className="font-mono">{opt}</span>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
@@ -301,7 +314,7 @@ function MiniReto() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="overflow-hidden"
+                  className={`overflow-hidden`}
                 >
                   <div
                     className={`mt-4 rounded-xl border p-3 text-sm ${
@@ -336,16 +349,14 @@ function MiniReto() {
               </p>
               <div className="flex items-center gap-2">
                 {done && (
-                  <motion.button
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                  <button
                     onClick={advance}
                     className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-95"
                   >
                     {isLast ? <RotateCcw className="h-3.5 w-3.5" /> : null}
                     {isLast ? "Reiniciar" : "Siguiente reto"}
                     {!isLast && <ChevronRight className="h-3.5 w-3.5" />}
-                  </motion.button>
+                  </button>
                 )}
               </div>
             </div>
@@ -357,14 +368,14 @@ function MiniReto() {
 }
 
 const MARQUEE_ITEMS = [
-  { t: "Física", i: Atom, c: "text-emerald-700" },
-  { t: "Química", i: FlaskConical, c: "text-fuchsia-700" },
-  { t: "Inglés", i: Languages, c: "text-amber-700" },
-  { t: "Cinemática", i: Zap, c: "text-emerald-700" },
-  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-700" },
-  { t: "Estequiometría", i: Target, c: "text-fuchsia-700" },
-  { t: "Reported speech", i: Languages, c: "text-amber-700" },
-  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-700" },
+  { t: "Física", i: Atom, c: "text-emerald-600" },
+  { t: "Química", i: FlaskConical, c: "text-fuchsia-600" },
+  { t: "Inglés", i: Languages, c: "text-amber-600" },
+  { t: "Cinemática", i: Zap, c: "text-emerald-600" },
+  { t: "Nomenclatura IUPAC", i: FlaskConical, c: "text-fuchsia-600" },
+  { t: "Estequiometría", i: Target, c: "text-fuchsia-600" },
+  { t: "Reported speech", i: Languages, c: "text-amber-600" },
+  { t: "Aprender haciendo", i: Sparkles, c: "text-fuchsia-600" },
 ];
 
 function SubjectMarquee({ className = "" }: { className?: string }) {
@@ -390,7 +401,7 @@ export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section className="relative -mt-[4.125rem] overflow-hidden bg-gradient-to-b from-fuchsia-100/90 via-rose-50/40 to-transparent pb-16 pt-[calc(4rem_+_clamp(1.25rem,2.5vw,2.5rem))] sm:pb-20 lg:flex lg:min-h-dvh lg:flex-col lg:pb-0">
+      <section className="relative -mt-[4.125rem] overflow-hidden bg-[radial-gradient(circle_at_12%_12%,rgba(250,232,255,0.95),transparent_34%),radial-gradient(circle_at_88%_18%,rgba(255,247,214,0.9),transparent_30%),linear-gradient(180deg,#fffaff_0%,#fff8f3_55%,transparent_100%)] pb-16 pt-[calc(4rem_+_clamp(1.25rem,2.5vw,2.5rem))] sm:pb-20 lg:flex lg:min-h-dvh lg:flex-col lg:pb-0">
         <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-16 -left-24 h-[24rem] w-[24rem] rounded-full bg-fuchsia-200/40 blur-3xl blob-float" />
           <div className="absolute top-20 -right-24 h-[26rem] w-[26rem] rounded-full bg-amber-200/35 blur-3xl blob-float" style={{ animationDelay: "4s" }} />
@@ -412,14 +423,14 @@ export default function Home() {
                   <span className="absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75 animate-soft-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500" />
                 </span>
-                Prácticas Activas · Plan DEMS
+                Aprende haciendo · Plan DEMS
               </motion.div>
 
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.05 }}
-                className="hero-compact-title mt-4 text-[clamp(2.75rem,5.5vw,5rem)] font-black leading-[0.95] tracking-tighter text-foreground sm:mt-5 max-[359px]:text-[2.5rem]"
+                className="hero-compact-title mt-4 text-[clamp(2.75rem,5.5vw,5rem)] font-extrabold leading-[0.95] tracking-tighter text-foreground sm:mt-5 max-[359px]:text-[2.5rem]"
               >
                 <span className="block">Falla.</span>
                 <span className="block bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent animated-gradient">
@@ -461,9 +472,9 @@ export default function Home() {
                 className="mt-5 max-w-2xl mx-auto lg:mx-0 text-[clamp(1rem,1.1vw,1.25rem)] text-muted-foreground leading-relaxed sm:mt-6"
               >
                 Laboratorio virtual de{" "}
-                <Link href="/fisica" className="text-emerald-700 font-semibold hover:underline">Física</Link>,{" "}
-                <Link href="/quimica" className="text-fuchsia-700 font-semibold hover:underline">Química</Link> e{" "}
-                <Link href="/ingles" className="text-amber-700 font-semibold hover:underline">Inglés</Link> con la
+                <Link href="/fisica" className="text-emerald-600 font-semibold hover:underline">Física</Link>,{" "}
+                <Link href="/quimica" className="text-fuchsia-600 font-semibold hover:underline">Química</Link> e{" "}
+                <Link href="/ingles" className="text-amber-600 font-semibold hover:underline">Inglés</Link> con la
                 secuencia{" "}
                 <span className="font-semibold text-foreground">falla productiva → simulador → ejemplo resuelto</span>.
               </motion.p>
@@ -490,6 +501,17 @@ export default function Home() {
                 </Link>
               </motion.div>
 
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, delay: 0.34 }}
+                className="mt-7 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[11px] font-semibold text-foreground/65 lg:justify-start"
+              >
+                <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />18 simuladores</span>
+                <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />Feedback al instante</span>
+                <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />Avance guardado</span>
+              </motion.div>
+
               </div>
               <SubjectMarquee className="hero-compact-hide md:hidden -mx-4 sm:-mx-6 max-[359px]:hidden" />
             </div>
@@ -502,6 +524,10 @@ export default function Home() {
               className="lg:col-span-5 relative"
             >
               <div className="relative mx-auto w-full max-w-md">
+                <div className="mb-4 flex items-center justify-between px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/45">
+                  <span>Tu laboratorio empieza aquí</span>
+                  <span className="inline-flex items-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />Interactivo</span>
+                </div>
                 <div className="flex flex-col">
                   <Link href="/fisica" className="relative block w-[92%] self-start rounded-3xl bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-500 p-5 shadow-xl shadow-emerald-500/15 ring-1 ring-white/40 rotate-[-2deg] hover:rotate-0 hover:scale-[1.02] transition-transform duration-500 shine overflow-hidden">
                     <div className="flex items-center justify-between text-white relative z-10">
@@ -584,8 +610,7 @@ export default function Home() {
                     <Trophy className="h-4 w-4 text-white" />
                   </div>
                   <div className="leading-tight">
-                    <div className="text-xs text-muted-foreground">Tu avance</div>
-                    <div className="text-sm font-bold text-foreground">0 %</div>
+                    <HeroProgressBadge />
                   </div>
                   </motion.div>
                 </Link>
@@ -606,14 +631,14 @@ export default function Home() {
               <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-500" />
               El método
             </span>
-            <h2 className="animate-fade-in-up mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
+            <h2 className="mt-4 text-[clamp(1.75rem,3.4vw,2.5rem)] font-bold tracking-tight text-foreground">
               Tres materias.{" "}
               <span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-amber-500 bg-clip-text text-transparent">
                 Un mismo método
               </span>{" "}
               de aprender.
             </h2>
-            <p className="animate-fade-in-up delay-2 mt-4 text-lg text-muted-foreground leading-relaxed">
+            <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
               Física, Química e Inglés del plan DEMS, cada tema con su secuencia
               completa: <strong className="text-foreground">falla productiva</strong>,{" "}
               <strong className="text-foreground">simulador</strong>,{" "}
@@ -625,7 +650,14 @@ export default function Home() {
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {SUBJECTS.map((s, idx) => (
-              <div key={s.id} className={`animate-fade-in-up delay-${idx + 2} h-full`}>
+              <motion.div
+                key={s.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="h-full"
+              >
                 <Link
                   href={s.href}
                   className={`group relative block h-full overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-black/[0.06] ${s.hoverBorder}`}
@@ -653,7 +685,7 @@ export default function Home() {
                     </div>
                   </div>
                 </Link>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -662,7 +694,13 @@ export default function Home() {
       {/* STATS — panel Liquid Glass oscuro */}
       <section id="plataforma" className="relative scroll-mt-24 py-4 sm:py-6">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
-          <div className="animate-fade-in-up relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17171a]/95 text-white shadow-[0_32px_80px_-32px_rgba(23,23,26,0.6)] backdrop-blur-xl sm:rounded-[2.5rem]">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#17171a]/95 text-white shadow-[0_32px_80px_-32px_rgba(23,23,26,0.6)] backdrop-blur-xl sm:rounded-[2.5rem]"
+          >
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
               <div className="absolute -top-32 left-[8%] h-80 w-80 rounded-full bg-fuchsia-500/20 blur-[100px]" />
               <div className="absolute -bottom-40 right-[6%] h-80 w-80 rounded-full bg-emerald-400/15 blur-[100px]" />
@@ -692,9 +730,15 @@ export default function Home() {
 
               <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 sm:mt-10 lg:grid-cols-4 lg:gap-x-0 lg:gap-y-0">
                 {STATS.map((s, i) => (
-                  <div
+                  <motion.div
                     key={s.label}
-                    className={`animate-slide-up delay-${i + 2} relative lg:px-7 ${i > 0 ? "lg:border-l lg:border-white/10" : ""} ${i === 0 ? "lg:pl-0" : ""} ${i === STATS.length - 1 ? "lg:pr-0" : ""}`}
+                    initial={{ opacity: 0, y: 14 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 + i * 0.07, duration: 0.4 }}
+                    className={`relative lg:px-7 ${i > 0 ? "lg:border-l lg:border-white/10" : ""} ${
+                      i === 0 ? "lg:pl-0" : ""
+                    } ${i === STATS.length - 1 ? "lg:pr-0" : ""}`}
                   >
                     <div className="flex items-center gap-3">
                       <span className={`inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/10 ${s.aura} ${s.tint} shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]`}>
@@ -706,11 +750,11 @@ export default function Home() {
                       {s.value}
                     </div>
                     <div className="mt-2.5 max-w-[15rem] text-[12px] leading-relaxed text-white/55">{s.sub}</div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -741,7 +785,13 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="animate-fade-in-up mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-9 overflow-hidden rounded-[1.75rem] border border-black/[0.07] bg-white/70 shadow-[0_28px_70px_-36px_rgba(24,24,27,0.3)] backdrop-blur-xl sm:mt-11"
+          >
             <div className="grid min-w-0 md:grid-cols-2">
               {[0, 1].map((col) => (
                 <div
@@ -751,8 +801,9 @@ export default function Home() {
                   {TOPICS.slice(col * 5, col * 5 + 5).map((t, idx) => {
                     const s = subjectOf(t.subject);
                     return (
-                      <li
+                      <Link
                         key={t.n}
+                        href={t.href}
                         className="group relative flex min-w-0 items-center gap-3 px-3.5 py-4 transition-colors hover:bg-white/80 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-500/40 sm:gap-4 sm:px-5"
                       >
                         <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border font-mono text-[11px] font-semibold tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:h-11 sm:w-11 sm:rounded-[13px] ${s.bgSoft} ${s.border} ${s.text}`}>
@@ -779,25 +830,25 @@ export default function Home() {
                             aria-hidden="true"
                           />
                         )}
-                      </li>
+                      </Link>
                     );
                   })}
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* MINI RETO — adelanto de /retos */}
-      <section className="animate-fade-in-up bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)]">
+      <section className="bg-secondary/50 py-[clamp(3rem,5.5vw,5rem)]">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <MiniReto />
         </div>
       </section>
 
       {/* ACCESOS RÁPIDOS */}
-      <section className="animate-fade-in-up py-[clamp(3rem,6vw,6rem)]">
+      <section className="py-[clamp(3rem,6vw,6rem)]">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[88rem]">
           <div className="grid gap-6 md:grid-cols-3">
             <Link href="/laboratorios" className="group relative block overflow-hidden rounded-3xl border border-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-fuchsia-200 hover:shadow-xl hover:shadow-fuchsia-500/10">
@@ -807,7 +858,7 @@ export default function Home() {
               </div>
               <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">Laboratorios</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Guías con el método científico: hipótesis, cálculo, registro y conclusión.</p>
-              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-fuchsia-700 transition-all group-hover:gap-2.5">
+              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-fuchsia-600 transition-all group-hover:gap-2.5">
                 Ver laboratorios <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>
@@ -819,7 +870,7 @@ export default function Home() {
               </div>
               <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">Retos de 5 minutos</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Quizzes rápidos con feedback pedagógico. Suma puntos y sube de nivel.</p>
-              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-amber-700 transition-all group-hover:gap-2.5">
+              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-amber-600 transition-all group-hover:gap-2.5">
                 Probar un reto <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>
@@ -831,7 +882,7 @@ export default function Home() {
               </div>
               <h3 className="mt-4 text-xl font-bold tracking-tight text-foreground">Mi progreso</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Tu bitácora: actividades, ítems resueltos y nivel (Novato → Experto).</p>
-              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition-all group-hover:gap-2.5">
+              <div className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 transition-all group-hover:gap-2.5">
                 Ver mi avance <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
               </div>
             </Link>
@@ -841,3 +892,4 @@ export default function Home() {
     </>
   );
 }
+

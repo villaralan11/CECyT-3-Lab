@@ -75,13 +75,13 @@ const ITEMS: QItem[] = [
   },
   {
     type: "blank",
-    prompt: "She ____ not be in the lab; the lights are off. (deducción negativa fuerte)",
-    sentence: "She ____ not be in the lab; the lights are off.",
-    options: ["should", "might", "can", "must"],
-    correct: 3,
-    explanation: "'Must not be' expresa deducción negativa fuerte (estoy seguro de que no). En inglés británico también se usa 'can't be'.",
-    hint: "Deducción negativa fuerte → can't / must not (en este contexto, must = deducción).",
-    extra: "Deducción: must = seguro que sí; can't = seguro que no (más común que must not en negativas).",
+    prompt: "She ____ be in the lab; the lights are off. (deducción negativa fuerte)",
+    sentence: "She ____ be in the lab; the lights are off.",
+    options: ["must", "can't", "might", "should"],
+    correct: 1,
+    explanation: "'Can't be' expresa deducción negativa fuerte: estoy seguro de que NO está. Ojo: 'must not' sirve para prohibición, no para deducir; para deducir 'seguro que no' se usa can't/cannot.",
+    hint: "Deducción negativa fuerte → can't (contracción de cannot).",
+    extra: "Deducción: must = seguro que sí; can't = seguro que no.",
   },
   {
     type: "write",
@@ -112,10 +112,11 @@ export default function ModalVerbsTrainer() {
     <QuizTrainer
       title="Grammar · Modal Verbs"
       description="Must, can, might, should y compañía: obligación, prohibición, posibilidad, deducción y permiso. El matiz que convierte una recomendación en una norma de seguridad del laboratorio."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 10 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de verbos modales."
+      topicId="09_modal"
+      intro="Has completado los 10 ejercicios de verbos modales."
     />
   );
 }

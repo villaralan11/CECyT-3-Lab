@@ -28,6 +28,24 @@ describe("isCorrectEnglish", () => {
   });
 });
 
+describe("tolerancia estricta: no acepta errores gramaticales como typos", () => {
+  it("rechaza cambio de tiempo verbal (was/is)", () => {
+    expect(isCorrectEnglish("she was working", "she is working")).toBe(false);
+  });
+  it("rechaza error de concordancia verbal (lives/lived)", () => {
+    expect(isCorrectEnglish("she has lives", "she has lived")).toBe(false);
+  });
+  it("rechaza cambio de pronombre (he/she)", () => {
+    expect(isCorrectEnglish("he has lived", "she has lived")).toBe(false);
+  });
+  it("acepta un typo real a mitad de palabra (runing/running)", () => {
+    expect(isCorrectEnglish("she is runing", "she is running")).toBe(true);
+  });
+  it("acepta typo en palabra larga (writen/written)", () => {
+    expect(isCorrectEnglish("the report is writen", "the report is written")).toBe(true);
+  });
+});
+
 describe("levenshtein", () => {
   it("distancia básica", () => {
     expect(levenshtein("kitten", "sitting")).toBe(3);

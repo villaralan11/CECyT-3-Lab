@@ -151,11 +151,12 @@ export default function VerbTensesTrainer() {
   return (
     <QuizTrainer
       title="Grammar · Verb Tenses"
-      description="Doce ejercicios que cubren presente, pasado y futuro en sus formas simple, continuo, perfecto y condicional. La clave está en los marcadores temporales ('since', 'last year', 'look!', 'by+fecha')."
-      badge="Inglés · 12 ejercicios"
+      description="Catorce ejercicios que cubren presente, pasado y futuro en sus formas simple, continuo, perfecto y condicional. La clave está en los marcadores temporales ('since', 'last year', 'look!', 'by+fecha')."
+      badge="Inglés · 14 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 12 ejercicios de tiempos verbales."
+      topicId="07_verb"
+      intro="Has completado los 14 ejercicios de tiempos verbales."
     />
   );
 }

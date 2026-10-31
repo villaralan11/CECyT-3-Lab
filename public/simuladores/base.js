@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Mis Simuladores · motor compartido
+   CECyT-3 Lab · Física · motor compartido
    Sin dependencias. Funciona abriendo los archivos con doble clic (file://).
    ========================================================================== */
 (function () {
@@ -7,8 +7,15 @@
 
   var doc = document;
   var root = doc.documentElement;
+
+  /* Modo embed: la página se muestra dentro del catálogo (/física etc.);
+     ocultar el botón «Catálogo» para no anidar catálogos en el iframe. */
+  if (/[?&]embed=1\b/.test(location.search)) {
+    var embedBack = doc.querySelector('a.back');
+    if (embedBack) embedBack.style.display = 'none';
+  }
   var TAU = Math.PI * 2;
-  var FONT = '"Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+  var FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
   function lerp(a, b, t) { return a + (b - a) * t; }
@@ -44,16 +51,15 @@
   var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 
   function themePref() {
-    try {
-      return localStorage.getItem('simTheme') === 'dark' ? 'dark' : 'light';
-    } catch (e) { return 'light'; }
+    try { return localStorage.getItem('simTheme') || 'auto'; } catch (e) { return 'auto'; }
   }
   function isDark() {
-    return themePref() === 'dark';
+    var t = themePref();
+    return t === 'dark' || (t === 'auto' && !!mq && mq.matches);
   }
   function applyTheme() {
     var t = themePref();
-    var dark = t === 'dark';
+    var dark = t === 'dark' || (t === 'auto' && !!mq && mq.matches);
     root.setAttribute('data-theme', t);
     root.setAttribute('data-resolved', dark ? 'dark' : 'light');
     palette = pal(dark);
@@ -160,7 +166,7 @@
   function help(html) {
     var stage = doc.querySelector('.stage');
     if (!stage) return;
-    if (helpEl) helpEl.parentNode && helpEl.parentNode.removeChild(helpEl);
+    if (helpEl && helpEl.parentNode) helpEl.parentNode.removeChild(helpEl);
     helpEl = doc.createElement('div');
     helpEl.className = 'helpcard';
     helpEl.innerHTML =
@@ -200,9 +206,9 @@
 
     var bTheme = doc.getElementById('btnTheme');
     if (bTheme) bTheme.addEventListener('click', function () {
-      var seq = ['light', 'dark'];
+      var seq = ['auto', 'light', 'dark'];
       var cur = themePref();
-      var next = seq[(seq.indexOf(cur) + 1) % 2];
+      var next = seq[(seq.indexOf(cur) + 1) % 3];
       try { localStorage.setItem('simTheme', next); } catch (e) {}
       applyTheme();
       beep(520, 0.05, 'sine', 0.028);
@@ -823,6 +829,46 @@
     };
   }
 
+  /* ------------------------------------------------- progreso (app CECyT 3) */
+  var PROGRESS_KEY = 'cecyt3-progress-v2';
+  var USER_KEY = 'cecyt3-userId';
+  function anonId() {
+    try {
+      var id = localStorage.getItem(USER_KEY);
+      if (!id) {
+        id = 'anon-' + Math.random().toString(36).slice(2, 9);
+        localStorage.setItem(USER_KEY, id);
+      }
+      return id;
+    } catch (e) { return 'anon'; }
+  }
+  /* Registra avance de un simulador en el mismo almacén que la app React
+     (localStorage "cecyt3-progress-v2") y lo sincroniza con /api/progress. */
+  function report(topicId, score, total) {
+    try {
+      var data = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
+      var prev = data[topicId] || {};
+      var best = Math.max(prev.score || 0, score || 0);
+      var completed = total > 0 && (best / total) >= 0.7;
+      data[topicId] = {
+        topicId: topicId,
+        score: best,
+        total: total,
+        completed: completed || !!prev.completed,
+        attempts: (prev.attempts || 0) + 1
+      };
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+      var uid = anonId();
+      fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: uid, topicId: topicId, score: best, total: total,
+          completed: data[topicId].completed
+        })
+      }).catch(function () {});
+    } catch (e) { /* file:// o modo privado: el avance solo vive en esta página */ }
+  }
   /* ------------------------------------------------------------------ API */
   var Sim = {
     TAU: TAU,
@@ -851,6 +897,7 @@
     chord: chord,
     hint: hint,
     help: help,
+    report: report,
     onTheme: onTheme,
     toggleFull: toggleFull,
     isDark: isDark,
@@ -869,4 +916,18 @@
 
   initBar();
   applyTheme();
+
+  /* Último simulador abierto: lo usa /fisica para "continuar donde te quedaste" */
+  if (doc.body.classList.contains('app')) {
+    try {
+      var name = (doc.title.split(' · ')[0] || '').trim();
+      if (name) {
+        localStorage.setItem('cecyt3-last-sim', JSON.stringify({
+          href: location.pathname,
+          name: name,
+          t: Date.now()
+        }));
+      }
+    } catch (e) { /* modo privado: sin registro */ }
+  }
 })();

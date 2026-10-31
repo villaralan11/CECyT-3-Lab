@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: false,
+  reactStrictMode: true,
   async redirects() {
     return [
       {
@@ -21,18 +21,13 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/simuladores",
-        destination: "/fisica",
-        permanent: true,
+        destination: "/simuladores/index.html",
+        permanent: false,
       },
       {
         source: "/simuladores/",
-        destination: "/fisica",
-        permanent: true,
-      },
-      {
-        source: "/simuladores/index.html",
-        destination: "/fisica",
-        permanent: true,
+        destination: "/simuladores/index.html",
+        permanent: false,
       },
     ];
   },
