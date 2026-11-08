@@ -1,0 +1,71 @@
+import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Navbar } from "@/components/site/navbar";
+import { Footer } from "@/components/site/footer";
+import { BackToTop } from "@/components/site/back-to-top";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://preview-6ab5fc4d.space-z.ai"),
+  title: "CECyT No. 3 Lab · Laboratorio virtual de Física, Química e Inglés (IPN)",
+  description:
+    "Plataforma educativa interactiva del CECyT No. 3 «Estanislao Ramírez Ruiz» (IPN) con simuladores de Física, Química e Inglés y una secuencia basada en evidencia: falla productiva → simulador → ejemplo resuelto.",
+  keywords: [
+    "CECyT 3", "IPN", "Física", "Química", "Inglés", "simuladores",
+    "cinemática", "nomenclatura IUPAC", "estequiometría", "laboratorio virtual",
+  ],
+  authors: [{ name: "Alan Antonio Molina Villar" }],
+  openGraph: {
+    title: "CECyT No. 3 Lab · Física, Química e Inglés",
+    description:
+      "Simuladores, retos y ejemplos resueltos con la secuencia falla productiva → simulador → ejemplo resuelto.",
+    locale: "es_MX",
+    type: "website",
+    siteName: "CECyT No. 3 Lab",
+    images: [{ url: "/cecyt3-logo-full.png" }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  /* Habilita env(safe-area-inset-*) reales en iPhone con notch */
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fdf7f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1917" },
+  ],
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="es-MX" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
+        <div className="app-shell flex flex-col">
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+        <BackToTop />
+        <Toaster />
+      </body>
+    </html>
+  );
+}
