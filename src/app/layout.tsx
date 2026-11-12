@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Noto_Sans_Mono } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Navbar } from "@/components/site/navbar";
@@ -9,14 +9,7 @@ import { BackToTop } from "@/components/site/back-to-top";
 const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-const notoMono = Noto_Sans_Mono({
-  variable: "--font-noto-mono",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -49,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es-MX" suppressHydrationWarning>
       <body
-        className={`${notoSans.variable} ${notoMono.variable} antialiased bg-background text-foreground`}
+        className={`${notoSans.variable} antialiased bg-background text-foreground`}
       >
         <div className="min-h-screen flex flex-col">
           <Navbar />

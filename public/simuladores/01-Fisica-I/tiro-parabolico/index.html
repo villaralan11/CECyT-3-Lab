@@ -41,6 +41,10 @@
     marte: { name: 'Marte', g: 3.71 }
   };
 
+  /* Geometría del cañón en metros. El proyectil sale de la boca del tubo,
+     no del suelo: así la parábola nace exactamente donde apunta el cañón. */
+  var CANNON = { pivotH: 1.2, barrel: 3.6, wheel: 1.1, baseW: 4.0, baseH: 2.0 };
+
   var S = {
     planet: 'tierra',
     g: 9.81,
@@ -130,7 +134,8 @@
 
   Sim.help(
     '<p>Un proyectil lanzado con velocidad <b>v₀</b> y ángulo <b>θ</b> describe una parábola:</p>' +
-    '<ul><li>x(t) = v₀·cos θ · t</li><li>y(t) = v₀·sen θ · t − ½·g·t²</li></ul>' +
+    '<ul><li>x(t) = x₀ + v₀·cos θ · t</li><li>y(t) = y₀ + v₀·sen θ · t − ½·g·t²</li></ul>' +
+    '<p>El proyectil sale de la boca del cañón, no del suelo: por eso la parábola empieza en <b>y₀</b>, a la altura del tubo.</p>' +
     '<p>La gravedad cambia según el planeta. En la Luna caes más lento y llegas más lejos; en Marte, algo intermedio.</p>' +
     '<p><b>Reto:</b> arrastra el blanco, ajusta el ángulo y la velocidad, y acierta con menos de 1.5 m de error. También puedes arrastrar desde el cañón para apuntar y soltar para disparar.</p>'
   );
@@ -140,8 +145,15 @@
     var rad = ang * Math.PI / 180;
     var vx = v0 * Math.cos(rad);
     var vy = v0 * Math.sin(rad);
-    var tf = 2 * vy / g;
-    return { vx: vx, vy: vy, tf: tf, range: vx * tf, hmax: vy * vy / (2 * g), rad: rad };
+    /* Punto de salida: la boca del cañón, no el suelo. */
+    var x0 = CANNON.barrel * Math.cos(rad);
+    var y0 = CANNON.pivotH + CANNON.barrel * Math.sin(rad);
+    /* Tiempo de vuelo hasta y = 0 resolviendo y0 + vy·t − ½g·t² = 0 */
+    var tf = (vy + Math.sqrt(vy * vy + 2 * g * y0)) / g;
+    return {
+      vx: vx, vy: vy, tf: tf, x0: x0, y0: y0,
+      range: vx * tf, hmax: y0 + vy * vy / (2 * g), rad: rad
+    };
   }
 
   function paramChanged() {
@@ -178,10 +190,11 @@
     S.vx = p.vx;
     S.vy = p.vy;
     S.t = 0;
-    S.x = 0;
-    S.y = 0;
-    S.hmax = 0;
+    S.x = p.x0;
+    S.y = p.y0;
+    S.hmax = p.y0;
     S.trail.length = 0;
+    S.trail.push({ x: p.x0, y: p.y0 });
     S.flying = true;
     S.done = false;
     S.hit = false;
@@ -197,7 +210,7 @@
   function land() {
     var p = predict(S.v0, S.angle, S.g);
     S.t = p.tf;
-    S.x = p.range;
+    S.x = p.x0 + p.range;
     S.y = 0;
     S.flying = false;
     S.done = true;
@@ -248,7 +261,7 @@
 
   function goalScale() {
     var p = predict(S.v0, S.angle, S.g);
-    var range = Math.max(p.range, S.target + 10, 16);
+    var range = Math.max(p.x0 + p.range, S.target + 10, 16);
     var height = Math.max(p.hmax, 6);
     return Math.max(0.4, Math.min((v.w - 150) / range, (v.h - 150) / height, 13));
   }
@@ -358,8 +371,8 @@
       var steps = 50;
       for (var k = 0; k <= steps; k++) {
         var tt = p.tf * k / steps;
-        var px = ux(p.vx * tt);
-        var py = uy(p.vy * tt - 0.5 * S.g * tt * tt);
+        var px = ux(p.x0 + p.vx * tt);
+        var py = uy(p.y0 + p.vy * tt - 0.5 * S.g * tt * tt);
         if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.stroke();
@@ -401,7 +414,7 @@
         ctx.stroke();
         ctx.setLineDash([]);
         var apexT = S.vy / S.g;
-        var apexX = ux(S.vx * apexT);
+        var apexX = ux(predict(S.v0, S.angle, S.g).x0 + S.vx * apexT);
         Sim.tag(ctx, 'h máx ' + S.hmax.toFixed(1) + ' m', Math.min(w - 55, Math.max(60, apexX)), apexY - 15, {
           size: 9.5, bg: C.card, color: C.orange
         });
@@ -531,20 +544,31 @@
   }
 
   function drawCannon(ctx, x, groundY) {
+    /* Todo se dibuja a escala del mundo: el tubo mide CANNON.barrel metros
+       y su boca cae exactamente en (x0, y0), el punto de lanzamiento. */
+    var s = S.scale > 0 ? S.scale : 10;
+    var L = CANNON.barrel * s;
+    var bw = Math.max(5, 0.7 * s);
+    var wheelR = Math.max(4, CANNON.wheel * s);
+    var baseW = Math.max(16, CANNON.baseW * s);
+    var baseH = Math.max(9, CANNON.baseH * s);
+    var pivotY = -CANNON.pivotH * s;
+
     ctx.save();
     ctx.translate(x, groundY);
+
     /* sombra */
     ctx.fillStyle = 'rgba(0,0,0,.18)';
     ctx.beginPath();
-    ctx.ellipse(4, 1, 30, 6, 0, 0, Sim.TAU);
+    ctx.ellipse(0, 1, baseW * 0.62, Math.max(3, baseW * 0.13), 0, 0, Sim.TAU);
     ctx.fill();
 
-    /* base */
-    var base = ctx.createLinearGradient(0, -34, 0, 2);
+    /* cureña */
+    var base = ctx.createLinearGradient(0, pivotY - 4, 0, 2);
     base.addColorStop(0, C.dark ? '#4a4a50' : '#6e6e76');
     base.addColorStop(1, C.dark ? '#26262a' : '#3a3a40');
     ctx.fillStyle = base;
-    Sim.rr(ctx, -25, -30, 50, 27, 8);
+    Sim.rr(ctx, -baseW / 2, -baseH, baseW, baseH, Math.min(6, baseH * 0.35));
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.12)';
     ctx.lineWidth = 1;
@@ -553,43 +577,49 @@
     /* rueda */
     ctx.fillStyle = '#1b1b1f';
     ctx.beginPath();
-    ctx.arc(0, -4, 13, 0, Sim.TAU);
+    ctx.arc(0, -wheelR * 0.4, wheelR, 0, Sim.TAU);
     ctx.fill();
     ctx.fillStyle = '#6b6b74';
     ctx.beginPath();
-    ctx.arc(0, -4, 5, 0, Sim.TAU);
+    ctx.arc(0, -wheelR * 0.4, wheelR * 0.38, 0, Sim.TAU);
     ctx.fill();
 
-    /* cañón */
+    /* tubo: del pivote a la boca, sin hueco */
     ctx.save();
-    ctx.translate(0, -28);
+    ctx.translate(0, pivotY);
     ctx.rotate(-S.angle * Math.PI / 180);
-    var barrel = ctx.createLinearGradient(0, -8, 0, 8);
+    var barrel = ctx.createLinearGradient(0, -bw, 0, bw);
     barrel.addColorStop(0, C.dark ? '#5c5c64' : '#8a8a93');
     barrel.addColorStop(1, C.dark ? '#2a2a2e' : '#45454c');
     ctx.fillStyle = barrel;
-    Sim.rr(ctx, -4, -8, 50, 16, 7);
+    Sim.rr(ctx, -bw * 0.5, -bw, L + bw * 0.5, bw * 2, bw * 0.9);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255,255,255,.14)';
     ctx.lineWidth = 1;
     ctx.stroke();
+    /* boca del cañón: aquí nace el proyectil */
     ctx.fillStyle = C.dark ? '#1d1d20' : '#2c2c31';
     ctx.beginPath();
-    ctx.ellipse(46, 0, 3, 7, 0, 0, Sim.TAU);
+    ctx.ellipse(L, 0, bw * 0.38, bw * 0.95, 0, 0, Sim.TAU);
     ctx.fill();
     /* brillo */
     ctx.fillStyle = 'rgba(255,255,255,.22)';
-    Sim.rr(ctx, 4, -6, 34, 3, 1.5);
+    Sim.rr(ctx, bw * 0.2, -bw * 0.72, L * 0.7, bw * 0.34, bw * 0.17);
     ctx.fill();
     ctx.restore();
 
-    /* ángulo */
+    /* arco del ángulo */
+    var arcR = Math.max(12, L * 0.6);
     ctx.strokeStyle = C.orange;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(0, -28, 34, -S.angle * Math.PI / 180, 0);
+    ctx.arc(0, pivotY, arcR, -S.angle * Math.PI / 180, 0);
     ctx.stroke();
-    Sim.tag(ctx, S.angle + '°', 34, -52, { size: 9.5, bg: C.card, color: C.orange });
+    /* etiqueta en el hueco del arco, fuera del tubo */
+    var midA = -S.angle * Math.PI / 360;
+    var lr = arcR + 15;
+    Sim.tag(ctx, S.angle + '°', Math.cos(midA) * lr, pivotY + Math.sin(midA) * lr,
+      { size: 9.5, bg: C.card, color: C.orange });
     ctx.restore();
   }
 
@@ -629,7 +659,7 @@
 
   function aimAt(x, y) {
     var dx = x - 64;
-    var dy = (v.h - 64) - y;
+    var dy = (v.h - 64 - CANNON.pivotH * S.scale) - y;
     var ang = Math.atan2(dy, Math.max(1, dx)) * 180 / Math.PI;
     S.angle = Math.round(Sim.clamp(ang, 5, 85));
     var dist = Math.hypot(dx, Math.max(0, dy));
@@ -649,11 +679,11 @@
       var p = predict(S.v0, S.angle, S.g);
       if (S.t >= p.tf) {
         S.hmax = Math.max(S.hmax, p.hmax);
-        S.trail.push({ x: p.range, y: 0 });
+        S.trail.push({ x: p.x0 + p.range, y: 0 });
         land();
       } else {
-        S.x = S.vx * S.t;
-        S.y = S.vy * S.t - 0.5 * S.g * S.t * S.t;
+        S.x = p.x0 + S.vx * S.t;
+        S.y = p.y0 + S.vy * S.t - 0.5 * S.g * S.t * S.t;
         S.hmax = Math.max(S.hmax, S.y);
         if (S.trail.length === 0 || Math.hypot(S.x - S.trail[S.trail.length - 1].x, S.y - S.trail[S.trail.length - 1].y) > 0.04) {
           S.trail.push({ x: S.x, y: S.y });

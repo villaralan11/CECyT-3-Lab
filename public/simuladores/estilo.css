@@ -1,7 +1,17 @@
 /* ==========================================================================
    Mis Simuladores · CECyT 3
-   Sistema de diseño compartido — claro / oscuro, vidrio, tipografía del sistema
+   Sistema de diseño compartido — claro / oscuro, vidrio, tipografía Noto Sans
    ========================================================================== */
+
+/* Noto Sans variable, servida desde el propio sitio: no depende de que el
+   sistema del visitante tenga la fuente instalada. */
+@font-face{
+  font-family:"Noto Sans";
+  font-style:normal;
+  font-weight:100 900;
+  font-display:swap;
+  src:url("../fonts/noto-sans-var.woff2") format("woff2");
+}
 
 :root{
   color-scheme: light;
@@ -73,6 +83,9 @@ body{
 }
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit}
+/* Los controles de formulario no heredan la tipografía por defecto:
+   sin esto, los sliders y selects caen en Arial. */
+input,select,textarea,option,optgroup{font-family:inherit;font-size:inherit;color:inherit}
 button,a,input{touch-action:manipulation}
 
 body.app{
