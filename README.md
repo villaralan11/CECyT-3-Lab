@@ -1,225 +1,93 @@
 <div align="center">
-  <img src="public/cecyt3-logo.png" width="80" alt="CECyT 3 Lab" />
-  
-  # CECyT 3 Lab
-  
-  ### Laboratorio Virtual de Física · Química · Inglés
-  
-  **CECyT No. 3 "Estanislao Ramírez Ruiz" — IPN**
-  
-  *Falla. Experimenta. Entiende.*
 
-  [![Live Demo](https://img.shields.io/badge/Live%20Demo-cecyt3--lab.vercel.app-black?style=for-the-badge)](https://cecyt3-lab.vercel.app)
-  
-  ---
-  
-  <div>
-    <img src="https://img.shields.io/badge/Next.js%2016-000000?style=flat&logo=next.js" alt="Next.js" />
-    <img src="https://img.shields.io/badge/React%2019-61dafb?style=flat&logo=react" alt="React" />
-    <img src="https://img.shields.io/badge/TypeScript-3178c6?style=flat&logo=typescript" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/Tailwind%204-38bdf8?style=flat&logo=tailwindcss" alt="Tailwind" />
-    <img src="https://img.shields.io/badge/Prisma-2d3748?style=flat&logo=prisma" alt="Prisma" />
-  </div>
+<img src="public/cecyt3-logo.png" width="96" alt="CECyT No. 3" />
+
+# CECyT 3 Lab
+
+**Laboratorio virtual de Física · Química · Inglés**
+CECyT No. 3 «Estanislao Ramírez Ruiz» — IPN
+
+*Falla. Experimenta. Entiende.*
+
+[![Sitio](https://img.shields.io/badge/sitio-cecyt3--lab.vercel.app-000?style=for-the-badge&logo=vercel&logoColor=white)](https://cecyt3-lab.vercel.app)
+[![CI](https://github.com/villaralan11/CECyT-3-Lab/actions/workflows/ci.yml/badge.svg)](https://github.com/villaralan11/CECyT-3-Lab/actions/workflows/ci.yml)
+[![Licencia MIT](https://img.shields.io/badge/licencia-MIT-22c55e)](./LICENSE)
+
+<img src="docs/images/home.png" width="100%" alt="Portada de CECyT 3 Lab" />
+
 </div>
 
----
+Plataforma web con **18 laboratorios interactivos** para el tronco común del CECyT 3. Cada tema sigue la misma secuencia didáctica: el alumno **falla primero**, manipula un **simulador** y cierra con un **ejemplo resuelto** que se auto-explica (Kapur, falla productiva · Renkl, worked examples).
 
-## 🎯 Sobre el Proyecto
+## Qué incluye
 
-Plataforma educativa interactiva diseñada para mejorar el aprendizaje en **Física**, **Química** e **Inglés** siguiendo una secuencia didáctica probada:
+| Materia | Laboratorios | Contenido |
+|:--|:--:|:--|
+| **Física** | 11 | F1 cinemática · F2 fuerzas y energía · F3 electricidad · F4 ondas |
+| **Química** | 3 | Nomenclatura IUPAC · Balanceo · Estequiometría con reactivo limitante |
+| **Inglés** | 4 | Verb tenses · Passive voice · Modal verbs · Reported speech |
 
-1. **Falla Productiva** — Experimenta sin límites y comete errores
-2. **Simulador** — Visualiza y manipula conceptos en tiempo real  
-3. **Ejemplo Resuelto** — Auto-explicación paso a paso
+**Física I–IV (11 simuladores):** MRU/MRUV · tiro parabólico · fuerzas y movimiento · colisiones · energía del patinador · resortes y masas · flotabilidad · gases · cargas y campo · ley de Ohm · ondas en cuerda. Los simuladores son HTML autónomos en canvas (`public/simuladores/`), con planetas, blanco arrastrable y lecturas en vivo.
 
-Basado en investigación educativa: *Kapur (falla productiva)* y *Renkl (worked examples)*.
-
----
-
-## 🚀 Características Principales
-
-### Física (3 módulos)
-- **MRU · MRUV · Tiros** — Simulación Euler-Cromer con Δt=1/120s
-- Gráficas x-t y v-t en vivo
-- Toggle de resistencia al aire: F = -k·v·|v|
-
-### Química (3 módulos)
-- **IUPAC (Stock)** — 25 compuestos + visor 3D con 3Dmol
-- **Balanceo de ecuaciones** — 8 ejercicios + solver dinámico
-- **Estequiometría** — Masas molares reales + reactivo limitante
-
-### Inglés (4 módulos)
-- **Verb Tenses · Passive · Modals · Reported Speech**
-- Preguntas de opción múltiple + escritura libre tolerante
-- Validación inteligente (I'm = I am, ignora puntuación)
-
-### Sistema de Progreso
-- **Quiz de 6 preguntas** con explicación en 3 pasos
-- **Niveles:** Novato → Experto
-- **Sincronización:** localStorage (local) + API (nube opcional)
-
----
-
-## 📸 Galería
+## Capturas
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/v3-actual/hero.png" width="100%" alt="Landing" /></td>
-<td width="50%"><img src="docs/screenshots/v3-actual/iupac.png" width="100%" alt="IUPAC 3D" /></td>
+<td width="50%"><img src="docs/images/fisica.png" alt="Física · 11 simuladores en una sola página" /></td>
+<td width="50%"><img src="docs/images/simulador-tiro-parabolico.png" alt="Simulador de tiro parabólico" /></td>
 </tr>
 <tr>
-<td width="50%"><img src="docs/screenshots/v3-actual/balanceo.png" width="100%" alt="Balanceo" /></td>
-<td width="50%"><img src="docs/screenshots/v3-actual/tiros.png" width="100%" alt="Tiros" /></td>
+<td width="50%"><img src="docs/images/quimica.png" alt="Química · 3 laboratorios" /></td>
+<td width="50%"><img src="docs/images/ingles.png" alt="Inglés · 4 entrenadores" /></td>
 </tr>
 </table>
 
----
+## Stack
 
-## 🛠️ Stack Tecnológico
-
-| Categoría | Tecnologías |
-|-----------|-------------|
-| **Frontend** | Next.js 16 · React 19 · Tailwind CSS 4 · shadcn |
-| **Animación** | Framer Motion |
-| **Backend** | Prisma · PostgreSQL (Supabase) |
-| **Visualización** | 3Dmol (química 3D) |
-| **Testing** | Vitest · Playwright |
-| **Tipado** | TypeScript 5 |
-
----
-
-## 📁 Estructura del Proyecto
+Next.js 16 (App Router) · React 19 · TypeScript 5 · Tailwind CSS 4 · shadcn/ui · Prisma (opcional) · HTML5 canvas para los simuladores. Tipografía única **Noto Sans**, empaquetada con el sitio (`public/fonts/`).
 
 ```
-src/
-├── app/                    # Pages: /, /fisica/*, /quimica/*, /ingles/*, /retos, /progreso
-├── components/
-│   ├── simulators/         # Simuladores: MRU, MRUV, Tiros, IUPAC, Balanceo, Estequiometría
-│   ├── didactic/           # Componentes pedagógicos: falla productiva, ejemplos resueltos
-│   └── chemistry/          # Visor 3D de moléculas
-├── lib/                    # Utilidades: nlp.ts, balance.ts, tests
-└── api/progress            # Backend de sincronización de progreso
-
-prisma/
-└── schema.prisma           # Modelos: User, Progress, Event
-
-docs/
-├── PROJECT_CHARTER.md      # Objetivos SMART y alcance
-├── ROADMAP.md              # Sprints y planificación
-├── WBS.md                  # Estructura de desglose del trabajo
-├── DESIGN.md               # Sistema de diseño y tokens
-├── guia-profesor.md        # Guía para docentes
-└── informe-piloto.md       # Resultados del piloto + análisis estadístico
+public/simuladores/   simuladores autónomos (HTML + canvas + base.js + estilo.css)
+src/app/              rutas: /, /fisica, /quimica, /ingles, /laboratorios, /retos, /progreso
+src/components/       navbar, footer, UI y componentes didácticos
+docs/                 product charter, roadmap, WBS, guía docente, capturas
 ```
 
----
-
-## ⚡ Inicio Rápido
-
-### Instalación
+## Correr en local
 
 ```bash
-# Clonar repositorio
 git clone https://github.com/villaralan11/CECyT-3-Lab.git
 cd CECyT-3-Lab
-
-# Instalar dependencias
 npm install
-
-# Configurar variables de entorno (opcional)
-cp .env.example .env.local
-# Edita .env.local con tu DATABASE_URL de Supabase
-```
-
-### Desarrollo
-
-```bash
-# Servidor local
-npm run dev
-# Abre http://localhost:3000
-
-# Tests
-npm test          # Vitest (38 tests)
-
-# Linting
+npm run dev        # http://localhost:3000
+npm run build      # build de producción
 npm run lint
-
-# Build producción
-npm run build
-npm start
 ```
 
-**Nota:** Sin Supabase configurado, la app funciona completamente en local con `localStorage`.
+Sin base de datos configurada, el progreso se guarda en `localStorage`.
 
----
+## Publicación
 
-## 🎨 Diseño
+El sitio se publica en **Vercel** (<https://cecyt3-lab.vercel.app>) desde `main`: cada push despliega producción y cada PR genera una vista previa.
 
-Sistema de colores por materia:
+## Documentación
 
-| Materia | Paleta |
-|---------|--------|
-| **Física** | Emerald: 50 / 700 / 200 |
-| **Química** | Fuchsia: 50 / 700 / 200 |
-| **Inglés** | Amber: 50 / 700 / 200 |
+- [Acta de constitución](./docs/PROJECT_CHARTER.md) · [Roadmap](./docs/ROADMAP.md) · [WBS](./docs/WBS.md)
+- [Guía del profesor](./docs/guia-profesor.md) · [Informe del piloto](./docs/informe-piloto.md) · [Plan de Fase 2](./docs/plan-fase2.md)
+- [Índice completo de documentación](./docs/README.md)
 
-**Tokens:** Radius 16px (cards), full (pills) · Touch targets 44px · WCAG AA · Tipografía: Geist Sans + Mono
+## Ramas y versiones
 
-Ver detalles completos en [`DESIGN.md`](./DESIGN.md)
-
----
-
-## 📚 Documentación
-
-- **[PROJECT_CHARTER.md](./PROJECT_CHARTER.md)** — Objetivos, alcance, riesgos
-- **[ROADMAP.md](./docs/ROADMAP.md)** — Sprints e hitos
-- **[WBS.md](./docs/WBS.md)** — Estructura de desglose
-- **[DESIGN.md](./DESIGN.md)** — Sistema de diseño completo
-- **[guia-profesor.md](./docs/guia-profesor.md)** — Manual para docentes
-- **[informe-piloto.md](./docs/informe-piloto.md)** — Resultados + análisis t-test y Cohen d
-
----
-
-## 🏆 Versiones Anteriores
+Una sola rama activa: **`main`**. Las versiones anteriores quedaron archivadas como etiquetas, sin ramas paralelas:
 
 ```bash
-git checkout v1-azul      # Diseño original en azul
-git checkout v2-linear    # Rediseño Linear Dark
-git checkout v3-actual    # Versión actual
+git tag                      # archivo/*, v0.2.1-alan
+git show archivo/v0.3.0      # versión del equipo (docs, scripts, entrenadores)
 ```
 
-Ver todas las capturas en [`docs/screenshots/`](./docs/screenshots/)
+## Créditos
 
----
+Proyecto académico del **CECyT No. 3 «Estanislao Ramírez Ruiz» — IPN**.
+Coordinación y dirección: **Victor Eduardo Rivera Corona** · Desarrollo: **Alan Antonio Molina Villar**, **Isai Rodríguez Villaseca**.
 
-## 📊 Estadísticas
-
-- **TypeScript:** 92.2% · **Shell:** 5.9% · **Other:** 1.9%
-- **38 tests** con Vitest
-- **10 módulos** interactivos (3 Física + 3 Química + 4 Inglés)
-
----
-
-## 🤝 Contribuir
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el repositorio
-2. Crea una rama: `git checkout -b feature/mi-mejora`
-3. Commit: `git commit -m "Agrega mi mejora"`
-4. Push: `git push origin feature/mi-mejora`
-5. Abre un Pull Request
-
----
-
-## 📄 Licencia
-
-MIT License — Libre para usar, modificar y distribuir.
-
----
-
-<div align="center">
-  <p><strong>Hecho por Alan Villar</strong></p>
-  <p>CECyT No. 3 "Estanislao Ramírez Ruiz" — IPN</p>
-  <p><a href="https://cecyt3-lab.vercel.app">🚀 Ver en vivo</a> · <a href="https://github.com/villaralan11/CECyT-3-Lab">📖 Ver código</a></p>
-</div>
+MIT — ver [LICENSE](./LICENSE).
