@@ -7,6 +7,7 @@ import { BookOpen, Bot, ExternalLink, FileText, Loader2, Plus, Send, Sparkles, T
 type Source = { id: string; title: string; content: string };
 type Message = { role: "user" | "assistant"; content: string };
 type DocMeta = { id: string; name: string; mime: string; size: number; createdAt: string };
+type NetEntry = { id: number; endpoint: string; method: string; request: unknown; status: number | "…"; response: string; ms: number; ts: string };
 
 const STARTER_SOURCES: Source[] = [
   { id: "starter-fisica", title: "Apunte de ejemplo · Física", content: "En un tiro parabólico, la componente horizontal de la velocidad permanece constante si se desprecia la resistencia del aire. En el punto más alto, la velocidad vertical es cero." },
@@ -54,21 +55,42 @@ export default function NotebookPage() {
   const [docError, setDocError] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Inspector de red (JSON de las llamadas a las APIs en tiempo real)
+  const [showNet, setShowNet] = useState(false);
+  const [netLog, setNetLog] = useState<NetEntry[]>([]);
+  const netIdRef = useRef(0);
+
+  const logRequest = useCallback((method: string, endpoint: string, request: unknown): number => {
+    const id = ++netIdRef.current;
+    setNetLog((current) => [{ id, method, endpoint, request, status: "…" as const, response: "", ms: 0, ts: new Date().toLocaleTimeString("es-MX") }, ...current].slice(0, 40));
+    return id;
+  }, []);
+
+  const logResponse = useCallback((id: number, status: number, response: unknown, ms: number) => {
+    setNetLog((current) => current.map((e) => (e.id === id ? { ...e, status, response: JSON.stringify(response, null, 2)?.slice(0, 1200) ?? "" , ms } : e)));
+  }, []);
+
   const canAdd = title.trim().length > 1 && content.trim().length > 15;
   const hasContext = selectedDocs.size > 0 || sources.length > 0;
   const canAsk = question.trim().length > 2 && hasContext && !busy;
   const sourcePayload = useMemo(() => sources.map(({ title: sourceTitle, content: sourceContent }) => ({ title: sourceTitle, content: sourceContent })), [sources]);
 
   const refreshDocs = useCallback(async (uid: string, selectAll: boolean) => {
+    const url = `/api/documents?userId=${encodeURIComponent(uid)}`;
+    const entryId = logRequest("GET", url, { userId: uid });
+    const t0 = performance.now();
     try {
-      const response = await fetch(`/api/documents?userId=${encodeURIComponent(uid)}`);
-      const data = await response.json();
+      const response = await fetch(url);
+      const data = await response.json().catch(() => null);
+      logResponse(entryId, response.status, data, Math.round(performance.now() - t0));
       if (response.ok && Array.isArray(data.documents)) {
         setDocs(data.documents);
         if (selectAll) setSelectedDocs(new Set(data.documents.map((d: DocMeta) => d.id)));
       }
-    } catch {}
-  }, []);
+    } catch (netError) {
+      logResponse(entryId, 0, { error: String(netError) }, Math.round(performance.now() - t0));
+    }
+  }, [logRequest, logResponse]);
 
   useEffect(() => {
     const uid = getUserId();
@@ -82,12 +104,15 @@ export default function NotebookPage() {
     const file = files?.[0];
     if (!file || !userId) return;
     setDocError(""); setUploading(true);
+    const entryId = logRequest("POST", "/api/documents", { userId: userId, file: { name: file.name, size: file.size, type: file.type } });
+    const t0 = performance.now();
     try {
       const form = new FormData();
       form.append("userId", userId);
       form.append("file", file);
       const response = await fetch("/api/documents", { method: "POST", body: form });
       const data = await response.json().catch(() => null);
+      logResponse(entryId, response.status, data, Math.round(performance.now() - t0));
       if (!response.ok) throw new Error(data?.error || "No se pudo subir el documento.");
       await refreshDocs(userId, false);
       if (data?.document?.id) setSelectedDocs((current) => new Set([...current, data.document.id]));
@@ -102,8 +127,12 @@ export default function NotebookPage() {
   const onDeleteDoc = async (doc: DocMeta) => {
     if (!confirm(`¿Eliminar "${doc.name}" de tu biblioteca?`)) return;
     setDocError("");
+    const entryId = logRequest("DELETE", `/api/documents/${doc.id}`, { userId, id: doc.id });
+    const t0 = performance.now();
     try {
       const response = await fetch(`/api/documents/${doc.id}?userId=${encodeURIComponent(userId)}`, { method: "DELETE" });
+      const data = await response.json().catch(() => null);
+      logResponse(entryId, response.status, data, Math.round(performance.now() - t0));
       if (!response.ok) throw new Error("No se pudo eliminar.");
       setDocs((current) => current.filter((d) => d.id !== doc.id));
       setSelectedDocs((current) => {
@@ -137,13 +166,17 @@ export default function NotebookPage() {
     setQuestion(""); setError(""); setBusy(true);
     const nextMessages = [...messages, { role: "user" as const, content: currentQuestion }];
     setMessages(nextMessages);
+    const payload = { question: currentQuestion, sources: sourcePayload, messages, documentIds: [...selectedDocs], userId };
+    const entryId = logRequest("POST", "/api/notebook", payload);
+    const t0 = performance.now();
     try {
       const response = await fetch("/api/notebook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: currentQuestion, sources: sourcePayload, messages, documentIds: [...selectedDocs], userId }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
+      logResponse(entryId, response.status, { ...data, answer: data.answer ? `${data.answer.slice(0, 300)}…` : undefined }, Math.round(performance.now() - t0));
       if (!response.ok) throw new Error(data.error || "No se pudo obtener una respuesta.");
       setMessages([...nextMessages, { role: "assistant", content: data.answer }]);
     } catch (requestError) {
@@ -179,7 +212,14 @@ export default function NotebookPage() {
       </div>
       <div className="notebook-add-form"><span className="notebook-label">FUENTE DE TEXTO (OPCIONAL)</span><input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Título, por ejemplo: MRUV" maxLength={80} /><textarea value={content} onChange={(event) => setContent(event.target.value)} placeholder="Pega aquí el contenido de tu apunte..." rows={4} maxLength={12000} /><button type="button" onClick={addSource} disabled={!canAdd || sources.length >= 8}><Plus size={16} /> Agregar fuente de texto ({sources.length}/8)</button></div></aside>
 
-      <section className="notebook-chat"><div className="notebook-panel-heading"><div><span className="notebook-label">02 / CONVERSACIÓN</span><h2>Pregunta lo que quieras</h2></div><button className="notebook-clear" type="button" onClick={() => setMessages([])} disabled={!messages.length}><Trash2 size={15} /> Limpiar</button></div><div className="notebook-chat-window">{messages.length === 0 ? <div className="notebook-empty"><div className="notebook-empty-icon"><Bot size={27} /></div><h3>Tu tutor está listo.</h3><p>Empieza con algo como:</p><div className="notebook-suggestions"><button type="button" onClick={() => setQuestion("Resume las ideas principales de mis documentos")}>“Resume mis documentos”</button><button type="button" onClick={() => setQuestion("¿Qué conceptos debo recordar para el examen?")}>“¿Qué debo recordar para el examen?”</button><button type="button" onClick={() => setQuestion("Hazme tres preguntas para practicar")}>“Hazme tres preguntas para practicar”</button></div></div> : messages.map((message, index) => <div key={`${message.role}-${index}`} className={`notebook-message ${message.role}`}><div className="notebook-message-avatar">{message.role === "assistant" ? <Bot size={16} /> : <UserRound size={16} />}</div><div><span>{message.role === "assistant" ? "Notebook CECyT" : "Tú"}</span><p>{message.content}</p></div></div>)}{busy && <div className="notebook-message assistant"><div className="notebook-message-avatar"><Bot size={16} /></div><div><span>Notebook CECyT</span><p className="notebook-thinking"><Loader2 size={16} /> Estoy leyendo tus documentos y conectando las ideas...</p></div></div>}</div>{error && <p className="notebook-error">{error}</p>}<form className="notebook-composer" onSubmit={ask}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={hasContext ? "Pregunta sobre tus documentos y fuentes..." : "Primero sube un documento o agrega una fuente"} rows={2} disabled={!hasContext || busy} /><button type="submit" disabled={!canAsk} aria-label="Enviar pregunta"><Send size={16} /></button></form></section>
+      <section className="notebook-chat"><div className="notebook-panel-heading"><div><span className="notebook-label">02 / CONVERSACIÓN</span><h2>Pregunta lo que quieras</h2></div><div className="notebook-chat-tools"><button className="notebook-net-btn" type="button" onClick={() => setShowNet((v) => !v)} aria-pressed={showNet} aria-label="Ver peticiones JSON de las APIs" title="Peticiones JSON en tiempo real">{"{ }"}</button><button className="notebook-clear" type="button" onClick={() => setMessages([])} disabled={!messages.length}><Trash2 size={15} /> Limpiar</button></div></div>
+      {showNet && <div className="notebook-net" role="log" aria-label="Registro de peticiones"><div className="notebook-net-head"><span className="notebook-label">RED · JSON EN TIEMPO REAL</span><button type="button" onClick={() => setNetLog([])}>Vaciar</button></div>{netLog.length === 0 ? <p className="notebook-net-empty">Sin peticiones todavía. Habla con la IA o sube un documento.</p> : netLog.map((e) => (
+        <details key={e.id} className="notebook-net-entry">
+          <summary><span className={`notebook-net-status ${typeof e.status === "number" && e.status < 300 ? "ok" : "bad"}`}>{e.status}</span><code>{e.method} {e.endpoint}</code><small>{e.ts} · {e.ms} ms</small></summary>
+          <pre>{`→ ${JSON.stringify(e.request, null, 2)}\n← ${e.response || "(sin cuerpo aún)"}`}</pre>
+        </details>
+      ))}</div>}
+      <div className="notebook-chat-window">{messages.length === 0 ? <div className="notebook-empty"><div className="notebook-empty-icon"><Bot size={27} /></div><h3>Tu tutor está listo.</h3><p>Empieza con algo como:</p><div className="notebook-suggestions"><button type="button" onClick={() => setQuestion("Resume las ideas principales de mis documentos")}>“Resume mis documentos”</button><button type="button" onClick={() => setQuestion("¿Qué conceptos debo recordar para el examen?")}>“¿Qué debo recordar para el examen?”</button><button type="button" onClick={() => setQuestion("Hazme tres preguntas para practicar")}>“Hazme tres preguntas para practicar”</button></div></div> : messages.map((message, index) => <div key={`${message.role}-${index}`} className={`notebook-message ${message.role}`}><div className="notebook-message-avatar">{message.role === "assistant" ? <Bot size={16} /> : <UserRound size={16} />}</div><div><span>{message.role === "assistant" ? "Notebook CECyT" : "Tú"}</span><p>{message.content}</p></div></div>)}{busy && <div className="notebook-message assistant"><div className="notebook-message-avatar"><Bot size={16} /></div><div><span>Notebook CECyT</span><p className="notebook-thinking"><Loader2 size={16} /> Estoy leyendo tus documentos y conectando las ideas...</p></div></div>}</div>{error && <p className="notebook-error">{error}</p>}<form className="notebook-composer" onSubmit={ask}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={hasContext ? "Pregunta sobre tus documentos y fuentes..." : "Primero sube un documento o agrega una fuente"} rows={2} disabled={!hasContext || busy} /><button type="submit" disabled={!canAsk} aria-label="Enviar pregunta"><Send size={16} /></button></form></section>
     </main>
   </div>;
 }
