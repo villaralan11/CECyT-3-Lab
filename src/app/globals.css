@@ -608,7 +608,7 @@
   text-wrap: balance;
 }
 .lab-hero-copy h1 span {
-  color: color-mix(in oklab, var(--foreground) 88%, transparent);
+  color: color-mix(in oklab, var(--foreground) 95%, transparent);
 }
 
 .lab-hero-description {
