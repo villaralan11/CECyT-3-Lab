@@ -75,3 +75,21 @@ Notebook IA, rutas y redirecciones de `next.config.ts` quedaron intactos.
 | Notebook IA sin API key | `POST /api/notebook` | 503 con mensaje claro (requiere `NVIDIA_API_KEY`; no se solicitaron credenciales por instrucción) |
 | Responsive | capturas 1440 / 1024 / 768 / 390 px | Sin desbordamientos; menú móvil operativo |
 | Modo oscuro | navegador (toggle + recarga) | Portada, Física y lecciones consistentes; preferencia persistente |
+
+## 6. Infraestructura de producción (2026-11-16, posterior al empaquetado)
+
+Migración del proyecto a infraestructura de producción manteniendo intacto el
+diseño y las funcionalidades descritas arriba:
+
+| Área | Cambio |
+|---|---|
+| Base de datos | SQLite (`db/custom.db`) → **PostgreSQL en Supabase** (Prisma 6, `provider = "postgresql"`). `DATABASE_URL` pooled (PgBouncer 6543) para runtime y `DIRECT_URL` directa (5432) para migraciones |
+| Migraciones | Primera migración versionada `20261116120000_init_postgres` (modelos `User`, `Progress`, `Post` con sus restricciones), aplicada con flujo de *baseline* porque la BD se comparte con otra app del propietario |
+| `/api/progress` | Persistencia real (upsert Postgres) con validación de tipos y límites; corrección del bug que respondía `ok: true` ante fallo de BD; el fallback 501 → localStorage se conserva |
+| Notebook IA | El modelo `nvidia/llama-3.1-nemotron-51b-instruct` alcanzó su fin de vida el 2026-11-15 (NVIDIA responde 410); reemplazado por `nvidia/nemotron-3.5-lightning-30b-a3b` con `thinking: false` (evita respuestas vacías por agotamiento de tokens en razonamiento). La clave sigue siendo server-only |
+| CI | GitHub Actions migrado de Bun a `npm ci` + lint + typecheck + test + build (Node 24) |
+| Repositorio | `.env` y `db/custom.db` retirados del tracking; `.gitignore` protege `.env*` (excepto `.env.example`), BDs locales y artefactos |
+| Documentación | `README.md`, `docs/desarrollo/README.md` y `docs/desarrollo/DESPLIEGUE.md` (nuevo) actualizados a la arquitectura real |
+| Despliegue | Vercel proyecto `cecyt3-lab` (Next.js, `npm ci` + `npm run build`), variables en los 3 entornos, verificado en preview antes de producción |
+
+Detalle operativo y flujo para desplegar cambios futuros: `docs/desarrollo/DESPLIEGUE.md`.
