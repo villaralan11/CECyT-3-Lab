@@ -42,3 +42,19 @@ model Post {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// Documentos subidos al Notebook IA (PDF, DOCX, PPTX, TXT, MD):
+// se guarda el archivo original (data) y el texto extraído (text) para la IA.
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  mime      String
+  size      Int
+  text      String
+  data      Bytes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}

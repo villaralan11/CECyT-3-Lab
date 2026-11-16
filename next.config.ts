@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Paquetes de extracción de documentos que deben resolverse fuera del bundle
+  // de servidor (pdf.js importa su worker dinámicamente).
+  serverExternalPackages: ["pdf-parse", "pdfjs-dist", "mammoth", "jszip"],
   async redirects() {
     return [
       {

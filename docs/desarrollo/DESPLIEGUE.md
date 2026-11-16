@@ -20,9 +20,10 @@ npm run db:deploy    # aplica migraciones pendientes en producción (no destruct
 npm run db:generate  # regenera el cliente Prisma
 ```
 
-Nota: la migración inicial (`20261116120000_init_postgres`) se aplicó con el flujo de
-*baseline* (`prisma db execute` + `prisma migrate resolve --applied`) porque la BD ya
-tenía tablas de otra aplicación. Nuevas migraciones: usar `npm run db:migrate` normal.
+Nota: la migración inicial (`20261116120000_init_postgres`) y la de documentos
+(`20261116153000_documentos_notebook`, tabla `Document` para el Notebook IA) se aplicaron
+con el flujo de *baseline* (`prisma db execute` + `prisma migrate resolve --applied`) porque
+la BD ya tenía tablas de otra aplicación. Nuevas migraciones: usar `npm run db:migrate` normal.
 No usar `prisma db push` contra esta BD (puede generar drift con el esquema compartido).
 
 ## Variables de entorno

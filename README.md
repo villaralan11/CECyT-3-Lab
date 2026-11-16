@@ -17,5 +17,5 @@ Laboratorio virtual (Next.js 16 + Tailwind 4): Física (11 simuladores), Químic
 ## Notas
 - La base de datos es **Supabase PostgreSQL** (Prisma 6, migraciones versionadas en `prisma/migrations/`). En local, `DATABASE_URL` usa la conexión pooled (PgBouncer) y `DIRECT_URL` la directa (puerto 5432) para migrar. Ver `docs/desarrollo/DESPLIEGUE.md`.
 - El progreso se persiste vía `/api/progress` (upsert en Postgres); si la BD no está disponible la API responde 501 y el cliente sigue con localStorage (fallback conservado).
-- El Notebook IA (`/api/notebook`) llama a NVIDIA integrate API **solo desde el servidor**; la clave vive en `NVIDIA_API_KEY` (Vercel/servidor, nunca en el cliente).
+- El Notebook IA (`/api/notebook`) llama a NVIDIA integrate API **solo desde el servidor**; la clave vive en `NVIDIA_API_KEY` (Vercel/servidor, nunca en el cliente). Desde v0.5.1 también acepta **documentos subidos** (PDF/DOCX/PPTX/TXT/MD) guardados en la BD: ver `CAMBIOS-v0.5.1.md`.
 - Los simuladores de Física son páginas HTML autónomas en `public/simuladores/` (se incrustan por iframe con `?embed=1`).
