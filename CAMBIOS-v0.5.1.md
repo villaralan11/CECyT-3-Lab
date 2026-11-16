@@ -28,8 +28,16 @@ El Notebook ahora acepta **documentos reales** además de texto pegado:
   subir/listar/servir/eliminar (validación de tipo, tamaño y cuota por usuario).
 - `src/app/api/notebook/route.ts` — acepta `documentIds` y reparte el presupuesto de contexto.
 - `src/app/notebook/page.tsx` — panel de biblioteca junto al chat (mismo sistema visual).
-- `src/app/globals.css` — estilos mínimos `.notebook-doc-*` con tokens existentes (claro/oscuro).
-- `next.config.ts` — `serverExternalPackages` para pdf.js/mammoth/jszip (worker dinámico).
+  Además: botón discreto `{ }` junto a «Limpiar» que abre un inspector con las
+  peticiones JSON de las APIs en tiempo real (estado HTTP, cuerpo, latencia).
+- `src/app/globals.css` — estilos mínimos `.notebook-doc-*` y `.notebook-net-*` con
+  tokens existentes (claro/oscuro). También: el tramo final del titular de portada
+  («se ve así») sube de 55% a 88% de opacidad para conservar legibilidad sobre la foto.
+- `next.config.ts` — `serverExternalPackages` (pdf.js/mammoth/jszip) y
+  `outputFileTracingIncludes` con `pdf.worker.mjs` + `standard_fonts` para el runtime
+  serverless (ver sección 6).
+- `src/lib/docs-server.ts` — stubs de `DOMMatrix`/`Path2D`/`ImageData` e import
+  dinámico de pdf.js (requerido en el runtime serverless de Vercel; ver sección 6).
 - `package.json` — 0.5.0 → 0.5.1; dependencias `pdf-parse`, `mammoth`, `jszip`.
 
 ## 3. Resultado de las pruebas (ejecutadas realmente)
@@ -58,3 +66,14 @@ Los archivos se sirven bajo demanda desde la BD; no hay almacenamiento externo.
 La tabla `Document` convive en el schema `public` con el resto de tablas (BD compartida).
 No se ejecutan migraciones en el build de Vercel; la migración quedó aplicada y registrada
 (`prisma migrate status` → up to date).
+
+## 6. pdf.js en el runtime serverless de Vercel (dos problemas resueltos)
+
+1. **`DOMMatrix is not defined`**: pdf.js referencia globales del navegador al
+   inicializarse. Solución: stubs mínimos en `src/lib/docs-server.ts` antes del import,
+   que además pasó a ser dinámico (mejora el cold start de las rutas que no usan PDF).
+2. **`Cannot find module .../pdf.worker.mjs`**: pdf.js carga su worker con
+   `import(workerSrc)` — string no estático que el trazado de archivos (NFT) no puede
+   seguir, así que el lambda no incluía el archivo. Solución: `outputFileTracingIncludes`
+   en `next.config.ts` copia `pdf.worker.mjs` y `standard_fonts/` a la función de
+   `/api/documents`.

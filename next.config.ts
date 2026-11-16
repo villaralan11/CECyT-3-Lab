@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   // Paquetes de extracción de documentos que deben resolverse fuera del bundle
   // de servidor (pdf.js importa su worker dinámicamente).
   serverExternalPackages: ["pdf-parse", "pdfjs-dist", "mammoth", "jszip"],
+  // pdf.js carga pdf.worker.mjs con un import() dinámico (string no estático),
+  // invisible para el trazado de archivos del lambda; sin esto, Vercel no copia
+  // el worker ni las fuentes estándar y la extracción de PDF falla en runtime.
+  outputFileTracingIncludes: {
+    "/api/documents": [
+      "./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
+      "./node_modules/pdfjs-dist/standard_fonts/**",
+    ],
+  },
   async redirects() {
     return [
       {
