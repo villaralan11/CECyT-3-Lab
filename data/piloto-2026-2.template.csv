@@ -1,0 +1,7 @@
+codigo,grupo,tema,pre_score,post_score,nps,completitud,tiempo_min,fecha_pre,fecha_post
+ALU-01,A,04_IUPAC,4,6,9,1,18,2026-11-16,2026-12-02
+ALU-02,A,04_IUPAC,3,5,8,1,15,2026-11-16,2026-12-02
+ALU-03,A,05_Balanceo,5,7,10,1,20,2026-11-18,2026-12-05
+ALU-04,A,05_Balanceo,2,5,7,1,22,2026-11-18,2026-12-05
+ALU-05,A,06_Estequiometria,3,6,8,1,25,2026-11-20,2026-12-07
+# ... añade 30 filas, anonimizado. pre_score/post_score sobre 8, nps 1-10, completitud 0/1

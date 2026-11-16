@@ -1,0 +1,11 @@
+# Normaliza finales de línea en scripts ejecutables
+*.sh text eol=lf
+Caddyfile text eol=lf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.pdf binary

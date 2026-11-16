@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useMemo, useState } from "react";
 import {
   FlaskConical,
   TrendingDown,
@@ -75,6 +75,18 @@ export default function EstequiometriaSimulator() {
   const [rIdx, setRIdx] = useState(0);
   const reaction = REACTIONS[rIdx];
   const [masses, setMasses] = useState<number[]>(reaction.reactants.map(() => 8));
+  // Reacciones exploradas: el alumno movió al menos un slider en cada una
+  const [explored, setExplored] = useState<Set<string>>(new Set());
+
+  const setMass = (i: number, v: number) => {
+    setMasses((m) => m.map((x, j) => (j === i ? v : x)));
+    if (!explored.has(reaction.id)) {
+      const next = new Set(explored);
+      next.add(reaction.id);
+      setExplored(next);
+      save("06_estequiometria", next.size, REACTIONS.length);
+    }
+  };
 
   const switchReaction = (i: number) => {
     setRIdx(i);
@@ -118,17 +130,6 @@ export default function EstequiometriaSimulator() {
     };
   });
 
-  // Auto-guarda progreso al interactuar
-  const esteqSavedRef = useRef(false);
-  useEffect(() => {
-    const hasInteracted = masses.some((m) => m !== 8);
-    if (hasInteracted && !esteqSavedRef.current) {
-      esteqSavedRef.current = true;
-      save("06_estequiometria", 1, 1);
-    } else if (!hasInteracted) {
-      esteqSavedRef.current = false;
-    }
-  }, [masses, save]);
   // Find max mass for bar scaling
   const maxMass = Math.max(...masses, ...yields.map((y) => y.grams), 1);
 
@@ -154,7 +155,7 @@ export default function EstequiometriaSimulator() {
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 i === rIdx
                   ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-sm"
-                  : "bg-white border border-border text-muted-foreground hover:text-foreground"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               {r.label}
@@ -164,7 +165,7 @@ export default function EstequiometriaSimulator() {
       </div>
 
       {/* Equation */}
-      <div className="rounded-2xl border-2 border-fuchsia-100 bg-white p-4 text-center">
+      <div className="rounded-2xl border-2 border-fuchsia-100 bg-card p-4 text-center">
         <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
           Reacción balanceada
         </div>
@@ -172,7 +173,7 @@ export default function EstequiometriaSimulator() {
       </div>
 
       {/* Mass sliders + bar chart */}
-      <div className="rounded-2xl border border-border bg-white p-4">
+      <div className="rounded-2xl border border-border bg-card p-4">
         <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
           <Coins className="h-3.5 w-3.5" />
           Entrada · masa de cada reactivo
@@ -187,7 +188,7 @@ export default function EstequiometriaSimulator() {
                 max={50}
                 step={0.5}
                 unit="g"
-                onChange={(v) => setMasses((m) => m.map((x, j) => (j === i ? v : x)))}
+                onChange={(v) => setMass(i, v)}
                 color="fuchsia"
                 description={`Masa molar: ${r.molarMass.toFixed(2)} g/mol`}
               />
@@ -263,8 +264,8 @@ export default function EstequiometriaSimulator() {
                 key={i}
                 className={`rounded-xl p-4 border-2 transition-all ${
                   isLimiting
-                    ? "border-rose-400 bg-white shadow-md"
-                    : "border-emerald-300 bg-white/70"
+                    ? "border-rose-400 bg-card shadow-md"
+                    : "border-emerald-300 bg-card/70"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -310,7 +311,7 @@ export default function EstequiometriaSimulator() {
       </div>
 
       {/* Theoretical yield */}
-      <div className="rounded-2xl border-2 border-emerald-200 bg-white p-5">
+      <div className="rounded-2xl border-2 border-emerald-200 bg-card p-5">
         <div className="flex items-center gap-2 mb-3">
           <Scale className="h-4 w-4 text-emerald-600" />
           <div className="text-xs uppercase tracking-wider font-bold text-emerald-700">
@@ -361,32 +362,33 @@ export default function EstequiometriaSimulator() {
           Flujo de conversión
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-center text-xs font-mono font-bold">
-          <div className="rounded-lg bg-white border border-fuchsia-200 px-3 py-2 text-center">
+          <div className="rounded-lg bg-card border border-fuchsia-200 px-3 py-2 text-center">
             <div className="text-[9px] text-muted-foreground font-normal uppercase">Entrada</div>
             <div className="text-fuchsia-700">{masses.join(" + ")} g</div>
           </div>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <div className="rounded-lg bg-white border border-fuchsia-200 px-3 py-2 text-center">
+          <div className="rounded-lg bg-card border border-fuchsia-200 px-3 py-2 text-center">
             <div className="text-[9px] text-muted-foreground font-normal uppercase">÷ Molar Mass</div>
             <div className="text-fuchsia-700">{moles.map((m) => m.toFixed(3)).join(" + ")} mol</div>
           </div>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <div className="rounded-lg bg-white border border-rose-200 px-3 py-2 text-center">
+          <div className="rounded-lg bg-card border border-rose-200 px-3 py-2 text-center">
             <div className="text-[9px] text-muted-foreground font-normal uppercase">÷ coeficiente</div>
             <div className="text-rose-600">min rondas = {minRondas.toFixed(3)}</div>
           </div>
           <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          <div className="rounded-lg bg-white border border-emerald-200 px-3 py-2 text-center">
+          <div className="rounded-lg bg-card border border-emerald-200 px-3 py-2 text-center">
             <div className="text-[9px] text-muted-foreground font-normal uppercase">× coef × M</div>
             <div className="text-emerald-700">{yields.map((y) => y.grams.toFixed(2)).join(" + ")} g</div>
           </div>
         </div>
       </div>
 
-      {/* Insights */}
+        {/* Insights */}
       <div className="grid sm:grid-cols-2 gap-3">
         <Insight color="rose" title="¿Por qué O₂ y no H₂?" icon={<AlertTriangle className="h-4 w-4" />}>
-          Con 8 g de H₂ y 8 g de O₂, el <strong>limitante es el O₂</strong> aunque las masas sean iguales. La estequiometría cuenta <strong>moles</strong>, no gramos: 8 g de H₂ son ~4 mol, pero 8 g de O₂ son solo 0.25 mol. Y como la reacción pide 2:1, las "rondas" resultan 2 (H₂) vs 0.25 (O₂) → gana O₂.
+          Con 8 g de H₂ y 8 g de O₂, el <strong>limitante es el O₂</strong> aunque las masas sean iguales. La estequiometría cuenta <strong>moles</strong>, no gramos: 8 g de H₂ son ~4 mol, pero 8 g de O₂ son solo 0.25 mol. Y como la reacción pide 2:1, las "rondas" resultan 2 (H₂) vs 0.25 (O₂) → el O₂ se agota primero: es el limitante.
+          <div className="mt-2 text-xs font-mono">{explored.size}/{REACTIONS.length} reacciones exploradas</div>
         </Insight>
         <Insight color="emerald" title="El truco: mol ÷ coef" icon={<CheckCircle2 className="h-4 w-4" />}>
           Para comparar reactivos con coeficientes distintos, divide sus moles entre su coeficiente en la ecuación. El <strong>menor</strong> es el limitante. Ese número (rondas) te dice cuántas "veces" se puede ejecutar la reacción. Multiplica por el coeficiente del producto → moles obtenidos → × masa molar → gramos teóricos.

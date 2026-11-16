@@ -14,6 +14,7 @@ import {
 import { SimHeader, Insight } from "./shared";
 import { cn } from "@/lib/utils";
 import { isCorrectEnglish } from "@/lib/nlp";
+import { useProgress } from "@/hooks/use-progress";
 
 export type QItem = {
   prompt: string;
@@ -35,6 +36,7 @@ export function QuizTrainer({
   items,
   accentColor = "amber",
   intro,
+  topicId,
 }: {
   title: string;
   description: string;
@@ -42,106 +44,71 @@ export function QuizTrainer({
   items: QItem[];
   accentColor?: "amber" | "fuchsia" | "emerald";
   intro?: string;
+  topicId?: string; // id de progreso (ej. "07_verb"); si se pasa, registra avance
 }) {
+  const { save } = useProgress();
   const [idx, setIdx] = useState(0);
-  const [picked, setPicked] = useState<number | null>(null);
   const [results, setResults] = useState<(boolean | null)[]>(items.map(() => null));
+  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
+  const [writeHistory, setWriteHistory] = useState<Record<number, string>>({});
+  const [writeValue, setWriteValue] = useState("");
   const [showHint, setShowHint] = useState(false);
 
   const item = items[idx];
   const total = items.length;
-  const [writeValue, setWriteValue] = useState("");
   const isWriteMode = item.type === "write";
 
   const score = results.filter((r) => r === true).length;
   const answered = results.filter((r) => r !== null).length;
 
+  // Guarda avance cuando cambia el número de aciertos únicos
+  const recordProgress = (nextResults: (boolean | null)[]) => {
+    if (!topicId) return;
+    const correct = nextResults.filter((r) => r === true).length;
+    if (correct > 0) save(topicId, correct, total);
+  };
+
   const onPick = (i: number) => {
-    if (picked !== null) return;
-    setPicked(i);
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = i === item.correct;
-      return next;
-    });
-  };
-
-  const goto = (i: number) => {
-    if (i < 0 || i >= total) return;
-    setIdx(i);
-    setPicked(results[i] !== null ? items[i].correct : null); // if already answered, keep showing as answered
-    // Actually we need to track the picked index separately - let me redo
-    setShowHint(false);
-  };
-
-  const next = () => {
-    if (idx < total - 1) {
-      setIdx(idx + 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const prev = () => {
-    if (idx > 0) {
-      setIdx(idx - 1);
-      setPicked(null);
-      setWriteValue("");
-      setShowHint(false);
-    }
-  };
-
-  const reset = () => {
-    setIdx(0);
-    setPicked(null);
-    setWriteValue("");
-    setResults(items.map(() => null));
-    setShowHint(false);
-    setPickedHistory(items.map(() => null));
-  };
-
-  // For showing picked, we need to track which option user picked (not just correct/incorrect)
-  // Let me track separately
-  const [pickedHistory, setPickedHistory] = useState<(number | null)[]>(items.map(() => null));
-
-  const onPickV2 = (i: number) => {
     if (pickedHistory[idx] !== null) return;
-    setPickedHistory((h) => {
-      const next = [...h];
-      next[idx] = i;
-      return next;
-    });
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = i === item.correct;
-      return next;
-    });
-    setPicked(i);
+    const nextPicked = [...pickedHistory];
+    nextPicked[idx] = i;
+    setPickedHistory(nextPicked);
+    const nextResults = [...results];
+    nextResults[idx] = i === item.correct;
+    setResults(nextResults);
+    recordProgress(nextResults);
   };
 
   const onSubmitWrite = () => {
     if (pickedHistory[idx] !== null || !writeValue.trim()) return;
     const expected = item.accepted ?? [item.options[item.correct]];
     const correct = isCorrectEnglish(writeValue, expected);
-    setPickedHistory((h) => {
-      const next = [...h];
-      next[idx] = correct ? item.correct : -1;
-      return next;
-    });
-    setResults((r) => {
-      const next = [...r];
-      next[idx] = correct;
-      return next;
-    });
-    setPicked(correct ? item.correct : -1);
+    setWriteHistory((w) => ({ ...w, [idx]: writeValue }));
+    const nextPicked = [...pickedHistory];
+    nextPicked[idx] = correct ? item.correct : -1;
+    setPickedHistory(nextPicked);
+    const nextResults = [...results];
+    nextResults[idx] = correct;
+    setResults(nextResults);
+    recordProgress(nextResults);
   };
 
-  const gotoV2 = (i: number) => {
+  const goto = (i: number) => {
     if (i < 0 || i >= total) return;
     setIdx(i);
-    setPicked(pickedHistory[i]);
+    setWriteValue(writeHistory[i] ?? "");
+    setShowHint(false);
+  };
+
+  const next = () => goto(idx + 1);
+  const prev = () => goto(idx - 1);
+
+  const reset = () => {
+    setIdx(0);
     setWriteValue("");
+    setResults(items.map(() => null));
+    setPickedHistory(items.map(() => null));
+    setWriteHistory({});
     setShowHint(false);
   };
 
@@ -181,19 +148,19 @@ export function QuizTrainer({
 
       {/* Top stats */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-border bg-white px-3 py-2 text-center">
+        <div className="rounded-xl border border-border bg-card px-3 py-2 text-center">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Aciertos</div>
           <div className={cn("mt-0.5 text-xl font-bold font-mono", c.text)}>
             {score}<span className="text-sm text-muted-foreground">/{answered}</span>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-white px-3 py-2 text-center">
+        <div className="rounded-xl border border-border bg-card px-3 py-2 text-center">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Respondidas</div>
           <div className="mt-0.5 text-xl font-bold font-mono text-foreground">
             {answered}<span className="text-sm text-muted-foreground">/{total}</span>
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-white px-3 py-2 text-center">
+        <div className="rounded-xl border border-border bg-card px-3 py-2 text-center">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">% acierto</div>
           <div className={cn("mt-0.5 text-xl font-bold font-mono", c.text)}>
             {answered > 0 ? Math.round((score / answered) * 100) : 0}%
@@ -213,13 +180,13 @@ export function QuizTrainer({
             return (
               <button
                 key={i}
-                onClick={() => gotoV2(i)}
+                onClick={() => goto(i)}
                 className={cn(
                   "h-7 w-7 text-xs font-bold rounded-full transition-all border",
                   isCurrent && `bg-gradient-to-br ${c.gradient} text-white border-transparent shadow-sm scale-110`,
                   !isCurrent && r === true && "bg-emerald-100 text-emerald-700 border-emerald-200",
                   !isCurrent && r === false && "bg-rose-100 text-rose-700 border-rose-200",
-                  !isCurrent && r === null && "bg-white text-muted-foreground border-border hover:border-foreground/30"
+                  !isCurrent && r === null && "bg-card text-muted-foreground border-border hover:border-foreground/30"
                 )}
                 title={`Ejercicio ${i + 1}${r === true ? " (correcto)" : r === false ? " (incorrecto)" : ""}`}
               >
@@ -240,7 +207,7 @@ export function QuizTrainer({
             onClick={() => setShowHint((v) => !v)}
             className={cn(
               "inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 border transition-colors",
-              showHint ? `${c.bgSoft} ${c.text} ${c.border}` : "bg-white text-muted-foreground border-border hover:text-foreground"
+              showHint ? `${c.bgSoft} ${c.text} ${c.border}` : "bg-card text-muted-foreground border-border hover:text-foreground"
             )}
           >
             <Lightbulb className="h-3 w-3" />
@@ -265,7 +232,7 @@ export function QuizTrainer({
                       "inline-block min-w-[100px] px-2 py-0.5 mx-1 rounded border-2 text-center",
                       pickedHistory[idx] !== null
                         ? cn(c.border, c.bgSoft, c.text, "font-bold")
-                        : "border-dashed border-muted-foreground/40 bg-white"
+                        : "border-dashed border-muted-foreground/40 bg-card"
                     )}
                   >
                     {pickedHistory[idx] !== null ? item.options[pickedHistory[idx]!] : "?"}
@@ -280,12 +247,12 @@ export function QuizTrainer({
         {isWriteMode ? (
           <div className="mt-5 space-y-3">
             <textarea
-              value={writeValue}
+              value={pickedHistory[idx] !== null ? writeHistory[idx] ?? writeValue : writeValue}
               onChange={(e) => setWriteValue(e.target.value)}
               disabled={pickedHistory[idx] !== null}
               placeholder={item.placeholder ?? "Escribe tu respuesta aquí..."}
               rows={3}
-              className="w-full rounded-xl border-2 border-border bg-white p-3 text-sm focus:border-amber-300 focus:outline-none disabled:opacity-60"
+              className="w-full rounded-xl border-2 border-border bg-card p-3 text-sm focus:border-amber-300 focus:outline-none disabled:opacity-60"
               aria-label="Respuesta escrita"
             />
             <button
@@ -307,13 +274,13 @@ export function QuizTrainer({
             return (
               <button
                 key={i}
-                onClick={() => onPickV2(i)}
+                onClick={() => onPick(i)}
                 disabled={pickedHistory[idx] !== null}
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all",
                   showCorrect && "border-emerald-400 bg-emerald-50 text-emerald-700",
                   showWrong && "border-rose-400 bg-rose-50 text-rose-700",
-                  !showCorrect && !showWrong && "border-border bg-white hover:border-amber-300 hover:bg-amber-50/40 text-foreground",
+                  !showCorrect && !showWrong && "border-border bg-card hover:border-amber-300 hover:bg-amber-50/40 text-foreground",
                   pickedHistory[idx] !== null && !isPicked && !isCorrect && "opacity-50"
                 )}
               >
@@ -383,7 +350,7 @@ export function QuizTrainer({
         <button
           onClick={prev}
           disabled={idx === 0}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary/40 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-secondary/40 transition-colors"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
           Anterior
@@ -411,7 +378,7 @@ export function QuizTrainer({
             onClick={reset}
             className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-600 transition-colors"
           >
-            <Trophy className="h-3.5 w-3.5" /> Reiniciar
+            <Trophy className="h-3.5 w-3.5" /> Terminar y reiniciar
           </button>
         )}
       </div>

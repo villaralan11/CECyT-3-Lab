@@ -23,7 +23,8 @@ export function BackToTop() {
           exit={{ opacity: 0, y: 16, scale: 0.9 }}
           transition={{ duration: 0.25 }}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed right-[max(1.25rem,env(safe-area-inset-right))] bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 backdrop-blur border border-border text-foreground shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all"
+          data-site-chrome=""
+          className="fixed bottom-5 right-5 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-card/90 backdrop-blur border border-border text-foreground shadow-lg shadow-black/10 hover:shadow-xl hover:-translate-y-0.5 active:scale-95 transition-all"
           aria-label="Volver arriba"
         >
           <ArrowUp className="h-5 w-5" />

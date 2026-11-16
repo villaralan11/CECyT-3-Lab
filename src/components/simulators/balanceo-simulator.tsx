@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef } from "react";
 import { Minus, Plus, CheckCircle2, RotateCcw, AlertTriangle, Scale } from "lucide-react";
 import { SimHeader, Insight } from "./shared";
-import { balanceReaction } from "@/lib/balance";
+import { balanceReaction, isValidFormula, parseFormula } from "@/lib/balance";
 import { useProgress } from "@/hooks/use-progress";
 
 type Species = { formula: string; defaultCoef: number };
@@ -119,30 +119,37 @@ const REACTIONS: Reaction[] = [
   },
 ];
 
-// Parse formula and count atoms (handles elements + subscript digits)
+// Conteo de átomos por fórmula × coeficiente (usa el parser de lib/balance,
+// que normaliza subíndices Unicode: CH₄, O₂, Fe₂O₃…)
 function countAtoms(formula: string, coef: number): Record<string, number> {
+  const parsed = parseFormula(formula);
   const result: Record<string, number> = {};
-  // Remove parentheses by distributing (simplified: treat (OH)2 as O2H2)
-  // First, expand simple parenthetical groups like (OH)2 -> O2H2
-  let expanded = formula.replace(/\(([^)]+)\)(\d*)/g, (_, inside, mult) => {
-    const m = mult ? parseInt(mult, 10) : 1;
-    // Inside: O H → multiply each element's subscript
-    return inside.replace(/([A-Z][a-z]?)(\d*)/g, (_m: string, el: string, n: string) => el + (n ? parseInt(n, 10) * m : m));
-  });
-  // Now match element + optional number
-  const regex = /([A-Z][a-z]?)(\d*)/g;
-  let m;
-  while ((m = regex.exec(expanded)) !== null) {
-    if (!m[1]) continue;
-    const el = m[1];
-    const n = m[2] ? parseInt(m[2], 10) : 1;
+  Object.entries(parsed).forEach(([el, n]) => {
     result[el] = (result[el] || 0) + n * coef;
-  }
+  });
   return result;
 }
 
 function balancedCoef(coef: number) {
   return coef === 1 ? "" : coef.toString();
+}
+
+// ¿La ecuación queda balanceada con estos coeficientes?
+function isBalancedWith(rx: Reaction, cs: number[]): boolean {
+  const left: Record<string, number> = {};
+  const right: Record<string, number> = {};
+  rx.reactants.forEach((s, i) => {
+    Object.entries(countAtoms(s.formula, cs[i] || 1)).forEach(([el, n]) => {
+      left[el] = (left[el] || 0) + n;
+    });
+  });
+  rx.products.forEach((s, i) => {
+    Object.entries(countAtoms(s.formula, cs[rx.reactants.length + i] || 1)).forEach(([el, n]) => {
+      right[el] = (right[el] || 0) + n;
+    });
+  });
+  const atoms = Array.from(new Set([...Object.keys(left), ...Object.keys(right)]));
+  return atoms.length > 0 && atoms.every((el) => (left[el] || 0) === (right[el] || 0));
 }
 
 export default function BalanceoSimulator() {
@@ -151,34 +158,55 @@ export default function BalanceoSimulator() {
   const reaction = REACTIONS[rIdx];
   const allSpecies = [...reaction.reactants, ...reaction.products];
   const [coefs, setCoefs] = useState<number[]>(allSpecies.map((s) => s.defaultCoef));
+  // Reacciones dominadas (balanceadas sin «Ver solución»)
+  const [solved, setSolved] = useState<Set<string>>(new Set());
+  const [solutionShown, setSolutionShown] = useState(false);
+  const solutionUsed = useRef(false);
+
+  // Aplica nuevos coeficientes y registra el dominio si quedó balanceada a mano
+  const applyCoefs = (next: number[]) => {
+    setCoefs(next);
+    if (isBalancedWith(reaction, next)) {
+      if (!solutionUsed.current && !solved.has(reaction.id)) {
+        const ns = new Set(solved);
+        ns.add(reaction.id);
+        setSolved(ns);
+        save("05_balanceo", ns.size, REACTIONS.length);
+      }
+    } else {
+      // el alumno volvió a mover los coeficientes: puede volver a contar como a mano
+      solutionUsed.current = false;
+      setSolutionShown(false);
+    }
+  };
 
   const switchReaction = (i: number) => {
     setRIdx(i);
     const r = REACTIONS[i];
+    solutionUsed.current = false;
+    setSolutionShown(false);
     setCoefs([...r.reactants, ...r.products].map((s) => s.defaultCoef));
   };
 
   const reset = () => {
-    setCoefs(allSpecies.map((s) => s.defaultCoef));
+    applyCoefs(allSpecies.map((s) => s.defaultCoef));
   };
 
   const bump = (i: number, delta: number) => {
-    setCoefs((c) => {
-      const next = [...c];
-      next[i] = Math.max(1, next[i] + delta);
-      return next;
-    });
+    const next = [...coefs];
+    next[i] = Math.max(1, next[i] + delta);
+    applyCoefs(next);
   };
 
   const setCoef = (i: number, value: number) => {
-    setCoefs((c) => {
-      const next = [...c];
-      next[i] = Math.max(1, Math.min(20, Math.floor(value || 1)));
-      return next;
-    });
+    const next = [...coefs];
+    next[i] = Math.max(1, Math.min(20, Math.floor(value || 1)));
+    applyCoefs(next);
   };
 
   const showSolution = () => {
+    solutionUsed.current = true;
+    setSolutionShown(true);
     setCoefs([...reaction.balanced]);
   };
 
@@ -215,19 +243,21 @@ export default function BalanceoSimulator() {
   const tryCustom = () => {
     const r = customR.split(",").map((s) => s.trim()).filter(Boolean);
     const p2 = customP.split(",").map((s) => s.trim()).filter(Boolean);
+    const invalid = [...r, ...p2].find((f) => !isValidFormula(f));
+    if (invalid) {
+      setCustomRes(null);
+      setCustomErr(`Fórmula no válida: «${invalid}». Escribe elementos con mayúscula inicial (ej. C3H8, O2, Fe2O3).`);
+      return;
+    }
+    if (!r.length || !p2.length) {
+      setCustomRes(null);
+      setCustomErr("Escribe al menos un reactivo y un producto separados por comas.");
+      return;
+    }
     const res = balanceReaction(r, p2);
     if (res) { setCustomRes(res); setCustomErr(null); }
-    else { setCustomRes(null); setCustomErr("No se pudo balancear con coeficientes ≤100. Revisa fórmulas."); }
+    else { setCustomRes(null); setCustomErr("No se pudo balancear con coeficientes ≤100. Revisa que la reacción sea químicamente coherente."); }
   };
-  const balSavedRef = useRef(false);
-  useEffect(() => {
-    if (isBalanced && !balSavedRef.current) {
-      balSavedRef.current = true;
-      save("05_balanceo", 1, 1);
-    } else if (!isBalanced) {
-      balSavedRef.current = false;
-    }
-  }, [isBalanced, save]);
 
   return (
     <div className="space-y-5">
@@ -251,11 +281,11 @@ export default function BalanceoSimulator() {
               className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
                 i === rIdx
                   ? "bg-gradient-to-r from-fuchsia-500 to-pink-500 text-white shadow-sm"
-                  : "bg-white border border-border text-muted-foreground hover:text-foreground"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               <span className={`inline-flex items-center rounded-full px-1.5 py-0 text-[8px] font-bold uppercase tracking-wide ${
-                i === rIdx ? "bg-white/20 text-white" : "bg-secondary text-muted-foreground"
+                i === rIdx ? "bg-card/20 text-white" : "bg-secondary text-muted-foreground"
               }`}>
                 {r.category === "combustión" ? "🔥" : r.category === "síntesis" ? "⚗" : "⚙"}
               </span>
@@ -266,7 +296,7 @@ export default function BalanceoSimulator() {
       </div>
 
       {/* Equation */}
-      <div className="rounded-2xl border-2 border-fuchsia-100 bg-white p-5 overflow-x-auto">
+      <div className="rounded-2xl border-2 border-fuchsia-100 bg-card p-5 overflow-x-auto">
         <div className="flex items-center justify-between mb-3">
           <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">
             Ecuación química
@@ -371,7 +401,7 @@ export default function BalanceoSimulator() {
       </div>
 
       {/* Atom inventory */}
-      <div className="rounded-2xl border border-border bg-white overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card overflow-hidden">
         <div className="px-4 py-2.5 border-b border-border bg-secondary/40 flex items-center justify-between">
           <div className="text-xs uppercase tracking-wider font-semibold text-muted-foreground flex items-center gap-1.5">
             <Scale className="h-3.5 w-3.5" />
@@ -429,7 +459,7 @@ export default function BalanceoSimulator() {
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={reset}
-          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-1.5 text-xs font-semibold hover:bg-secondary/40 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold hover:bg-secondary/40 transition-colors"
         >
           <RotateCcw className="h-3 w-3" />
           Reiniciar coeficientes
@@ -445,13 +475,13 @@ export default function BalanceoSimulator() {
 
       {/* Custom solver — dinámico */}
       <div className="rounded-2xl border-2 border-dashed border-fuchsia-300 bg-fuchsia-50/40 p-4">
-        <div className="text-xs uppercase tracking-wider font-bold text-fuchsia-700">Solver dinámico: prueba tu propia reacción</div>
+        <div className="text-xs uppercase tracking-wider font-bold text-fuchsia-700">🧪 Solver dinámico — prueba tu propia reacción</div>
         <div className="mt-3 grid sm:grid-cols-2 gap-3">
           <label className="text-xs font-semibold">Reactivos (coma)
-            <input value={customR} onChange={(e) => setCustomR(e.target.value)} placeholder="ej: C3H8, O2" className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 font-mono text-sm" />
+            <input value={customR} onChange={(e) => setCustomR(e.target.value)} placeholder="ej: C3H8, O2" className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm" />
           </label>
           <label className="text-xs font-semibold">Productos (coma)
-            <input value={customP} onChange={(e) => setCustomP(e.target.value)} placeholder="ej: CO2, H2O" className="mt-1 w-full rounded-lg border border-border bg-white px-3 py-2 font-mono text-sm" />
+            <input value={customP} onChange={(e) => setCustomP(e.target.value)} placeholder="ej: CO2, H2O" className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm" />
           </label>
         </div>
         <button onClick={tryCustom} className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm">
@@ -463,7 +493,7 @@ export default function BalanceoSimulator() {
           const left = r.map((f, i) => `${customRes[i] === 1 ? "" : customRes[i]}${f}`).join(" + ");
           const right = pp.map((f, i) => `${customRes[r.length + i] === 1 ? "" : customRes[r.length + i]}${f}`).join(" + ");
           return (
-            <div className="mt-3 rounded-xl bg-white border border-emerald-200 p-3 font-mono text-sm">
+            <div className="mt-3 rounded-xl bg-card border border-emerald-200 p-3 font-mono text-sm">
               <span className="text-emerald-700 font-bold">✓ {left} → {right}</span>
               <div className="text-xs text-muted-foreground mt-1">Coeficientes: [{customRes.join(", ")}] · verificado átomo por átomo</div>
             </div>
@@ -477,6 +507,7 @@ export default function BalanceoSimulator() {
       <div className="grid sm:grid-cols-2 gap-3">
         <Insight color="fuchsia" title="Coeficiente vs subíndice" icon={<AlertTriangle className="h-4 w-4" />}>
           El <strong>coeficiente</strong> (número grande a la izquierda de la fórmula, como el 2 en 2H₂O) <strong>se puede cambiar</strong> y multiplica TODA la fórmula. El <strong>subíndice</strong> (número pequeño dentro, como el ₂ en H₂O) <strong>NO se toca</strong>: cambiarlo alteraría la sustancia.
+          <div className="mt-2 text-xs font-mono">{solved.size}/{REACTIONS.length} reacciones dominadas{solutionShown ? " · la actual se resolvió con «Ver solución»" : ""}</div>
         </Insight>
         <Insight color="emerald" title="Método de tanteo" icon={<CheckCircle2 className="h-4 w-4" />}>
           <strong>Pasos:</strong> 1) cuenta átomos a cada lado. 2) Empieza por el elemento que aparece en menos sustancias (suele ser el C en combustiones). 3) Balancea el H y deja el O para el final (aparece en varias sustancias). 4) Verifica con la tabla. 5) Si hay fracciones, multiplica todo por 2.

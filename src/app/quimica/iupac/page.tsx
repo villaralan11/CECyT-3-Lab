@@ -1,27 +1,27 @@
 import { Breadcrumb } from "@/components/site/ui";
 import IUPACTrainer from "@/components/simulators/iupac-trainer";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
-  title: "Nomenclatura IUPAC · CECyT No. 3 Lab",
-  description: "Secuencia completa falla productiva → simulador → ejemplo resuelto: 25 compuestos orgánicos e inorgánicos (DEM S Química I, Unidad 2).",
+  title: "Nomenclatura IUPAC — CECyT No. 3 Lab",
+  description: "Secuencia completa falla productiva → simulador → ejemplo resuelto: 25 compuestos orgánicos e inorgánicos (Plan DEMS · Química I, Unidad 2).",
 };
 
 const FAILURE = {
   question: "Tu compañero dice: «Fe₂O₃ es trióxido de dihierro, como CO₂ es dióxido de carbono». ¿Tiene razón?",
   options: [
     "Sí, misma regla: prefijos griegos para todo",
-    "No, Fe₂O₃ es óxido de hierro (III): lleva romano porque el hierro tiene dos valencias",
+    "No, Fe₂O₃ es óxido de hierro (III) — lleva romano porque el hierro tiene dos valencias",
     "No, Fe₂O₃ es óxido ferroso",
     "Sí, pero sería trióxido de hierro",
   ],
   correct: 1,
-  reveal: "Los prefijos di-/tri- son para no-metales con enlace covalente (CO₂, SO₃). Para metales de transición con valencia variable (Fe²⁺/Fe³⁺) usas Stock: óxido de hierro (III). El Fe²O³ no es 'trióxido', es Fe(III). Esta confusión es justo lo que entrenarás abajo.",
+  reveal: "Los prefijos di-/tri- son para no-metales con enlace covalente (CO₂, SO₃). Para metales de transición con valencia variable (Fe²⁺/Fe³⁺) usas Stock: óxido de hierro (III). El Fe₂O₃ no es 'trióxido', es Fe(III). Esta confusión es justo lo que entrenarás abajo.",
 };
 
 const EXAMPLE = {
-  title: "Sulfato de hierro (II) · FeSO₄",
+  title: "Sulfato de hierro (II) — FeSO₄",
   problem: "Nombra FeSO₄ paso a paso. Es la sal verde que se usa en laboratorio. ¿Por qué no es 'sulfato de hierro (III)' ni 'sulfito'?",
   steps: [
     {
@@ -53,7 +53,7 @@ const EXAMPLE = {
 
 export default function IUPACPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-28 pb-12 space-y-8">
+    <div className="lab-lesson-page lab-lesson-page--chemistry mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       <Breadcrumb items={[
         { label: "Inicio", href: "/" },
         { label: "Química", href: "/quimica" },
@@ -61,12 +61,12 @@ export default function IUPACPage() {
       ]} />
 
       <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-bold text-fuchsia-700">DEM S Química I · Unidad 2</span>
+        <span className="font-bold text-fuchsia-700">Plan DEMS · Química I · Unidad 2</span>
         <span className="text-muted-foreground">· Nomenclatura sistemática y Stock · 25 compuestos validados (RH 2024) ·</span>
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="04_iupac" />
 
       <IUPACTrainer />
 

@@ -1,10 +1,10 @@
 import { Breadcrumb } from "@/components/site/ui";
 import EstequiometriaSimulator from "@/components/simulators/estequiometria-simulator";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
-  title: "Estequiometría · Reactivo Limitante · CECyT No. 3 Lab",
+  title: "Estequiometría · Reactivo Limitante — CECyT No. 3 Lab",
   description: "Secuencia falla → simulador reactivo limitante → ejemplo: 4 reacciones, masas molares reales, cálculo de rondas y rendimiento teórico.",
 };
 
@@ -17,11 +17,11 @@ const FAILURE = {
     "El H₂O (es el producto)",
   ],
   correct: 1,
-  reveal: "10 g H₂ = 4.96 mol ÷ 2 = 2.48 rondas; 10 g O₂ = 0.31 mol ÷ 1 = 0.31 rondas. Gana el O₂ con menos rondas. La masa engaña: lo que cuenta es moles ÷ coeficiente. Prueba abajo moviendo los sliders de 8 a 10 g.",
+  reveal: "10 g H₂ = 4.96 mol ÷ 2 = 2.48 rondas; 10 g O₂ = 0.31 mol ÷ 1 = 0.31 rondas. El O₂ se agota primero: es el limitante. La masa engaña: lo que cuenta es moles ÷ coeficiente. Prueba abajo moviendo los sliders de 8 a 10 g.",
 };
 
 const EXAMPLE = {
-  title: "Agua con 8 g de cada reactivo: 2H₂ + O₂ → 2H₂O",
+  title: "Agua con 8 g de cada reactivo — 2H₂ + O₂ → 2H₂O",
   problem: "Con 8 g de H₂ y 8 g de O₂, ¿cuánto H₂O obtienes y cuánto sobra? Sigue el flujo masa→moles→rondas.",
   steps: [
     {
@@ -53,7 +53,7 @@ const EXAMPLE = {
 
 export default function EstequiometriaPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-28 pb-12 space-y-8">
+    <div className="lab-lesson-page lab-lesson-page--chemistry mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       <Breadcrumb items={[
         { label: "Inicio", href: "/" },
         { label: "Química", href: "/quimica" },
@@ -61,12 +61,12 @@ export default function EstequiometriaPage() {
       ]} />
 
       <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-bold text-fuchsia-700">DEM S Química I · Unidad 3</span>
+        <span className="font-bold text-fuchsia-700">Plan DEMS · Química I · Unidad 3</span>
         <span className="text-muted-foreground">· Cálculos estequiométricos · 4 reacciones con masas molares reales ·</span>
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="06_estequiometria" />
 
       <EstequiometriaSimulator />
 

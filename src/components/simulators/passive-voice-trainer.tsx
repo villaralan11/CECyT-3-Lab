@@ -133,10 +133,11 @@ export default function PassiveVoiceTrainer() {
     <QuizTrainer
       title="Grammar · Passive Voice"
       description="Transforma oraciones activas en pasivas y domina la estructura be + participio en todos los tiempos. El foco cambia: del quien hace al que recibe."
-      badge="Inglés · 8 ejercicios"
+      badge="Inglés · 9 ejercicios"
       items={ITEMS}
       accentColor="amber"
-      intro="Has completado los 8 ejercicios de voz pasiva."
+      topicId="08_passive"
+      intro="Has completado los 9 ejercicios de voz pasiva."
     />
   );
 }

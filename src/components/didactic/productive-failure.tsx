@@ -35,7 +35,7 @@ export function ProductiveFailureCard({
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-pink-50 p-6 sm:p-7">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-card to-pink-50 p-6 sm:p-7">
       <div className="pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gradient-to-br from-fuchsia-400 to-pink-400 opacity-15 blur-3xl" />
       <div className="relative flex flex-wrap items-center justify-between gap-2">
         <span className={`inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r ${accentMap[accent]} px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm`}>
@@ -52,18 +52,18 @@ export function ProductiveFailureCard({
         {data.question}
       </p>
       <p className="relative mt-2 text-sm text-muted-foreground">
-        Responde con tu intuición, aún sin repasar. Equivocarte aquí es parte del método.
+        Responde con tu intuición — aún sin repasar. Equivocarte aquí es parte del método.
       </p>
 
       <div className="relative mt-5 grid gap-2.5">
         {data.options.map((opt, i) => {
           const isCorrect = i === data.correct;
           const isSelected = selected === i;
-          let cls = "border-border bg-white hover:border-fuchsia-300 hover:bg-fuchsia-50/50 text-foreground";
+          let cls = "border-border bg-card hover:border-fuchsia-300 hover:bg-fuchsia-50/50 text-foreground";
           if (answered) {
             if (isCorrect) cls = "border-emerald-300 bg-emerald-50 text-emerald-800";
             else if (isSelected) cls = "border-rose-300 bg-rose-50 text-rose-800";
-            else cls = "border-border bg-white text-muted-foreground opacity-60";
+            else cls = "border-border bg-card text-muted-foreground opacity-60";
           }
           return (
             <button
@@ -81,7 +81,7 @@ export function ProductiveFailureCard({
       </div>
 
       {answered && (
-        <div className="relative mt-5 rounded-2xl border border-fuchsia-200 bg-white p-4 shadow-sm">
+        <div className="relative mt-5 rounded-2xl border border-fuchsia-200 bg-card p-4 shadow-sm">
           <p className="text-sm leading-relaxed text-foreground">
             <b className={selected === data.correct ? "text-emerald-600" : "text-fuchsia-600"}>
               {selected === data.correct ? "¡Exacto! " : "No exactamente. "}

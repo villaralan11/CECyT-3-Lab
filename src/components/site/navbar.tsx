@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, FlaskConical } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUpRight, FlaskConical, Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/site/theme-toggle";
 
 const LINKS = [
   { href: "/", label: "Inicio" },
@@ -14,133 +15,54 @@ const LINKS = [
   { href: "/laboratorios", label: "Laboratorios" },
   { href: "/retos", label: "Retos" },
   { href: "/progreso", label: "Progreso" },
+  { href: "/notebook", label: "Notebook IA" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  // Helper to close menu (used by mobile link clicks)
-  const handleMobileNav = () => setOpen(false);
+  const isActive = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header
-      className={`fixed inset-x-0 z-50 transition-all duration-300 ${
-        scrolled || open
-          ? "top-3 mx-3 sm:mx-4 lg:mx-6 rounded-2xl border border-border bg-background/85 backdrop-blur-xl shadow-lg shadow-black/[0.06]"
-          : "top-0 border-b border-transparent bg-transparent"
-      }`}
-    >
-      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 2xl:max-w-[86rem]">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group" onClick={handleMobileNav}>
-            <img src="/cecyt3-logo.png" alt="Logo del CECyT No. 3 Estanislao Ramírez Ruiz, IPN" width={40} height={40} className="h-10 w-10 rounded-xl object-cover shadow-sm ring-1 ring-border bg-white group-hover:scale-105 transition-transform" />
-            <div className="leading-tight">
-              <div className="text-sm font-bold tracking-tight text-foreground">
-                CECyT No. 3
-              </div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
-                Lab · IPN
-              </div>
-            </div>
-          </Link>
+    <header data-site-chrome="" className="lab-navbar">
+      <div className="lab-nav-inner">
+        <Link href="/" className="lab-brand" onClick={() => setOpen(false)} aria-label="CECyT No. 3 Lab, inicio">
+          <span className="lab-brand-mark"><img src="/cecyt3-logo.png" alt="" width={38} height={38} /></span>
+          <span className="lab-brand-copy"><strong>CECyT No. 3</strong><small>LAB <i>·</i> IPN</small></span>
+        </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {LINKS.map((l) => {
-              const active =
-                l.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(l.href);
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`relative px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                    active
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                  }`}
-                >
-                  {l.label}
-                  {active && (
-                    <motion.div
-                      layoutId="navbar-active"
-                      className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* CTA */}
-          <div className="hidden lg:flex items-center gap-2">
-            <Link
-              href="/fisica"
-              className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 hover:shadow-xl hover:shadow-fuchsia-500/40 hover:scale-105 transition-all"
-            >
-              <FlaskConical className="h-4 w-4" />
-              Explorar
+        <nav className="lab-nav-links" aria-label="Navegación principal">
+          {LINKS.map((link) => (
+            <Link key={link.href} href={link.href} aria-current={isActive(link.href) ? "page" : undefined} className={isActive(link.href) ? "active" : ""}>
+              {link.label}
+              {isActive(link.href) && <motion.span layoutId="lab-nav-indicator" className="lab-nav-indicator" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
             </Link>
-          </div>
+          ))}
+        </nav>
 
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="lg:hidden flex size-11 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
-            aria-label={open ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={open}
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
+        <Link href="/fisica" className="lab-nav-cta"><FlaskConical size={14} /> Explorar</Link>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="lg:hidden overflow-hidden"
-            >
-              <div className="py-3 space-y-1 border-t border-border">
-                {LINKS.map((l) => {
-                  const active =
-                    l.href === "/"
-                      ? pathname === "/"
-                      : pathname.startsWith(l.href);
-                  return (
-                    <Link
-                      key={l.href}
-                      href={l.href}
-                      onClick={handleMobileNav}
-                      className={`block px-3 py-2.5 text-sm font-medium rounded-lg ${
-                        active
-                          ? "bg-secondary text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                      }`}
-                    >
-                      {l.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <span className="ml-auto flex items-center gap-2 lg:ml-0.5">
+          <ThemeToggle />
+        </span>
+
+        <button type="button" className="lab-mobile-toggle" onClick={() => setOpen((value) => !value)} aria-label={open ? "Cerrar menú" : "Abrir menú"} aria-expanded={open}>
+          {open ? <X size={21} /> : <Menu size={21} />}
+        </button>
       </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.nav className="lab-mobile-menu" aria-label="Navegación móvil" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
+            {LINKS.map((link, i) => (
+              <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={isActive(link.href) ? "active" : ""}>
+                <span className="mobile-link-index">0{i + 1}</span>{link.label}<ArrowUpRight size={15} />
+              </Link>
+            ))}
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

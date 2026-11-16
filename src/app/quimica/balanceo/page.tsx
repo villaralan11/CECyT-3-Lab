@@ -1,10 +1,10 @@
 import { Breadcrumb } from "@/components/site/ui";
 import BalanceoSimulator from "@/components/simulators/balanceo-simulator";
-import { ProductiveFailureCard } from "@/components/didactic/productive-failure";
+import { FailureWithSave } from "@/components/didactic/failure-with-save";
 import { WorkedExampleCard } from "@/components/didactic/worked-example";
 
 export const metadata = {
-  title: "Balanceo de Ecuaciones · CECyT No. 3 Lab",
+  title: "Balanceo de Ecuaciones — CECyT No. 3 Lab",
   description: "Secuencia falla → balanceador con conteo vivo → ejemplo resuelto: 8 reacciones (combustión, síntesis, oxidación) verificadas ley de Lavoisier.",
 };
 
@@ -17,11 +17,11 @@ const FAILURE = {
     "Sí, pero falta poner 2CO₂",
   ],
   correct: 1,
-  reveal: "Balancenado H sin revisar O es el error #1. Derecha: CO₂ (2 O) + 2H₂O (2 O) = 4 O, izquierda solo 2 O. Hay que ajustar el coeficiente del O₂ a 2. Y nunca toques subíndices (O₂→O₄ cambia la sustancia). Practícalo abajo con el conteo vivo.",
+  reveal: "Balancear H sin revisar O es el error #1. Derecha: CO₂ (2 O) + 2H₂O (2 O) = 4 O, izquierda solo 2 O. Hay que ajustar el coeficiente del O₂ a 2. Y nunca toques subíndices (O₂→O₄ cambia la sustancia). Practícalo abajo con el conteo vivo.",
 };
 
 const EXAMPLE = {
-  title: "Combustión de etano: C₂H₆ + O₂ → CO₂ + H₂O",
+  title: "Combustión de etano — C₂H₆ + O₂ → CO₂ + H₂O",
   problem: "Balancea la combustión del etano paso a paso sin tocar subíndices. Solo coeficientes. Usa el método de tanteo.",
   steps: [
     {
@@ -53,7 +53,7 @@ const EXAMPLE = {
 
 export default function BalanceoPage() {
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-28 pb-12 space-y-8">
+    <div className="lab-lesson-page lab-lesson-page--chemistry mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-8">
       <Breadcrumb items={[
         { label: "Inicio", href: "/" },
         { label: "Química", href: "/quimica" },
@@ -61,12 +61,12 @@ export default function BalanceoPage() {
       ]} />
 
       <div className="rounded-xl border border-fuchsia-200 bg-fuchsia-50 px-4 py-3 flex flex-wrap items-center gap-2 text-xs">
-        <span className="font-bold text-fuchsia-700">DEM S Química I · Unidad 3</span>
+        <span className="font-bold text-fuchsia-700">Plan DEMS · Química I · Unidad 3</span>
         <span className="text-muted-foreground">· Ley de conservación de la masa · 8 reacciones validadas (RH 2024) ·</span>
         <span className="text-muted-foreground">Falla → Simulador → Ejemplo</span>
       </div>
 
-      <ProductiveFailureCard data={FAILURE} accent="fuchsia" />
+      <FailureWithSave data={FAILURE} accent="fuchsia" topicId="05_balanceo" />
 
       <BalanceoSimulator />
 
