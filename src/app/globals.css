@@ -611,6 +611,10 @@
   color: color-mix(in oklab, var(--foreground) 95%, transparent);
 }
 
+.dark .lab-hero-copy h1 span {
+  color: #18181b;
+}
+
 .lab-hero-description {
   max-width: 560px;
   font-size: clamp(1rem, 1.4vw, 1.15rem);
